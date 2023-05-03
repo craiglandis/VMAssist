@@ -1,7 +1,5 @@
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
-    [string]$scriptPathRemote,
-    [switch]$useWMI = $true
 )
 
 function Out-Log
@@ -487,17 +485,6 @@ if ($rdAgentKey)
 else
 {
     $rdAgentKeyExists = $false
-}
-
-if ($useWMI)
-{
-    $rdAgentFilter = "Name='RdAgent'"
-    $rdAgentFromWMI = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName Win32_Service -Filter $rdAgentFilter -ErrorAction SilentlyContinue"
-    if ($rdAgentFromWMI)
-    {
-        $rdAgentExitCode = $rdAgentFromWMI.ExitCode
-        $rdAgentErrorControl = $rdAgentErrorControl.ErrorControl
-    }
 }
 
 $scExe = "$env:SystemRoot\System32\sc.exe"
@@ -1388,9 +1375,9 @@ $css = @'
 $stringBuilder = New-Object Text.StringBuilder
 
 $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
-#[void]$stringBuilder.Append("<h1>VM health report for VM $vmName (VMID: $vmId) generated $scriptEndTimeUTCString</h1>`r`n")
 [void]$stringBuilder.Append("<h1>VM Health Report</h1>")
 [void]$stringBuilder.Append("<h3>VM: $vmName VMID: $vmId Time Generated: $scriptEndTimeUTCString</h3>")
+<#
 [void]$stringBuilder.Append("<a href=`"#findings`"><strong>Findings</strong></a><br />`r`n")
 [void]$stringBuilder.Append("<a href=`"#checks`"><strong>Checks</strong></a><br />`r`n")
 [void]$stringBuilder.Append("<a href=`"#vm`"><strong>VM Details</strong></a><br />`r`n")
@@ -1399,6 +1386,7 @@ $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append("&emsp;<a href=`"#vmNetwork`"><strong>Network</strong></a><br />`r`n")
 [void]$stringBuilder.Append("&emsp;<a href=`"#vmSecurity`"><strong>Security</strong></a><br />`r`n")
 [void]$stringBuilder.Append("&emsp;<a href=`"#vmStorage`"><strong>Storage</strong></a><br />`r`n")
+#>
 
 $findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
 if ($findingsCount -ge 1)
@@ -1446,35 +1434,12 @@ $vmStorageTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append("</html>`r`n")
 
 $html = $stringBuilder.ToString()
-$html | Out-File -FilePath C:\test.html
-Invoke-Item -Path C:\test.html
 
-$outputString = $output | Select-Object -Property * -ExcludeProperty guestKey, windowsAzureKey, guestAgentKey, handlerStates | Format-List | Out-String
-if ($outputString)
-{
-    $outputString = $outputString.Trim()
-    if ($verbose -or $debug)
-    {
-        Out-Log $outputString -raw
-    }
-
-    $outputFileName = "$($scriptBaseName)_SUMMARY_$($computerName.ToUpper())_$($osVersion.Replace(' ', '_'))_$(Get-Date -Format yyyyMMddhhmmss).txt"
-    $outputFilePath = "$logFolderPath\$outputFileName"
-    $outputString | Out-File -FilePath $outputFilePath
-    $destinationPath = Split-Path -Path $scriptPathRemote
-    $outputFileRemotePath = "$destinationPath\$outputFileName"
-    $logFileRemotePath = "$destinationPath\$($scriptBaseName)_LOG_$($computerName.ToUpper())_$($osVersion.Replace(' ', '_'))_$(Get-Date -Format yyyyMMddhhmmss).log"
-    if (Test-Path -Path $outputFilePath -PathType Leaf)
-    {
-        Out-Log "Output file: $outputFilePath"
-        Invoke-ExpressionWithLogging "Copy-Item -Path $outputFilePath -Destination $outputFileRemotePath -ErrorAction SilentlyContinue"
-        Invoke-ExpressionWithLogging "Copy-Item -Path $logFilePath -Destination $logFileRemotePath -ErrorAction SilentlyContinue"
-        if ($verbose -or $debug)
-        {
-            Invoke-Item -Path $outputFilePath
-        }
-    }
-}
+$htmlFileName = "$($scriptBaseName)_$($computerName.ToUpper())_$($osVersion.Replace(' ', '_'))_$(Get-Date -Format yyyyMMddhhmmss).html"
+$htmlFilePath = "$logFolderPath\$htmlFileName"
+$html | Out-File -FilePath $htmlFilePath
+Out-Log "HTML report: $htmlFilePath"
+Invoke-Item -Path $htmlFilePath
 
 Out-Log "Log file: $logFilePath"
 $scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f (New-TimeSpan -Start $scriptStartTime -End (Get-Date))
