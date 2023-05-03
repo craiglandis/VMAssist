@@ -1,6 +1,6 @@
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
-    [string]$scriptPathRemote = '\\tsclient\c\onedrive\my\Get-AzVMAgentHealth.ps1',
+    [string]$scriptPathRemote,
     [switch]$useWMI = $true
 )
 
