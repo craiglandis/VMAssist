@@ -1131,8 +1131,96 @@ $vm.Add([PSCustomObject]@{Property = 'osInstallDate'; Value = $installDateString
 $vm.Add([PSCustomObject]@{Property = 'computerName'; Value = $computerName; Type = 'OS'})
 $vm.Add([PSCustomObject]@{Property = 'licenseType'; Value = $licenseType; Type = 'OS'})
 
+$nics = New-Object System.Collections.Generic.List[Object]
+$ipInterfaces = Get-NetIPInterface -AddressFamily IPv4
+foreach ($ipInterface in $ipInterfaces)
+{
+    $nic = [PSCustomObject]@{
+        'InterfaceIndex'      = $ipInterface.InterfaceIndex
+        'InterfaceAlias'      = $ipInterface.InterfaceAlias
+        'Dhcp'      = $ipInterface.Dhcp
+        'ConnectionState'      = $ipInterface.ConnectionState
+    }
+    $nics.Add($nic)
+}
+
+foreach ($nic in $nics)
+{
+    $adapter = Get-NetAdapter -InterfaceIndex $nic.InterfaceIndex
+    $nic | Add-Member -MemberType NoteProperty -Name ComponentID -Value $adapter.ComponentID -Force
+    $nic | Add-Member -MemberType NoteProperty -Name Status -Value $adapter.Status -Force
+    $nic | Add-Member -MemberType NoteProperty -Name MediaConnectionState -Value $adapter.MediaConnectionState -Force
+    $nic | Add-Member -MemberType NoteProperty -Name DriverInformation -Value $adapter.DriverInformation -Force
+    $nic | Add-Member -MemberType NoteProperty -Name MacAddress -Value $adapter.MacAddress -Force
+
+    $ipV4Addresses = Get-NetIPAddress -InterfaceIndex $nic.InterfaceIndex -AddressFamily IPv4
+    foreach ($ipV4Address in $ipV4Addresses)
+    {
+        $ipV4AddressString = $ipV4Address.IPAddress
+        if ($ipV4Address.PrefixOrigin -eq 'Dhcp' -and $ipV4Address.SuffixOrigin -eq 'Dhcp')
+        {
+            $ipV4AddressString = "$ipV4AddressString (DHCP)"
+        }
+        else
+        {
+            $ipV4AddressString = "$ipV4AddressString (Static)"
+        }
+
+        if ($ipV4Address.SkipAsSource -eq $true)
+        {
+            $ipV4AddressString = "$ipV4AddressString (Primary)"
+        }
+        $ipV4AddressesString += "$ipV4AddressString, "
+    }
+    $ipV4AddressesString.Trim(', ')
+    $nic | Add-Member -MemberType NoteProperty -Name 'IPv4 Addresses' -Value $ipV4AddressesString -Force
+}
+
 # Network
 <#
+
+Get-NetIPInterface
+
+Get-NetAdapter
+Get-NetAdapterAdvancedProperty
+Get-NetAdapterBinding
+Get-NetAdapterHardwareInfo
+Get-NetAdapterPowerManagement
+Get-NetAdapterStatistics
+Get-NetConnectionProfile
+
+Get-NetIPAddress                            NetTCPIP
+Get-NetIPConfiguration                      NetTCPIP
+Get-NetIPInterface
+Get-NetIPsecRule
+Get-NetIPv4Protocol
+Get-NetIPv6Protocol
+
+Get-NetRoute
+Get-NetTCPConnection
+Get-NetTCPSetting
+Get-NetUDPSetting
+
+Get-NetEventNetworkAdapter
+Get-NetEventPacketCaptureProvider
+Get-NetEventProvider
+Get-NetEventSession
+Get-NetEventVmNetworkAdapter
+Get-NetEventVmSwitch
+
+
+
+Get-NetFirewallAddressFilter                NetSecurity
+Get-NetFirewallApplicationFilter            NetSecurity
+Get-NetFirewallInterfaceFilter              NetSecurity
+Get-NetFirewallInterfaceTypeFilter          NetSecurity
+Get-NetFirewallPortFilter                   NetSecurity
+Get-NetFirewallProfile                      NetSecurity
+Get-NetFirewallRule                         NetSecurity
+Get-NetFirewallSecurityFilter               NetSecurity
+Get-NetFirewallServiceFilter                NetSecurity
+Get-NetFirewallSetting                      NetSecurity
+
 # Microsoft Hyper-V Network Adapter
 Get-NetAdapter | where-object {$_.ComponentID -eq 'VMBUS\{f8615163-df3e-46c5-913f-f2d2f965ed0e}'}
 # Mellanox ConnectX-5 Virtual Adapter
@@ -1487,10 +1575,12 @@ $vmOsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("<h3 id=`"vmNetwork`">Network</h3>`r`n")
 [void]$stringBuilder.Append("<h4>NIC details from OS</h4>`r`n")
+$vmNetworkTable = $nics | ConvertTo-Html -Fragment -As Table
+$vmNetworkTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append("<h4>NIC details from IMDS</h4>`r`n")
 #$vmNetworkTable = $vm | Where-Object {$_.Type -eq 'Network'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
-$vmNetworkTable = $nicsImds | ConvertTo-Html -Fragment -As Table
-$vmNetworkTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+$vmNetworkImdsTable = $nicsImds | ConvertTo-Html -Fragment -As Table
+$vmNetworkImdsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("<h3 id=`"vmSecurity`">Security</h3>`r`n")
 $vmSecurityTable = $vm | Where-Object {$_.Type -eq 'Security'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
