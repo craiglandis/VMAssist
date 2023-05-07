@@ -937,7 +937,7 @@ if ($imdsReachable.Succeeded)
     if ($metadata)
     {
         $global:dbgMetadata = $metadata
-        Out-Log "Querying Instance Metadata service 169.254.169.254:80 succeeded" -color Green
+        Out-Log 'Querying Instance Metadata service 169.254.169.254:80 succeeded' -color Green
 
         $azEnvironment = $metadata.compute.azEnvironment
         $vmName = $metadata.compute.name
@@ -1000,6 +1000,7 @@ if ($imdsReachable.Succeeded)
                 $imageReference = "$($imageReferenceId.Split('/')[-1]) (custom image)"
             }
         }
+        $interfaces = $metadata.network.interface
         $macAddress = $metadata.network.interface.macAddress
         $privateIpAddress = $metadata.network.interface | Select-Object -First 1 | Select-Object -ExpandProperty ipv4 -First 1 | Select-Object -ExpandProperty ipAddress -First 1 | Select-Object -ExpandProperty privateIpAddress -First 1
         $publicIpAddress = $metadata.network.interface | Select-Object -First 1 | Select-Object -ExpandProperty ipv4 -First 1 | Select-Object -ExpandProperty ipAddress -First 1 | Select-Object -ExpandProperty publicIpAddress -First 1
@@ -1011,7 +1012,7 @@ if ($imdsReachable.Succeeded)
     }
     else
     {
-        Out-Log "Querying Instance Metadata service 169.254.169.254:80 failed" -color Red
+        Out-Log 'Querying Instance Metadata service 169.254.169.254:80 failed' -color Red
     }
 }
 <#
@@ -1131,12 +1132,78 @@ $vm.Add([PSCustomObject]@{Property = 'computerName'; Value = $computerName; Type
 $vm.Add([PSCustomObject]@{Property = 'licenseType'; Value = $licenseType; Type = 'OS'})
 
 # Network
-$vm.Add([PSCustomObject]@{Property = 'privateIpAddress'; Value = $privateIpAddress; Type = 'Network'})
-$vm.Add([PSCustomObject]@{Property = 'publicIpAddress'; Value = $publicIpAddress; Type = 'Network'})
-$vm.Add([PSCustomObject]@{Property = 'publicIpAddressReportedFromAwsCheckIpService'; Value = $publicIpAddressReportedFromAwsCheckIpService; Type = 'Network'})
-$vm.Add([PSCustomObject]@{Property = 'macAddress'; Value = $macAddress; Type = 'Network'})
+<#
+# Microsoft Hyper-V Network Adapter
+Get-NetAdapter | where-object {$_.ComponentID -eq 'VMBUS\{f8615163-df3e-46c5-913f-f2d2f965ed0e}'}
+# Mellanox ConnectX-5 Virtual Adapter
+Get-NetAdapter | where-object {$_.ComponentID -eq 'PCI\VEN_15B3&DEV_1018&REV_80'}
+
+$metadata.network.interface.ipv4.ipAddress | Measure-Object | select-object -ExpandProperty count
+
+Get-NetAdapter
+MacAddress
+Status
+MediaConnectionState
+DriverVersion
+#>
+
+$nicsImds = New-Object System.Collections.Generic.List[Object]
+foreach ($interface in $interfaces)
+{
+    $ipV4privateIpAddresses = $interface.ipV4.ipAddress.privateIpAddress -join ','
+    $ipV4publicIpAddresses = $interface.ipV4.ipAddress.publicIpAddress -join ','
+    $ipV6privateIpAddresses = $interface.ipV6.ipAddress.privateIpAddress -join ','
+    $ipV6publicIpAddresses = $interface.ipV6.ipAddress.publicIpAddress -join ','
+
+    if ($ipV4privateIpAddresses) {$ipV4privateIpAddresses = $ipV4privateIpAddresses.TrimEnd(',')}
+    if ($ipV4publicIpAddresses) {$ipV4publicIpAddresses = $ipV4publicIpAddresses.TrimEnd(',')}
+    if ($ipV6privateIpAddresses) {$ipV6privateIpAddresses = $ipV6privateIpAddresses.TrimEnd(',')}
+    if ($ipV6publicIpAddresses) {$ipV6publicIpAddresses = $ipV6publicIpAddresses.TrimEnd(',')}
+
+    $nicImds = [PSCustomObject]@{
+        'MAC Address'      = $interface.macAddress
+        'IPv4 Private IPs' = $ipV4privateIpAddresses
+        'IPv4 Public IPs'  = $ipV4publicIpAddresses
+        'IPv6 Private IPs' = $ipV6privateIpAddresses
+        'IPv6 Public IPs'  = $ipV6publicIpAddresses
+    }
+    $nicsImds.Add($nicImds)
+<#
+get-netadapter | Get-NetIPAddress -AddressFamily IPv4 | ft IPAddress,InterfaceAlias,PrefixOrigin,SuffixOrigin,SkipAsSource
+
+IPAddress InterfaceAlias PrefixOrigin SuffixOrigin SkipAsSource
+--------- -------------- ------------ ------------ ------------
+10.0.0.10 Ethernet             Manual       Manual        False
+10.0.0.7  Ethernet             Manual       Manual         True
+
+get-netadapter | Get-NetIPAddress -AddressFamily IPv4 | ft IPAddress,InterfaceAlias,PrefixOrigin,SuffixOrigin,SkipAsSource
+
+IPAddress InterfaceAlias PrefixOrigin SuffixOrigin SkipAsSource
+--------- -------------- ------------ ------------ ------------
+10.0.1.6  Ethernet 4             Dhcp         Dhcp        False
+10.0.1.4  Ethernet 2             Dhcp         Dhcp        False
+10.0.2.4  Ethernet               Dhcp         Dhcp        False
+10.0.1.5  Ethernet 3             Dhcp         Dhcp        False
+
+#>
+}
+
+#$vm.Add([PSCustomObject]@{Property = 'publicIpAddressReportedFromAwsCheckIpService'; Value = $publicIpAddressReportedFromAwsCheckIpService; Type = 'Network'})
 
 # Security
+if ($imdsReachable.Succeeded -eq $false)
+{
+    $ErrorActionPreference = 'SilentlyContinue'
+    if (Confirm-SecureBootUEFI)
+    {
+        $secureBootEnabled = $true
+    }
+    else
+    {
+        $secureBootEnabled = $false
+    }
+    $ErrorActionPreference = 'Continue'
+}
 $vm.Add([PSCustomObject]@{Property = 'encryptionAtHost'; Value = $encryptionAtHost; Type = 'Security'})
 $vm.Add([PSCustomObject]@{Property = 'secureBootEnabled'; Value = $secureBootEnabled; Type = 'Security'})
 $vm.Add([PSCustomObject]@{Property = 'securityType'; Value = $securityType; Type = 'Security'})
@@ -1156,7 +1223,8 @@ $vm.Add([PSCustomObject]@{Property = 'osDiskOsType'; Value = $osDiskOsType; Type
 $vm.Add([PSCustomObject]@{Property = 'osDiskVhdUri'; Value = $osDiskVhdUri; Type = 'Storage'})
 $vm.Add([PSCustomObject]@{Property = 'osDiskWriteAcceleratorEnabled'; Value = $osDiskWriteAcceleratorEnabled; Type = 'Storage'})
 
-foreach ($dataDisk in $dataDisks) {
+foreach ($dataDisk in $dataDisks)
+{
     $bytesPerSecondThrottle = $dataDisk.bytesPerSecondThrottle
     $diskCapacityBytes = $dataDisk.diskCapacityBytes
     $diskSizeGB = $dataDisk.diskSizeGB
@@ -1375,7 +1443,7 @@ $css = @'
 $stringBuilder = New-Object Text.StringBuilder
 
 $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
-[void]$stringBuilder.Append("<h1>VM Health Report</h1>")
+[void]$stringBuilder.Append('<h1>VM Health Report</h1>')
 [void]$stringBuilder.Append("<h3>VM: $vmName VMID: $vmId Time Generated: $scriptEndTimeUTCString</h3>")
 <#
 [void]$stringBuilder.Append("<a href=`"#findings`"><strong>Findings</strong></a><br />`r`n")
@@ -1407,7 +1475,6 @@ $global:dbgChecksTable = $checksTable
 [void]$stringBuilder.Append("<h2 id=`"checks`">Checks</h2>`r`n")
 $checksTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
-#[void]$stringBuilder.Append("<p><h2 id=`"vm`">VM Details</h2><p>`r`n")
 [void]$stringBuilder.Append("<h2 id=`"vm`">VM Details</h2>`r`n")
 
 [void]$stringBuilder.Append("<h3 id=`"vmGeneral`">General</h3>`r`n")
@@ -1419,16 +1486,19 @@ $vmOsTable = $vm | Where-Object {$_.Type -eq 'OS'} | Select-Object Property, Val
 $vmOsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("<h3 id=`"vmNetwork`">Network</h3>`r`n")
-$vmNetworkTable = $vm | Where-Object {$_.Type -eq 'Network'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
+[void]$stringBuilder.Append("<h4>NIC details from OS</h4>`r`n")
+[void]$stringBuilder.Append("<h4>NIC details from IMDS</h4>`r`n")
+#$vmNetworkTable = $vm | Where-Object {$_.Type -eq 'Network'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
+$vmNetworkTable = $nicsImds | ConvertTo-Html -Fragment -As Table
 $vmNetworkTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("<h3 id=`"vmSecurity`">Security</h3>`r`n")
 $vmSecurityTable = $vm | Where-Object {$_.Type -eq 'Security'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmSecurityTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
-[void]$stringBuilder.Append("<h3 id=`"vmStorage`">Storage</h3>`r`n")
-$vmStorageTable = $vm | Where-Object {$_.Type -eq 'Storage'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
-$vmStorageTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+#[void]$stringBuilder.Append("<h3 id=`"vmStorage`">Storage</h3>`r`n")
+#$vmStorageTable = $vm | Where-Object {$_.Type -eq 'Storage'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
+#$vmStorageTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("</body>`r`n")
 [void]$stringBuilder.Append("</html>`r`n")
