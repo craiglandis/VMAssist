@@ -1,3 +1,6 @@
+<#
+if ( -not $showErrors ) { $ErrorActionPreference = 'SilentlyContinue' }
+#>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
 )
@@ -1132,18 +1135,63 @@ $vm.Add([PSCustomObject]@{Property = 'computerName'; Value = $computerName; Type
 $vm.Add([PSCustomObject]@{Property = 'licenseType'; Value = $licenseType; Type = 'OS'})
 
 $nics = New-Object System.Collections.Generic.List[Object]
-$ipInterfaces = Get-NetIPInterface -AddressFamily IPv4
-foreach ($ipInterface in $ipInterfaces)
+
+$ipconfigs = Get-NetIPConfiguration -Detailed
+foreach ($ipconfig in $ipconfigs)
 {
+    $interfaceAlias = $ipconfig | Select-Object -ExpandProperty InterfaceAlias
+    $interfaceIndex = $ipconfig | Select-Object -ExpandProperty InterfaceIndex
+    $interfaceDescription = $ipconfig | Select-Object -ExpandProperty InterfaceDescription
+
+    $netAdapter = $ipconfig | Select-Object -ExpandProperty NetAdapter
+    $macAddress = $netAdapter | Select-Object -ExpandProperty MacAddress
+    $status = $netAdapter | Select-Object -ExpandProperty Status
+
+    $netProfile = $ipconfig | Select-Object -ExpandProperty NetProfile
+    $networkCategory = $netProfile | Select-Object -ExpandProperty NetworkCategory
+    $ipV4Connectivity = $netProfile | Select-Object -ExpandProperty IPv4Connectivity
+    $ipV6Connectivity = $netProfile | Select-Object -ExpandProperty IPv6Connectivity
+
+    $ipV6LinkLocalAddress = $ipconfig | Select-Object -ExpandProperty IPv6LinkLocalAddress
+    $ipV6Address = $ipV6LinkLocalAddress | Select-Object -ExpandProperty IPAddress
+
+    $ipV4Address = $ipconfig | Select-Object -ExpandProperty IPv4Address
+    $ipV4Address = $ipV4Address | Select-Object -ExpandProperty IPAddress
+
+    $ipV6DefaultGateway = $ipconfig | Select-Object -ExpandProperty IPv6DefaultGateway
+    $ipV6DefaultGateway = $ipV6DefaultGateway | Select-Object -ExpandProperty NextHop
+    $ipV4DefaultGateway = $ipconfig | Select-Object -ExpandProperty IPv4DefaultGateway
+    $ipV6DefaultGateway = $ipV6DefaultGateway | Select-Object -ExpandProperty NextHop
+    $ipV6Dhcp = $ipconfig | Select-Object -ExpandProperty 'NetIPv6Interface.DHCP'
+    $ipV4Dhcp = $ipconfig | Select-Object -ExpandProperty 'NetIPv4Interface.DHCP'
+    $dnsServer = $ipconfig | Select-Object -ExpandProperty DNSServer
+    $dnsServersIpV4 = $dnsServer | Where-Object {$_.AddressFamily -eq 2} | Select-Object -Expand ServerAddresses
+    $dnsServersIpV6 = $dnsServer | Where-Object {$_.AddressFamily -eq 23} | Select-Object -Expand ServerAddresses
+
     $nic = [PSCustomObject]@{
-        'InterfaceIndex'      = $ipInterface.InterfaceIndex
-        'InterfaceAlias'      = $ipInterface.InterfaceAlias
-        'Dhcp'      = $ipInterface.Dhcp
-        'ConnectionState'      = $ipInterface.ConnectionState
+        InterfaceAlias = $interfaceAlias
+        InterfaceIndex = $interfaceIndex
+        InterfaceDescription = $interfaceDescription
+        'MAC Address' = $macAddress
+        Status = $netAdapterStatus
+        Category = $networkCategory
+        'IPv4 Connectivity' = $ipV4Connectivity
+        'IPv6 Connectivity' = $ipV6Connectivity
+        'IPv6 LinkLocalAddress' = $ipV6LinkLocalAddress
+        'IPv4 Address' = $ipV4Address
+        'IPv6 Default Gateway' = $ipV6DefaultGateway
+        'IPv4 Default Gateway' = $ipV4DefaultGateway
+        'IPv6 DHCP' = $ipV6Dhcp
+        'IPv4 DHCP' = $ipV4Dhcp
+        'DNS Servers IPv4' = $dnsServersIpV4
+        'DNS Servers IPv6' = $dnsServersIpV6
     }
     $nics.Add($nic)
 }
 
+#$adapters = Get-NetAdapter
+#$interfaceAliases = $adapters | Select-Object -ExpandProperty InterfaceAlias
+<#
 foreach ($nic in $nics)
 {
     $adapter = Get-NetAdapter -InterfaceIndex $nic.InterfaceIndex
@@ -1176,63 +1224,23 @@ foreach ($nic in $nics)
     $nic | Add-Member -MemberType NoteProperty -Name 'IPv4 Addresses' -Value $ipV4AddressesString -Force
 }
 
+$waAppAgentPid = Get-Process -Name WaAppAgent | Select-Object -ExpandProperty Id
+$waAppAgentConnections = Get-NetTCPConnection -OwningProcess $waAppAgentPid
+$windowsAzureGuestAgentPid = Get-Process -Name WindowsAzureGuestAgent | Select-Object -ExpandProperty Id
+$windowsAzureGuestAgentConnections = Get-NetTCPConnection -OwningProcess $windowsAzureGuestAgentPid
+
+
 # Network
-<#
-
-Get-NetIPInterface
 
 Get-NetAdapter
-Get-NetAdapterAdvancedProperty
-Get-NetAdapterBinding
-Get-NetAdapterHardwareInfo
-Get-NetAdapterPowerManagement
-Get-NetAdapterStatistics
-Get-NetConnectionProfile
-
-Get-NetIPAddress                            NetTCPIP
-Get-NetIPConfiguration                      NetTCPIP
-Get-NetIPInterface
-Get-NetIPsecRule
-Get-NetIPv4Protocol
-Get-NetIPv6Protocol
-
-Get-NetRoute
-Get-NetTCPConnection
-Get-NetTCPSetting
-Get-NetUDPSetting
-
-Get-NetEventNetworkAdapter
-Get-NetEventPacketCaptureProvider
-Get-NetEventProvider
-Get-NetEventSession
-Get-NetEventVmNetworkAdapter
-Get-NetEventVmSwitch
+    InterfaceAlias
+    InterfaceAlias
 
 
-
-Get-NetFirewallAddressFilter                NetSecurity
-Get-NetFirewallApplicationFilter            NetSecurity
-Get-NetFirewallInterfaceFilter              NetSecurity
-Get-NetFirewallInterfaceTypeFilter          NetSecurity
-Get-NetFirewallPortFilter                   NetSecurity
-Get-NetFirewallProfile                      NetSecurity
-Get-NetFirewallRule                         NetSecurity
-Get-NetFirewallSecurityFilter               NetSecurity
-Get-NetFirewallServiceFilter                NetSecurity
-Get-NetFirewallSetting                      NetSecurity
-
-# Microsoft Hyper-V Network Adapter
-Get-NetAdapter | where-object {$_.ComponentID -eq 'VMBUS\{f8615163-df3e-46c5-913f-f2d2f965ed0e}'}
-# Mellanox ConnectX-5 Virtual Adapter
-Get-NetAdapter | where-object {$_.ComponentID -eq 'PCI\VEN_15B3&DEV_1018&REV_80'}
-
-$metadata.network.interface.ipv4.ipAddress | Measure-Object | select-object -ExpandProperty count
-
-Get-NetAdapter
-MacAddress
-Status
-MediaConnectionState
-DriverVersion
+$waAppAgentPid = Get-Process -Name WaAppAgent | Select-Object -ExpandProperty Id
+$waAppAgentConnections = Get-NetTCPConnection -OwningProcess $waAppAgentPid
+$windowsAzureGuestAgentPid = Get-Process -Name WindowsAzureGuestAgent | Select-Object -ExpandProperty Id
+$windowsAzureGuestAgentConnections = Get-NetTCPConnection -OwningProcess $windowsAzureGuestAgentPid
 #>
 
 $nicsImds = New-Object System.Collections.Generic.List[Object]
@@ -1256,24 +1264,6 @@ foreach ($interface in $interfaces)
         'IPv6 Public IPs'  = $ipV6publicIpAddresses
     }
     $nicsImds.Add($nicImds)
-<#
-get-netadapter | Get-NetIPAddress -AddressFamily IPv4 | ft IPAddress,InterfaceAlias,PrefixOrigin,SuffixOrigin,SkipAsSource
-
-IPAddress InterfaceAlias PrefixOrigin SuffixOrigin SkipAsSource
---------- -------------- ------------ ------------ ------------
-10.0.0.10 Ethernet             Manual       Manual        False
-10.0.0.7  Ethernet             Manual       Manual         True
-
-get-netadapter | Get-NetIPAddress -AddressFamily IPv4 | ft IPAddress,InterfaceAlias,PrefixOrigin,SuffixOrigin,SkipAsSource
-
-IPAddress InterfaceAlias PrefixOrigin SuffixOrigin SkipAsSource
---------- -------------- ------------ ------------ ------------
-10.0.1.6  Ethernet 4             Dhcp         Dhcp        False
-10.0.1.4  Ethernet 2             Dhcp         Dhcp        False
-10.0.2.4  Ethernet               Dhcp         Dhcp        False
-10.0.1.5  Ethernet 3             Dhcp         Dhcp        False
-
-#>
 }
 
 #$vm.Add([PSCustomObject]@{Property = 'publicIpAddressReportedFromAwsCheckIpService'; Value = $publicIpAddressReportedFromAwsCheckIpService; Type = 'Network'})
