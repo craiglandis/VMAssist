@@ -1145,6 +1145,7 @@ foreach ($ipconfig in $ipconfigs)
 
     $netAdapter = $ipconfig | Select-Object -ExpandProperty NetAdapter
     $macAddress = $netAdapter | Select-Object -ExpandProperty MacAddress
+    $macAddress = $macAddress -replace '-', ''
     $status = $netAdapter | Select-Object -ExpandProperty Status
 
     $netProfile = $ipconfig | Select-Object -ExpandProperty NetProfile
@@ -1156,35 +1157,41 @@ foreach ($ipconfig in $ipconfigs)
     $ipV6Address = $ipV6LinkLocalAddress | Select-Object -ExpandProperty IPAddress
 
     $ipV4Address = $ipconfig | Select-Object -ExpandProperty IPv4Address
-    $ipV4Address = $ipV4Address | Select-Object -ExpandProperty IPAddress
+    $ipV4IpAddress = $ipV4Address | Select-Object -ExpandProperty IPAddress
 
     $ipV6DefaultGateway = $ipconfig | Select-Object -ExpandProperty IPv6DefaultGateway
     $ipV6DefaultGateway = $ipV6DefaultGateway | Select-Object -ExpandProperty NextHop
+
     $ipV4DefaultGateway = $ipconfig | Select-Object -ExpandProperty IPv4DefaultGateway
-    $ipV6DefaultGateway = $ipV6DefaultGateway | Select-Object -ExpandProperty NextHop
-    $ipV6Dhcp = $ipconfig | Select-Object -ExpandProperty 'NetIPv6Interface.DHCP'
-    $ipV4Dhcp = $ipconfig | Select-Object -ExpandProperty 'NetIPv4Interface.DHCP'
+    $ipV4DefaultGateway = $ipV4DefaultGateway | Select-Object -ExpandProperty NextHop
+
+    $netIPv6Interface = $ipconfig | Select-Object -ExpandProperty NetIPv6Interface
+    $ipV6Dhcp = $netIPv6Interface | Select-Object -ExpandProperty DHCP
+
+    $netIPv4Interface = $ipconfig | Select-Object -ExpandProperty NetIPv4Interface
+    $ipV4Dhcp = $netIPv4Interface | Select-Object -ExpandProperty DHCP
+
     $dnsServer = $ipconfig | Select-Object -ExpandProperty DNSServer
-    $dnsServersIpV4 = $dnsServer | Where-Object {$_.AddressFamily -eq 2} | Select-Object -Expand ServerAddresses
-    $dnsServersIpV6 = $dnsServer | Where-Object {$_.AddressFamily -eq 23} | Select-Object -Expand ServerAddresses
+    $ipV4DnsServers = $dnsServer | Where-Object {$_.AddressFamily -eq 2} | Select-Object -Expand ServerAddresses
+    $ipV6DnsServers = $dnsServer | Where-Object {$_.AddressFamily -eq 23} | Select-Object -Expand ServerAddresses
 
     $nic = [PSCustomObject]@{
-        InterfaceAlias = $interfaceAlias
-        InterfaceIndex = $interfaceIndex
-        InterfaceDescription = $interfaceDescription
-        'MAC Address' = $macAddress
-        Status = $netAdapterStatus
-        Category = $networkCategory
-        'IPv4 Connectivity' = $ipV4Connectivity
-        'IPv6 Connectivity' = $ipV6Connectivity
-        'IPv6 LinkLocalAddress' = $ipV6LinkLocalAddress
-        'IPv4 Address' = $ipV4Address
-        'IPv6 Default Gateway' = $ipV6DefaultGateway
-        'IPv4 Default Gateway' = $ipV4DefaultGateway
-        'IPv6 DHCP' = $ipV6Dhcp
-        'IPv4 DHCP' = $ipV4Dhcp
-        'DNS Servers IPv4' = $dnsServersIpV4
-        'DNS Servers IPv6' = $dnsServersIpV6
+        Description        = $interfaceDescription
+        Alias              = $interfaceAlias
+        Index              = $interfaceIndex
+        MacAddress         = $macAddress
+        Status             = $status
+        DHCP               = $ipV4Dhcp
+        IpAddress          = $ipV4IpAddress
+        DnsServers         = $ipV4DnsServers
+        DefaultGateway     = $ipV4DefaultGateway
+        Connectivity       = $ipV4Connectivity
+        Category           = $networkCategory
+        IPv6DHCP           = $ipV6Dhcp
+        IPv6IpAddress      = $ipV6LinkLocalAddress
+        IPv6DnsServers     = $ipV6DnsServers
+        IPv6DefaultGateway = $ipV6DefaultGateway
+        IPv6Connectivity   = $ipV6Connectivity
     }
     $nics.Add($nic)
 }
@@ -1564,11 +1571,13 @@ $vmOsTable = $vm | Where-Object {$_.Type -eq 'OS'} | Select-Object Property, Val
 $vmOsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("<h3 id=`"vmNetwork`">Network</h3>`r`n")
-[void]$stringBuilder.Append("<h4>NIC details from OS</h4>`r`n")
+[void]$stringBuilder.Append("<h4>NIC Details</h4>`r`n")
 $vmNetworkTable = $nics | ConvertTo-Html -Fragment -As Table
+$vmNetworkTable = $vmNetworkTable -replace '<td>Up</td>', '<td class="PASSED">Up</td>'
+$vmNetworkTable = $vmNetworkTable -replace '<td>Down</td>', '<td class="FAILED">Down</td>'
 $vmNetworkTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
-[void]$stringBuilder.Append("<h4>NIC details from IMDS</h4>`r`n")
-#$vmNetworkTable = $vm | Where-Object {$_.Type -eq 'Network'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
+
+[void]$stringBuilder.Append("<h4>NIC Details from IMDS</h4>`r`n")
 $vmNetworkImdsTable = $nicsImds | ConvertTo-Html -Fragment -As Table
 $vmNetworkImdsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
@@ -1576,9 +1585,9 @@ $vmNetworkImdsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 $vmSecurityTable = $vm | Where-Object {$_.Type -eq 'Security'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmSecurityTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
-#[void]$stringBuilder.Append("<h3 id=`"vmStorage`">Storage</h3>`r`n")
-#$vmStorageTable = $vm | Where-Object {$_.Type -eq 'Storage'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
-#$vmStorageTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append("<h3 id=`"vmStorage`">Storage</h3>`r`n")
+$vmStorageTable = $vm | Where-Object {$_.Type -eq 'Storage'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
+$vmStorageTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("</body>`r`n")
 [void]$stringBuilder.Append("</html>`r`n")
