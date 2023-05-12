@@ -10,9 +10,10 @@ trap
     $trappedError = $PSItem
     $global:trappedError = $trappedError
     $scriptLineNumber = $trappedError.InvocationInfo.ScriptLineNumber
+    $line = $trappedError.InvocationInfo.Line.Trim()
     $exceptionMessage = $trappedError.Exception.Message
     $trappedErrorString = $trappedError.Exception.ErrorRecord | Out-String -ErrorAction SilentlyContinue
-    Out-Log $trappedErrorString -raw
+    Out-Log "[ERROR] $exceptionMessage Line $scriptLineNumber $line" -color Red
     $properties = @{
         vmId = $vmId
         error = $trappedErrorString
@@ -240,7 +241,6 @@ function Send-Telemetry
         if ($ip4Address)
         {
             Out-Log "Sending telemetry: $ingestionDnsName ($ip4Address)"
-            Out-Log "Test-Port -ipAddress $ip4Address -Port 443"
             $ingestionEndpointReachable = Test-Port -ipAddress $ip4Address -Port 443
             $global:dbgingestionEndpointReachable = $ingestionEndpointReachable
             if ($ingestionEndpointReachable.Succeeded)
@@ -262,7 +262,6 @@ function Send-Telemetry
                 }
                 $body = $body | ConvertTo-JSON -Depth 10 -Compress
                 $headers = @{'Content-Type' = 'application/x-json-stream';}
-                Out-Log "Sending Telemetry"
                 $result = Invoke-RestMethod -Uri $ingestionEndpoint -Method Post -Headers $headers -Body $body -ErrorAction SilentlyContinue
                 if ($result)
                 {
@@ -1671,7 +1670,7 @@ $vmStorageTable = $vm | Where-Object {$_.Type -eq 'Storage'} | Select-Object Pro
 $vmStorageTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("</body>`r`n")
-[void]$stringBuilders.Append("</html>`r`n")
+[void]$stringBuilder.Append("</html>`r`n")
 
 $html = $stringBuilder.ToString()
 
