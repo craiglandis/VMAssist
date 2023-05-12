@@ -5,6 +5,22 @@ if ( -not $showErrors ) { $ErrorActionPreference = 'SilentlyContinue' }
 param (
 )
 
+trap
+{
+    $trappedError = $PSItem
+    $global:trappedError = $trappedError
+    $scriptLineNumber = $trappedError.InvocationInfo.ScriptLineNumber
+    $exceptionMessage = $trappedError.Exception.Message
+    $trappedErrorString = $trappedError.Exception.ErrorRecord | Out-String -ErrorAction SilentlyContinue
+    Out-Log $trappedErrorString -raw
+    $properties = @{
+        vmId = $vmId
+        error = $trappedErrorString
+    }
+    Send-Telemetry -properties $properties
+    Exit
+}
+
 function Out-Log
 {
     param(
@@ -120,7 +136,7 @@ function Test-Port
     param(
         [string]$ipAddress,
         [int]$port,
-        [int]$timeout
+        [int]$timeout = 1000
     )
     <#
     Use TCPClient .NET class since Test-NetConnection cmdlet does not support setting a timeout
@@ -210,6 +226,69 @@ function New-Finding
     $findings.Add($finding)
 }
 
+function Send-Telemetry
+{
+    param(
+        $properties
+    )
+
+    $ingestionDnsName = 'dc.services.visualstudio.com'
+    $dnsRecord = Resolve-DnsName -Name $ingestionDnsName -QuickTimeout -TcpOnly -Type A -ErrorAction SilentlyContinue
+    if ($dnsRecord)
+    {
+        $ip4Address = $dnsRecord.IP4Address
+        if ($ip4Address)
+        {
+            Out-Log "Sending telemetry: $ingestionDnsName ($ip4Address)"
+            Out-Log "Test-Port -ipAddress $ip4Address -Port 443"
+            $ingestionEndpointReachable = Test-Port -ipAddress $ip4Address -Port 443
+            $global:dbgingestionEndpointReachable = $ingestionEndpointReachable
+            if ($ingestionEndpointReachable.Succeeded)
+            {
+                $ingestionEndpoint = 'https://dc.services.visualstudio.com/v2/track'
+                $instrumentationKey = '82048970-8bf5-4f69-88d2-1951be268160'
+                $body = [PSCustomObject]@{
+                    'name' = "Microsoft.ApplicationInsights.$instrumentationKey.Event"
+                    'time' = ([System.dateTime]::UtcNow.ToString('o'))
+                    'iKey' = $instrumentationKey
+                    'data' = [PSCustomObject]@{
+                        'baseType' = 'EventData'
+                        'baseData' = [PSCustomObject]@{
+                            'ver' = '2'
+                            'name' = $scriptBaseName
+                            'properties' = $properties
+                        }
+                    }
+                }
+                $body = $body | ConvertTo-JSON -Depth 10 -Compress
+                $headers = @{'Content-Type' = 'application/x-json-stream';}
+                Out-Log "Sending Telemetry"
+                $result = Invoke-RestMethod -Uri $ingestionEndpoint -Method Post -Headers $headers -Body $body -ErrorAction SilentlyContinue
+                if ($result)
+                {
+                    $itemsReceived = $result | Select-Object -ExpandProperty itemsReceived
+                    $itemsAccepted = $result | Select-Object -ExpandProperty itemsAccepted
+                    $errors = $result | Select-Object -ExpandProperty errors
+                    $message = "Sending Telemetry: Received: $itemsReceived Accepted: $itemsAccepted"
+                    if ($errors)
+                    {
+                        $message = "$message Errors: $errors"
+                    }
+                    Out-Log $message
+                }
+            }
+            else
+            {
+                Out-Log "Sending telemetry: ingestion endpoint $($ip4Address):443 not reachable"
+            }
+        }
+        else
+        {
+            Out-Log "Sending telemetry: could not resolve $ingestionDnsName to an IP address"
+        }
+    }
+}
+
 $psVersion = $PSVersionTable.PSVersion
 $psVersionString = $psVersion.ToString()
 if ($psVersion -lt [version]'4.0' -or $psVersion -ge [version]'6.0')
@@ -228,6 +307,7 @@ $scriptBaseName = $scriptName.Split('.')[0]
 $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
 $PSDefaultParameterValues['*:WarningAction'] = 'SilentlyContinue'
 $ProgressPreference = 'SilentlyContinue'
+$WarningPreference =  'SilentlyContinue'
 
 $verbose = [bool]$PSBoundParameters['verbose']
 $debug = [bool]$PSBoundParameters['debug']
@@ -248,6 +328,7 @@ if ((Test-Path -Path $logFilePath -PathType Container) -eq $false)
 }
 Out-Log "Log file: $logFilePath"
 
+$result = New-Object System.Collections.Generic.List[Object]
 $checks = New-Object System.Collections.Generic.List[Object]
 $findings = New-Object System.Collections.Generic.List[Object]
 $vm = New-Object System.Collections.Generic.List[Object]
@@ -1590,9 +1671,23 @@ $vmStorageTable = $vm | Where-Object {$_.Type -eq 'Storage'} | Select-Object Pro
 $vmStorageTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("</body>`r`n")
-[void]$stringBuilder.Append("</html>`r`n")
+[void]$stringBuilders.Append("</html>`r`n")
 
 $html = $stringBuilder.ToString()
+
+$findingsJson = $findings | ConvertTo-Json -Depth 10
+$checksJson = $checks | ConvertTo-Json -Depth 10
+$vmJson = $vm | ConvertTo-Json -Depth 10
+$properties = @{
+    vmId = $vmId
+    vm = $vmJson
+    findings = $findingsJson
+    checks = $checksJson
+}
+Send-Telemetry -properties $properties
+$global:dbgProperties = $properties
+$global:dbgvm = $vm
+$global:dbgnics = $nics
 
 $htmlFileName = "$($scriptBaseName)_$($computerName.ToUpper())_$($osVersion.Replace(' ', '_'))_$(Get-Date -Format yyyyMMddhhmmss).html"
 $htmlFilePath = "$logFolderPath\$htmlFileName"
