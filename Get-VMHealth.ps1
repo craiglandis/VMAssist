@@ -1,5 +1,13 @@
 <#
 if ( -not $showErrors ) { $ErrorActionPreference = 'SilentlyContinue' }
+https://github.com/mkellerman/Invoke-CommandAs
+Install-Module -Name Invoke-CommandAs -Scope AllUsers -Repository PSGallery -Force
+PS C:\> Invoke-CommandAs {Test-NetConnection -ComputerName 169.254.169.254 -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue} -AsSystem
+True
+PS C:\> Invoke-CommandAs {whoami} -AsSystem
+nt authority\system
+get-winevent -LogName Microsoft-Windows-TaskScheduler/Operational | where Id -in 100,102,106,141,200,201,325| where message -match 'e51f1a23-96e2-4bc6-9bbc-1b15e865f4eb'
+Event 106 User "NORTHAMERICA\clandis"  registered Task Scheduler task "\e51f1a23-96e2-4bc6-9bbc-1b15e865f4eb"
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
@@ -211,7 +219,8 @@ function New-Finding
         [ValidateSet('Information', 'Warning', 'Critical')]
         [string]$type,
         [string]$name,
-        [string]$description
+        [string]$description,
+        [string]$mitigation
     )
 
     $date = Get-Date
@@ -222,7 +231,8 @@ function New-Finding
         TimeCreated = $timeCreated
         Type        = $type
         Name        = $name
-        Description = $Description
+        Description = $description
+        Mitigation  = $mitigation
     }
     $findings.Add($finding)
 }
@@ -272,8 +282,12 @@ function Send-Telemetry
                     if ($errors)
                     {
                         $message = "$message Errors: $errors"
+                        Out-Log $message -color Red
                     }
-                    Out-Log $message
+                    else
+                    {
+                        Out-Log $message -color Green
+                    }
                 }
             }
             else
@@ -964,6 +978,8 @@ Set-NetIPAddress -IPAddress 10.0.0.7 -InterfaceIndex $netAdapter.ifIndex -SkipAs
 Out-Log '168.63.129.16:80 reachable?'
 $wireserverPort80Reachable = Test-Port -ipAddress '168.63.129.16' -port 80 -timeout 1000
 $description = "168.63.129.16:80 reachable: $($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
+#$mitigation = 'https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16'
+$mitigation = '<a href="https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16">What is IP address 168.63.129.16?</a>'
 if ($wireserverPort80Reachable.Succeeded)
 {
     New-Check -name '168.63.129.16:80 reachable' -result 'Passed' -details ''
@@ -973,7 +989,7 @@ else
 {
     New-Check -name '168.63.129.16:80 reachable' -result 'Failed' -details ''
     Out-Log $description -color Red
-    New-Finding -type Critical -name '168.63.129.16:80 not reachable' -description $description
+    New-Finding -type Critical -name '168.63.129.16:80 not reachable' -description $description -mitigation $mitigation
 }
 
 Out-Log '168.63.129.16:32526 reachable?'
@@ -988,7 +1004,7 @@ else
 {
     New-Check -name '168.63.129.16:32526 reachable' -result 'Failed' -details ''
     Out-Log $description -color Red
-    New-Finding -type Critical -name '168.63.129.16:32526 not reachable' -description $description
+    New-Finding -type Critical -name '168.63.129.16:32526 not reachable' -description $description -mitigation $mitigation
 }
 
 Out-Log 'Instance Metadata Service 169.254.169.254:80 reachable?'
@@ -1621,16 +1637,21 @@ $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append("&emsp;<a href=`"#vmStorage`"><strong>Storage</strong></a><br />`r`n")
 #>
 
+[void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
 $findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
 if ($findingsCount -ge 1)
 {
-    $findingsTable = $findings | Select-Object Type, Name, Description | ConvertTo-Html -Fragment -As Table
+    $findingsTable = $findings | Select-Object Type, Name, Description, Mitigation | ConvertTo-Html -Fragment -As Table
     $findingsTable = $findingsTable -replace '<td>Critical</td>', '<td class="CRITICAL">Critical</td>'
     $findingsTable = $findingsTable -replace '<td>Warning</td>', '<td class="WARNING">Warning</td>'
     $findingsTable = $findingsTable -replace '<td>Information</td>', '<td class="INFORMATION">Information</td>'
     $global:dbgFindingsTable = $findingsTable
-    [void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
+    #[void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
     $findingsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+}
+else
+{
+    [void]$stringBuilder.Append("<h3>No issues found. VM agent is healthy.</h3>`r`n")
 }
 
 $checksTable = $checks | Select-Object Name, Result, Details | ConvertTo-Html -Fragment -As Table
@@ -1690,6 +1711,9 @@ $global:dbgnics = $nics
 
 $htmlFileName = "$($scriptBaseName)_$($computerName.ToUpper())_$($osVersion.Replace(' ', '_'))_$(Get-Date -Format yyyyMMddhhmmss).html"
 $htmlFilePath = "$logFolderPath\$htmlFileName"
+
+#$html.Replace('&lt;','<').Replace('&gt;','>').Replace('&lessthan;', '&lt;').Replace('&greaterthan;', '&gt;').ToString() | Out-File $script:reportContentFile -Encoding utf8
+$html = $html.Replace('&lt;','<').Replace('&gt;','>')
 $html | Out-File -FilePath $htmlFilePath
 Out-Log "HTML report: $htmlFilePath"
 Invoke-Item -Path $htmlFilePath
