@@ -8,6 +8,10 @@ PS C:\> Invoke-CommandAs {whoami} -AsSystem
 nt authority\system
 get-winevent -LogName Microsoft-Windows-TaskScheduler/Operational | where Id -in 100,102,106,141,200,201,325| where message -match 'e51f1a23-96e2-4bc6-9bbc-1b15e865f4eb'
 Event 106 User "NORTHAMERICA\clandis"  registered Task Scheduler task "\e51f1a23-96e2-4bc6-9bbc-1b15e865f4eb"
+
+cluster('https://ade.applicationinsights.io/subscriptions/927f2a7f-5662-40f2-8d19-521fe803ed2e/resourcegroups/rg/providers/microsoft.insights/components/ai1').database('ai1').customEvents
+| project timestamp, name, itemType, customDimensions, customMeasurements
+| sort by timestamp desc
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
