@@ -12,6 +12,8 @@ Event 106 User "NORTHAMERICA\clandis"  registered Task Scheduler task "\e51f1a23
 cluster('https://ade.applicationinsights.io/subscriptions/927f2a7f-5662-40f2-8d19-521fe803ed2e/resourcegroups/rg/providers/microsoft.insights/components/ai1').database('ai1').customEvents
 | project timestamp, name, itemType, customDimensions, customMeasurements
 | sort by timestamp desc
+
+[ENVIRONMENT]::Is64BitProcess
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
