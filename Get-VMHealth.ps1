@@ -950,6 +950,9 @@ else
     Out-Log "Proxy configured: $proxyConfigured" -color Green
 }
 
+$machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\framework64\v4.0.30319\config\machine.config"
+$machineConfigFilePath = "$env:SystemRoot\Microsoft.NET\Framework\v4.0.30319\Config\machine.config"
+
 <#
 To check the currently set proxy use:
 netsh winhttp show proxy
