@@ -29,7 +29,7 @@ trap
     $trappedErrorString = $trappedError.Exception.ErrorRecord | Out-String -ErrorAction SilentlyContinue
     Out-Log "[ERROR] $exceptionMessage Line $scriptLineNumber $line" -color Red
     $properties = @{
-        vmId = $vmId
+        vmId  = $vmId
         error = $trappedErrorString
     }
     Send-Telemetry -properties $properties
@@ -270,14 +270,14 @@ function Send-Telemetry
                     'data' = [PSCustomObject]@{
                         'baseType' = 'EventData'
                         'baseData' = [PSCustomObject]@{
-                            'ver' = '2'
-                            'name' = $scriptBaseName
+                            'ver'        = '2'
+                            'name'       = $scriptBaseName
                             'properties' = $properties
                         }
                     }
                 }
-                $body = $body | ConvertTo-JSON -Depth 10 -Compress
-                $headers = @{'Content-Type' = 'application/x-json-stream';}
+                $body = $body | ConvertTo-Json -Depth 10 -Compress
+                $headers = @{'Content-Type' = 'application/x-json-stream'; }
                 $result = Invoke-RestMethod -Uri $ingestionEndpoint -Method Post -Headers $headers -Body $body -ErrorAction SilentlyContinue
                 if ($result)
                 {
@@ -326,7 +326,7 @@ $scriptBaseName = $scriptName.Split('.')[0]
 $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
 $PSDefaultParameterValues['*:WarningAction'] = 'SilentlyContinue'
 $ProgressPreference = 'SilentlyContinue'
-$WarningPreference =  'SilentlyContinue'
+$WarningPreference = 'SilentlyContinue'
 
 $verbose = [bool]$PSBoundParameters['verbose']
 $debug = [bool]$PSBoundParameters['debug']
@@ -950,8 +950,14 @@ else
     Out-Log "Proxy configured: $proxyConfigured" -color Green
 }
 
-$machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\framework64\v4.0.30319\config\machine.config"
-$machineConfigFilePath = "$env:SystemRoot\Microsoft.NET\Framework\v4.0.30319\Config\machine.config"
+$machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
+#$machineConfigFilePath = "$env:SystemRoot\Microsoft.NET\Framework\v4.0.30319\Config\machine.config"
+[xml]$machineConfigx64 = Get-Content -Path $machineConfigx64FilePath
+
+$machineKeysPath = "$env:ALLUSERSPROFILE\Microsoft\Crypto\RSA\MachineKeys"
+$machineKeysAcl = Get-Acl -Path $machineKeysPath
+$machineKeysAcl.Access
+$machineKeysAclString = $machineKeysAcl.Access | Format-Table -AutoSize -HideTableHeaders IdentityReference, AccessControlType, FileSystemRights | Out-String
 
 <#
 To check the currently set proxy use:
@@ -1708,10 +1714,10 @@ $findingsJson = $findings | ConvertTo-Json -Depth 10
 $checksJson = $checks | ConvertTo-Json -Depth 10
 $vmJson = $vm | ConvertTo-Json -Depth 10
 $properties = @{
-    vmId = $vmId
-    vm = $vmJson
+    vmId     = $vmId
+    vm       = $vmJson
     findings = $findingsJson
-    checks = $checksJson
+    checks   = $checksJson
 }
 Send-Telemetry -properties $properties
 $global:dbgProperties = $properties
@@ -1722,7 +1728,7 @@ $htmlFileName = "$($scriptBaseName)_$($computerName.ToUpper())_$($osVersion.Repl
 $htmlFilePath = "$logFolderPath\$htmlFileName"
 
 #$html.Replace('&lt;','<').Replace('&gt;','>').Replace('&lessthan;', '&lt;').Replace('&greaterthan;', '&gt;').ToString() | Out-File $script:reportContentFile -Encoding utf8
-$html = $html.Replace('&lt;','<').Replace('&gt;','>')
+$html = $html.Replace('&lt;', '<').Replace('&gt;', '>')
 $html | Out-File -FilePath $htmlFilePath
 Out-Log "HTML report: $htmlFilePath"
 Invoke-Item -Path $htmlFilePath
