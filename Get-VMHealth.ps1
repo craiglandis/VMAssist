@@ -1231,11 +1231,11 @@ Out-Log "DHCP request returns option 245?"
 $dhcpReturnedOption245 = Confirm-AzureVM
 if ($dhcpReturnedOption245)
 {
-    Out-Log "DHCP request returned option 245"
+    Out-Log "DHCP request returned option 245" -color Green
 }
 else
 {
-    Out-Log "DHCP request did not return option 245"
+    Out-Log "DHCP request did not return option 245" -color Yellow
 }
 
 # wireserver doesn't listen on 8080 even though it creates a BFE filter for it
