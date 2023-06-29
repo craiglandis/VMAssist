@@ -1,5 +1,5 @@
 <#
-if ( -not $showErrors ) { $ErrorActionPreference = 'SilentlyContinue' }
+if ( -not $showErrors ) { $ErrorActionPreference = 'SilentlyContinue'}
 https://github.com/mkellerman/Invoke-CommandAs
 Install-Module -Name Invoke-CommandAs -Scope AllUsers -Repository PSGallery -Force
 PS C:\> Invoke-CommandAs {Test-NetConnection -ComputerName 169.254.169.254 -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue} -AsSystem
@@ -14,6 +14,21 @@ cluster('https://ade.applicationinsights.io/subscriptions/927f2a7f-5662-40f2-8d1
 | sort by timestamp desc
 
 [ENVIRONMENT]::Is64BitProcess
+
+TODO:
+1. permissions on C:\WindowsAzure and c:\Packages folder during startup. It first removes all user/groups and then sets the following permission (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders. If GA fails to remove/set the permission, it can't proceed further.
+WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set access rules for agent directories. Exception: System.Security.Principal.IdentityNotMappedException: {Namepii} or all identity references could not be translated. Symptom reported: Guest agent not ready (Unresponsive status).
+2. Check for presence and validity of CRP cert
+3. Check for WCF Profiling being enabled
+4. Check for out-dated netvsc.sys Get-CimInstance -Query "'SELECT Name,Status,ExitCode,Started,StartMode,ErrorControl,PathName FROM Win32_SystemDriver WHERE Name='netvsc'"
+get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
+\SystemRoot\System32\drivers\netvsc63.sys - ws12r2
+\SystemRoot\System32\drivers\netvsc.sys - win11,ws22
+get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
+
+5.
+
+
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
