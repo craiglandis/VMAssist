@@ -1,4 +1,10 @@
 <#
+# WS12R2
+Get-Acl -Path $env:ProgramData\Microsoft\Crypto\RSA\MachineKeys | Select-Object -ExpandProperty Sddl
+O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)
+
+md c:\my -ea sil;cd c:\my;copy \\tsclient\c\src\Get-VMHealth\Get-VMHealth.ps1;.\Get-VMHealth.ps1
+
 if ( -not $showErrors ) { $ErrorActionPreference = 'SilentlyContinue'}
 https://github.com/mkellerman/Invoke-CommandAs
 Install-Module -Name Invoke-CommandAs -Scope AllUsers -Repository PSGallery -Force
