@@ -38,6 +38,7 @@ get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object 
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
+    [string]$outputPath = 'C:\logs'
 )
 
 trap
@@ -600,8 +601,16 @@ if ($isAdmin -eq $false)
     exit
 }
 
-$logFolderParentPath = $env:TEMP
-$logFolderPath = "$logFolderParentPath\$scriptBaseName"
+if ($outputPath)
+{
+    $logFolderPath = $outputPath
+}
+else
+{
+    $logFolderParentPath = $env:TEMP
+    $logFolderPath = "$logFolderParentPath\$scriptBaseName"
+}
+$invokeWmiMethodResult = Invoke-WmiMethod -Path "Win32_Directory.Name='$logFolderPath'" -Name Compress
 $logFilePath = "$logFolderPath\$($scriptBaseName)_$(Get-Date -Format yyyyMMddhhmmss).log"
 if ((Test-Path -Path $logFilePath -PathType Container) -eq $false)
 {
