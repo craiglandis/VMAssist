@@ -34,8 +34,8 @@ get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object 
 
 5.
 
-
 #>
+
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
     [string]$outputPath = 'C:\logs'
@@ -615,7 +615,7 @@ if ((Test-Path -Path $logFolderPath -PathType Container) -eq $false)
     Invoke-ExpressionWithLogging "New-Item -Path $logFolderPath -ItemType Directory -Force | Out-Null"
 }
 $invokeWmiMethodResult = Invoke-WmiMethod -Path "Win32_Directory.Name='$logFolderPath'" -Name Compress
-$logFilePath = "$logFolderPath\$($scriptBaseName)_$(Get-Date -Format yyyyMMddhhmmss).log"
+$logFilePath = "$logFolderPath\$($scriptBaseName)_$($env:COMPUTERNAME.ToUpper())_$($scriptStartTimeString).log"
 if ((Test-Path -Path $logFilePath -PathType Leaf) -eq $false)
 {
     New-Item -Path $logFilePath -ItemType File -Force | Out-Null
@@ -2010,7 +2010,8 @@ $global:dbgProperties = $properties
 $global:dbgvm = $vm
 $global:dbgnics = $nics
 
-$htmlFileName = "$($scriptBaseName)_$($computerName.ToUpper())_$($osVersion.Replace(' ', '_'))_$(Get-Date -Format yyyyMMddhhmmss).html"
+# $htmlFileName = "$($scriptBaseName)_$($env:COMPUTERNAME.ToUpper())_$($osVersion.Replace(' ', '_'))_$($scriptStartTimeString).html"
+$htmlFileName = "$($scriptBaseName)_$($env:COMPUTERNAME.ToUpper())_$($scriptStartTimeString).htm"
 $htmlFilePath = "$logFolderPath\$htmlFileName"
 
 #$html.Replace('&lt;','<').Replace('&gt;','>').Replace('&lessthan;', '&lt;').Replace('&greaterthan;', '&gt;').ToString() | Out-File $script:reportContentFile -Encoding utf8
