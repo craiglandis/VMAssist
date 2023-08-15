@@ -612,7 +612,7 @@ else
 }
 if ((Test-Path -Path $logFolderPath -PathType Container) -eq $false)
 {
-    New-Item -Path $logFolderPath -ItemType Directory -Force | Out-Null
+    Invoke-ExpressionWithLogging "New-Item -Path $logFolderPath -ItemType Directory -Force | Out-Null"
 }
 $invokeWmiMethodResult = Invoke-WmiMethod -Path "Win32_Directory.Name='$logFolderPath'" -Name Compress
 $logFilePath = "$logFolderPath\$($scriptBaseName)_$(Get-Date -Format yyyyMMddhhmmss).log"
