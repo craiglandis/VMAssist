@@ -610,9 +610,13 @@ else
     $logFolderParentPath = $env:TEMP
     $logFolderPath = "$logFolderParentPath\$scriptBaseName"
 }
+if ((Test-Path -Path $logFolderPath -PathType Container) -eq $false)
+{
+    New-Item -Path $logFolderPath -ItemType Directory -Force | Out-Null
+}
 $invokeWmiMethodResult = Invoke-WmiMethod -Path "Win32_Directory.Name='$logFolderPath'" -Name Compress
 $logFilePath = "$logFolderPath\$($scriptBaseName)_$(Get-Date -Format yyyyMMddhhmmss).log"
-if ((Test-Path -Path $logFilePath -PathType Container) -eq $false)
+if ((Test-Path -Path $logFilePath -PathType Leaf) -eq $false)
 {
     New-Item -Path $logFilePath -ItemType File -Force | Out-Null
 }
