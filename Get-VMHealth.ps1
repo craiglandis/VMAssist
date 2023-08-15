@@ -622,6 +622,7 @@ if ((Test-Path -Path $logFilePath -PathType Leaf) -eq $false)
     New-Item -Path $logFilePath -ItemType File -Force | Out-Null
 }
 Out-Log "Log file: $logFilePath"
+Out-Log "`$scriptStartTimeString: $scriptStartTimeString"
 
 $result = New-Object System.Collections.Generic.List[Object]
 $checks = New-Object System.Collections.Generic.List[Object]
