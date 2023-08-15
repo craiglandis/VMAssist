@@ -614,8 +614,9 @@ if ((Test-Path -Path $logFolderPath -PathType Container) -eq $false)
 {
     Invoke-ExpressionWithLogging "New-Item -Path $logFolderPath -ItemType Directory -Force | Out-Null"
 }
+$computerName = $env:COMPUTERNAME.ToUpper()
 $invokeWmiMethodResult = Invoke-WmiMethod -Path "Win32_Directory.Name='$logFolderPath'" -Name Compress
-$logFilePath = "$logFolderPath\$($scriptBaseName)_$($env:COMPUTERNAME.ToUpper())_$($scriptStartTimeString).log"
+$logFilePath = "$logFolderPath\$($scriptBaseName)_$($computerName)_$($scriptStartTimeString).log"
 if ((Test-Path -Path $logFilePath -PathType Leaf) -eq $false)
 {
     New-Item -Path $logFilePath -ItemType File -Force | Out-Null
@@ -626,8 +627,6 @@ $result = New-Object System.Collections.Generic.List[Object]
 $checks = New-Object System.Collections.Generic.List[Object]
 $findings = New-Object System.Collections.Generic.List[Object]
 $vm = New-Object System.Collections.Generic.List[Object]
-
-$computerName = $env:COMPUTERNAME
 
 $ErrorActionPreference = 'SilentlyContinue'
 $version = [environment]::osversion.version.ToString()
@@ -1994,7 +1993,7 @@ $vmStorageTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append("</body>`r`n")
 [void]$stringBuilder.Append("</html>`r`n")
 
-$html = $stringBuilder.ToString()
+$htm = $stringBuilder.ToString()
 
 $findingsJson = $findings | ConvertTo-Json -Depth 10
 $checksJson = $checks | ConvertTo-Json -Depth 10
@@ -2010,15 +2009,15 @@ $global:dbgProperties = $properties
 $global:dbgvm = $vm
 $global:dbgnics = $nics
 
-# $htmlFileName = "$($scriptBaseName)_$($env:COMPUTERNAME.ToUpper())_$($osVersion.Replace(' ', '_'))_$($scriptStartTimeString).html"
-$htmlFileName = "$($scriptBaseName)_$($env:COMPUTERNAME.ToUpper())_$($scriptStartTimeString).htm"
-$htmlFilePath = "$logFolderPath\$htmlFileName"
+# $htmFileName = "$($scriptBaseName)_$($computerName)_$($osVersion.Replace(' ', '_'))_$($scriptStartTimeString).htm"
+$htmFileName = "$($scriptBaseName)_$($computerName)_$($scriptStartTimeString).htm"
+$htmFilePath = "$logFolderPath\$htmFileName"
 
-#$html.Replace('&lt;','<').Replace('&gt;','>').Replace('&lessthan;', '&lt;').Replace('&greaterthan;', '&gt;').ToString() | Out-File $script:reportContentFile -Encoding utf8
-$html = $html.Replace('&lt;', '<').Replace('&gt;', '>')
-$html | Out-File -FilePath $htmlFilePath
-Out-Log "HTML report: $htmlFilePath"
-Invoke-Item -Path $htmlFilePath
+# $htm.Replace('&lt;','<').Replace('&gt;','>').Replace('&lessthan;', '&lt;').Replace('&greaterthan;', '&gt;').ToString() | Out-File $script:reportContentFile -Encoding utf8
+$htm = $htm.Replace('&lt;', '<').Replace('&gt;', '>')
+$htm | Out-File -FilePath $htmFilePath
+Out-Log "HTML report: $htmFilePath"
+Invoke-Item -Path $htmFilePath
 
 Out-Log "Log file: $logFilePath"
 $scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f (New-TimeSpan -Start $scriptStartTime -End (Get-Date))
