@@ -33,25 +33,6 @@ https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1
 
 ### Custom Script Extension (Azure PowerShell)
 
-### Custom Script Extension (Azure CLI)
-
-### Managed Run Command (Azure PowerShell)
-
-### Managed Run Command (Azure CLI)
-
-### Action Run Command (Azure PowerShell)
-
-### Action Run Command (Azure CLI)
-
-### Serial Console
-
-## Maintainers
-
-## Contributing
-
-## License
-
-
 ```powershell
 Set-AzVMCustomScriptExtension -Location westus2 -ResourceGroupName rg -VMName win11 -Name cse -FileUri https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1 -Run Get-VMHealth.ps1 -TypeHandlerVersion 1.10 -ForceRerun (Get-Date).Ticks
 ```
@@ -76,3 +57,21 @@ Get-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Status | select
 ```powershell
 Get-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Status | select -ExpandProperty SubStatuses | where code -match 'stderr' | select -ExpandProperty Message
 ```
+
+### Custom Script Extension (Azure CLI)
+
+### Managed Run Command (Azure PowerShell)
+
+### Managed Run Command (Azure CLI)
+
+### Action Run Command (Azure PowerShell)
+
+### Action Run Command (Azure CLI)
+
+### Serial Console
+
+## Maintainers
+
+## Contributing
+
+## License
