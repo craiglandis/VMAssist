@@ -1,5 +1,5 @@
 <#
-# WS12R2
+# WS12R2  asdf
 Get-Acl -Path $env:ProgramData\Microsoft\Crypto\RSA\MachineKeys | Select-Object -ExpandProperty Sddl
 O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)
 
