@@ -1,6 +1,10 @@
 # Get-VMHealth
 
-add description
+Get-VMHealth is a PowerShell script you run within the guest operating system of an Azure virtual machine to diagnose common health and configuration issues with the Azure VM agent.
+
+Azure VM agent health is critical to the proper functioning of Azure VM agent extensions.
+
+Running Get-VMHealth generates a report showing the results of health checks it performed and suggested mitigation steps for issues it finds.
 
 ## Table of Contents
 
