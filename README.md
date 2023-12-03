@@ -5,7 +5,16 @@ add description
 ## Table of Contents
 
 - [Background](#background)
+- [Prerequisites](#prerequisites)
 - [Usage](#usage)
+	- [Remote Desktop](#remote-desktop)
+  - [Custom Script Extension (Azure PowerShell)](#custom-script-extension-azure-powershell)
+  - [Custom Script Extension (Azure CLI)](#custom-script-extension-azure-cli)
+  - [Managed Run Command (Azure PowerShell)](#managed-run-command-azure-powershell)
+  - [Managed Run Command (Azure CLI)](#managed-run-command-azure-cli)
+  - [Action Run Command (Azure PowerShell)](#action-run-command-azure-powershell)
+  - [Action Run Command (Azure CLI)](#action-run-command-azure-cli)
+  - [Serial Console](#serial-console)
 - [Example Readmes](#example-readmes)
 - [Maintainers](#maintainers)
 - [Contributing](#contributing)
@@ -13,9 +22,13 @@ add description
 
 https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1
 
+## Prerequisites
+
 ## Usage
 
-```
+#remote-desktop
+
+```powershell
 Set-AzVMCustomScriptExtension -Location westus2 -ResourceGroupName rg -VMName win11 -Name cse -FileUri https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1 -Run Get-VMHealth.ps1 -TypeHandlerVersion 1.10 -ForceRerun (Get-Date).Ticks
 ```
 
@@ -23,19 +36,19 @@ Set-AzVMCustomScriptExtension -Location westus2 -ResourceGroupName rg -VMName wi
 Get-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Status
 ```
 
-```
+```powershell
 Remove-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Force
 ```
 
-```
+```powershell
 [version]$version = Get-AzVMExtensionImage -Location westus2 -PublisherName Microsoft.Compute -Type CustomScriptExtension | Sort-Object {[version]$_.Version} | Select-Object -ExpandProperty Version -Last 1
 [string]$version = "$($version.Major).$($version.Minor)"
 ```
 
-```
+```powershell
 Get-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Status | select -ExpandProperty SubStatuses | where code -match 'stdout' | select -ExpandProperty Message
 ```
 
-```
+```powershell
 Get-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Status | select -ExpandProperty SubStatuses | where code -match 'stderr' | select -ExpandProperty Message
 ```
