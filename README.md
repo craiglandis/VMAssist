@@ -19,7 +19,6 @@ Running Get-VMHealth generates a report showing the results of health checks it 
   - [Action Run Command (Azure PowerShell)](#action-run-command-azure-powershell)
   - [Action Run Command (Azure CLI)](#action-run-command-azure-cli)
   - [Serial Console](#serial-console)
-- [Example Readmes](#example-readmes)
 - [Maintainers](#maintainers)
 - [Contributing](#contributing)
 - [License](#license)
@@ -33,6 +32,25 @@ https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1
 ### Remote Desktop
 
 ### Custom Script Extension (Azure PowerShell)
+
+### Custom Script Extension (Azure CLI)
+
+### Managed Run Command (Azure PowerShell)
+
+### Managed Run Command (Azure CLI)
+
+### Action Run Command (Azure PowerShell)
+
+### Action Run Command (Azure CLI)
+
+### Serial Console
+
+## Maintainers
+
+## Contributing
+
+## License
+
 
 ```powershell
 Set-AzVMCustomScriptExtension -Location westus2 -ResourceGroupName rg -VMName win11 -Name cse -FileUri https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1 -Run Get-VMHealth.ps1 -TypeHandlerVersion 1.10 -ForceRerun (Get-Date).Ticks
