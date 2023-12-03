@@ -1,12 +1,25 @@
 # Azure VM Health Check Script
 
+add description
+
+## Table of Contents
+
+- [Background](#background)
+- [Usage](#usage)
+- [Example Readmes](#example-readmes)
+- [Maintainers](#maintainers)
+- [Contributing](#contributing)
+- [License](#license)
+
 https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1
+
+## Usage
 
 ```
 Set-AzVMCustomScriptExtension -Location westus2 -ResourceGroupName rg -VMName win11 -Name cse -FileUri https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1 -Run Get-VMHealth.ps1 -TypeHandlerVersion 1.10 -ForceRerun (Get-Date).Ticks
 ```
 
-```
+```powershell
 Get-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Status
 ```
 
