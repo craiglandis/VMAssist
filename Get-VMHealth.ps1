@@ -1,40 +1,19 @@
 <#
-# WS12R2  asdf
-Get-Acl -Path $env:ProgramData\Microsoft\Crypto\RSA\MachineKeys | Select-Object -ExpandProperty Sddl
-O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)
-
-md c:\my -ea sil;cd c:\my;copy \\tsclient\c\src\Get-VMHealth\Get-VMHealth.ps1;.\Get-VMHealth.ps1
-
-if ( -not $showErrors ) { $ErrorActionPreference = 'SilentlyContinue'}
-https://github.com/mkellerman/Invoke-CommandAs
-Install-Module -Name Invoke-CommandAs -Scope AllUsers -Repository PSGallery -Force
-PS C:\> Invoke-CommandAs {Test-NetConnection -ComputerName 169.254.169.254 -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue} -AsSystem
-True
-PS C:\> Invoke-CommandAs {whoami} -AsSystem
-nt authority\system
-get-winevent -LogName Microsoft-Windows-TaskScheduler/Operational | where Id -in 100,102,106,141,200,201,325| where message -match 'e51f1a23-96e2-4bc6-9bbc-1b15e865f4eb'
-Event 106 User "NORTHAMERICA\clandis"  registered Task Scheduler task "\e51f1a23-96e2-4bc6-9bbc-1b15e865f4eb"
-
-cluster('https://ade.applicationinsights.io/subscriptions/927f2a7f-5662-40f2-8d19-521fe803ed2e/resourcegroups/rg/providers/microsoft.insights/components/ai1').database('ai1').customEvents
-| project timestamp, name, itemType, customDimensions, customMeasurements
-| sort by timestamp desc
-
-[ENVIRONMENT]::Is64BitProcess
-
-TODO:
-1. permissions on C:\WindowsAzure and c:\Packages folder during startup. It first removes all user/groups and then sets the following permission (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders. If GA fails to remove/set the permission, it can't proceed further.
-WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set access rules for agent directories. Exception: System.Security.Principal.IdentityNotMappedException: {Namepii} or all identity references could not be translated. Symptom reported: Guest agent not ready (Unresponsive status).
-2. Check for presence and validity of CRP cert
-3. Check for WCF Profiling being enabled
-4. Check for out-dated netvsc.sys Get-CimInstance -Query "'SELECT Name,Status,ExitCode,Started,StartMode,ErrorControl,PathName FROM Win32_SystemDriver WHERE Name='netvsc'"
-get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
-\SystemRoot\System32\drivers\netvsc63.sys - ws12r2
-\SystemRoot\System32\drivers\netvsc.sys - win11,ws22
-get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
-
-5.
-
+.SYNOPSIS
+    Checks health of Azure VM agent
+.DESCRIPTION
+    Checks health of Azure VM agent
+.NOTES
+    Supported on Windows Server 2012 and later versions of Windows.
+    Can be executed from PowerShell 4.0 and later versions of PowerShell.
+    Not supported on Linux.
+.LINK
+    https://github.com/craiglandis/Get-VMHealth/blob/main/README.md
+.EXAMPLE
+    Get-VMHealth.ps1
 #>
+
+
 
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
