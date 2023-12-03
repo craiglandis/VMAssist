@@ -1,4 +1,4 @@
-# Azure VM Health Check Script
+# Get-VMHealth
 
 add description
 
