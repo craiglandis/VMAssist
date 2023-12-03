@@ -11,7 +11,7 @@ Running Get-VMHealth generates a report showing the results of health checks it 
 - [Background](#background)
 - [Prerequisites](#prerequisites)
 - [Usage](#usage)
-	- [Remote Desktop](#remote-desktop)
+  - [Remote Desktop](#remote-desktop)
   - [Custom Script Extension (Azure PowerShell)](#custom-script-extension-azure-powershell)
   - [Custom Script Extension (Azure CLI)](#custom-script-extension-azure-cli)
   - [Managed Run Command (Azure PowerShell)](#managed-run-command-azure-powershell)
@@ -30,7 +30,9 @@ https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1
 
 ## Usage
 
-#remote-desktop
+### Remote Desktop
+
+### Custom Script Extension (Azure PowerShell)
 
 ```powershell
 Set-AzVMCustomScriptExtension -Location westus2 -ResourceGroupName rg -VMName win11 -Name cse -FileUri https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1 -Run Get-VMHealth.ps1 -TypeHandlerVersion 1.10 -ForceRerun (Get-Date).Ticks
