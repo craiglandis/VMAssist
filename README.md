@@ -19,8 +19,6 @@ Running Get-VMHealth generates a report showing the results of health checks it 
   - [Action Run Command (Azure PowerShell)](#action-run-command-azure-powershell)
   - [Action Run Command (Azure CLI)](#action-run-command-azure-cli)
   - [Serial Console](#serial-console)
-- [Maintainers](#maintainers)
-- [Contributing](#contributing)
 - [License](#license)
 
 https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1
