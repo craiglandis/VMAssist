@@ -885,7 +885,6 @@ else
     New-Finding -type Critical -Name 'VM agent not installed' -description $description
 }
 
-#<#
 Out-Log "VM agent services running?"
 $messageSuffix = "(rdAgentStatusRunning:$rdAgentStatusRunning windowsAzureGuestAgentStatusRunning:$windowsAzureGuestAgentStatusRunning)"
 if ($rdAgentStatusRunning -and $windowsAzureGuestAgentStatusRunning)
@@ -902,31 +901,6 @@ else
     $message = "VM agent services are not running $messageSuffix"
     New-Finding -type Critical -name VMAgentServicesNotRunning -message $message
 }
-#>
-
-<#
-$waSetupXmlFilePath = "$env:SystemRoot\Panther\WaSetup.xml"
-if (Test-Path -Path $waSetupXmlFilePath -PathType Leaf)
-{
-    $waSetupXml = Get-Content -Path $waSetupXmlFilePath
-    $waSetupXmlErrors = $waSetupXml | Select-String -SimpleMatch `"ERROR`"
-    if ($waSetupXmlErrors)
-    {
-        Out-Log $waSetupXmlErrors -raw
-    }
-}
-
-$vmAgentInstallerXmlFilePath = "$env:SystemRoot\Panther\VmAgentInstaller.xml"
-if (Test-Path -Path $vmAgentInstallerXmlFilePath -PathType Leaf)
-{
-    $vmAgentInstallerXml = Get-Content -Path $vmAgentInstallerXmlFilePath
-    $vmAgentInstallerXmlErrors = $vmAgentInstallerXml | Select-String -SimpleMatch `"ERROR`" | Where-Object {$_ -notmatch 'logman.exe'}
-    if ($vmAgentInstallerXmlErrors)
-    {
-        Out-Log $vmAgentInstallerXmlErrors -raw
-    }
-}
-#>
 
 Out-Log 'VM agent installed by provisioning agent or MSI?'
 $uninstallKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'
@@ -1046,10 +1020,10 @@ if ($handlerStateKey)
     }
 }
 
-# The ProxyEnable key controls the proxy settings. 0 disables them, and 1 enables them. If you are using a proxy, you will get its value under the ProxyServer key.
+# The ProxyEnable key controls the proxy settings.
+# 0 disables them, and 1 enables them.
+# If you are using a proxy, you will get its value under the ProxyServer key.
 # This gets the same settings as running "netsh winhttp show proxy"
-# Need to also check for ProxySettingsPerUser https://admx.help/?Category=Windows_10_2016&Policy=Microsoft.Policies.InternetExplorer::UserProxy
-# Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
 $proxyConfigured = $false
 Out-Log 'Proxy configured?'
 $netshWinhttpShowProxyOutput = netsh winhttp show proxy
@@ -1155,32 +1129,7 @@ $machineKeysAcl = Get-Acl -Path $machineKeysPath
 $machineKeysAcl.Access
 $machineKeysAclString = $machineKeysAcl.Access | Format-Table -AutoSize -HideTableHeaders IdentityReference, AccessControlType, FileSystemRights | Out-String
 
-<#
-To check the currently set proxy use:
-netsh winhttp show proxy
-To clear the proxy settings use:
-netsh winhttp reset proxy
-You can also import the settings for IE by typing:
-netsh winhttp import proxy source=ie
-#>
 
-<#
-https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/no-internet-access-multi-ip
-$netAdapter = Get-NetAdapter | where-object {$_.ComponentID -eq 'VMBUS\{f8615163-df3e-46c5-913f-f2d2f965ed0e}'}
-$ipAddress = $netAdapter | Get-NetIPAddress -AddressFamily IPv4 | Select-Object -ExpandProperty IPAddress
-$ipAddressCount = $ipAddress | Measure-Object | Select-Object -ExpandProperty Count
-
-$primaryIP = "<Primary IP address that you set in Azure portal>"
-$netInterface = "<NIC name in Windows>"
-[array]$IPs = Get-NetIPAddress -InterfaceAlias $netInterface | Where-Object {$_.AddressFamily -eq "IPv4" -and $_.IPAddress -ne $primaryIP}
-Set-NetIPAddress -IPAddress $primaryIP -InterfaceAlias $netInterface -SkipAsSource $false
-Set-NetIPAddress -IPAddress $IPs.IPAddress -InterfaceAlias $netInterface -SkipAsSource $true
-
-$netAdapter = Get-NetAdapter | where-object {$_.ComponentID -eq 'VMBUS\{f8615163-df3e-46c5-913f-f2d2f965ed0e}'}
-Set-NetIPAddress -IPAddress 10.0.0.10 -InterfaceIndex $netAdapter.ifIndex -SkipAsSource $false
-Set-NetIPAddress -IPAddress 10.0.0.7 -InterfaceIndex $netAdapter.ifIndex -SkipAsSource $true
-
-#>
 
 Out-Log "DHCP request returns option 245?"
 $dhcpReturnedOption245 = Confirm-AzureVM
@@ -1200,7 +1149,6 @@ else
 Out-Log '168.63.129.16:80 reachable?'
 $wireserverPort80Reachable = Test-Port -ipAddress '168.63.129.16' -port 80 -timeout 1000
 $description = "168.63.129.16:80 reachable: $($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
-#$mitigation = 'https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16'
 $mitigation = '<a href="https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16">What is IP address 168.63.129.16?</a>'
 if ($wireserverPort80Reachable.Succeeded)
 {
@@ -1248,7 +1196,8 @@ if ($imdsReachable.Succeeded)
 {
     Out-Log 'Querying Instance Metadata service 169.254.169.254:80'
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072
-    # Below three lines have it use a null proxy, bypassing any configured proxy, see also https://github.com/microsoft/azureimds/blob/master/IMDSSample.ps1
+    # Below three lines have it use a null proxy, bypassing any configured proxy
+    # See also https://github.com/microsoft/azureimds/blob/master/IMDSSample.ps1
     $proxy = New-Object System.Net.WebProxy
     $webSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
     $webSession.Proxy = $proxy
