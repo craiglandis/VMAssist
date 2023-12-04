@@ -885,7 +885,7 @@ else
     New-Finding -type Critical -Name 'VM agent not installed' -description $description
 }
 
-<#
+#<#
 Out-Log "VM agent services running?"
 $messageSuffix = "(rdAgentStatusRunning:$rdAgentStatusRunning windowsAzureGuestAgentStatusRunning:$windowsAzureGuestAgentStatusRunning)"
 if ($rdAgentStatusRunning -and $windowsAzureGuestAgentStatusRunning)
