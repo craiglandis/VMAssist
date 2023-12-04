@@ -1848,16 +1848,6 @@ $stringBuilder = New-Object Text.StringBuilder
 $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('<h1>VM Health Report</h1>')
 [void]$stringBuilder.Append("<h3>VM: $vmName VMID: $vmId Report created: $scriptEndTimeUTCString</h3>")
-<#
-[void]$stringBuilder.Append("<a href=`"#findings`"><strong>Findings</strong></a><br />`r`n")
-[void]$stringBuilder.Append("<a href=`"#checks`"><strong>Checks</strong></a><br />`r`n")
-[void]$stringBuilder.Append("<a href=`"#vm`"><strong>VM Details</strong></a><br />`r`n")
-[void]$stringBuilder.Append("&emsp;<a href=`"#vmGeneral`"><strong>General</strong></a><br />`r`n")
-[void]$stringBuilder.Append("&emsp;<a href=`"#vmOS`"><strong>OS</strong></a><br />`r`n")
-[void]$stringBuilder.Append("&emsp;<a href=`"#vmNetwork`"><strong>Network</strong></a><br />`r`n")
-[void]$stringBuilder.Append("&emsp;<a href=`"#vmSecurity`"><strong>Security</strong></a><br />`r`n")
-[void]$stringBuilder.Append("&emsp;<a href=`"#vmStorage`"><strong>Storage</strong></a><br />`r`n")
-#>
 
 [void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
 $findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
