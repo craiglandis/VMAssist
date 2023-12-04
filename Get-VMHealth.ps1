@@ -1858,7 +1858,6 @@ if ($findingsCount -ge 1)
     $findingsTable = $findingsTable -replace '<td>Warning</td>', '<td class="WARNING">Warning</td>'
     $findingsTable = $findingsTable -replace '<td>Information</td>', '<td class="INFORMATION">Information</td>'
     $global:dbgFindingsTable = $findingsTable
-    #[void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
     $findingsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 }
 else
@@ -1921,11 +1920,9 @@ $global:dbgProperties = $properties
 $global:dbgvm = $vm
 $global:dbgnics = $nics
 
-# $htmFileName = "$($scriptBaseName)_$($computerName)_$($osVersion.Replace(' ', '_'))_$($scriptStartTimeString).htm"
 $htmFileName = "$($scriptBaseName)_$($computerName)_$($scriptStartTimeString).htm"
 $htmFilePath = "$logFolderPath\$htmFileName"
 
-# $htm.Replace('&lt;','<').Replace('&gt;','>').Replace('&lessthan;', '&lt;').Replace('&greaterthan;', '&gt;').ToString() | Out-File $script:reportContentFile -Encoding utf8
 $htm = $htm.Replace('&lt;', '<').Replace('&gt;', '>')
 $htm | Out-File -FilePath $htmFilePath
 Out-Log "HTML report: $htmFilePath"
@@ -1944,22 +1941,3 @@ else
 {
     Out-Log 'No issues found.' -color Green
 }
-
-<#
-# $summaryString = $output | Select-Object -Property isWireServerReachable, aggregateStatusGuestAgentStatusVersion, aggregateStatusGuestAgentStatusStatus, aggregateStatusGuestAgentStatusFormattedMessage, aggregateStatusGuestAgentStatusLastStatusUploadMethod, aggregateStatusGuestAgentStatusLastStatusUploadTime, windowsAzureFolderExists, packagesFolderExists, windowsAzureGuestAgentExeFileVersion, waAppAgentExeFileVersion | Format-List | Out-String
-# $summaryString = $summaryString.Trim()
-#Out-Log "`n$summaryString`n" -raw
-$issues = $findings | Where-Object {$_.Level -in 1, 2, 3}
-$issuesCount = $issues | Measure-Object | Select-Object -ExpandProperty Count
-$findingsString = $findings | Sort-Object timeCreated | Format-Table -AutoSize | Out-String
-$findingsString = $findingsString.Trim()
-Out-Log "`n$findingsString`n" -raw
-if ($issues)
-{
-    Out-Log "$issuesCount issue(s) found." -color Yellow
-}
-else
-{
-    Out-Log 'No issues found.' -color Green
-}
-#>
