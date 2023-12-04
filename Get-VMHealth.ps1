@@ -1718,7 +1718,7 @@ $stringBuilder = New-Object Text.StringBuilder
 
 $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('<h1>VM Health Report</h1>')
-[void]$stringBuilder.Append("<h3>NAME: $vmName<P>VMID: $vmId<P>Report Created: $scriptEndTimeUTCString</h3>")
+[void]$stringBuilder.Append("<h3>NAME: $vmName VMID: $vmId Report Created: $scriptEndTimeUTCString</h3>")
 
 [void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
 $findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
