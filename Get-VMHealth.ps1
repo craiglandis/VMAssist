@@ -1336,19 +1336,6 @@ if ($imdsReachable.Succeeded)
         Out-Log 'Querying Instance Metadata service 169.254.169.254:80 failed' -color Red
     }
 }
-<#
-Invoke-RestMethod -Method GET -Uri 'http://168.63.129.16/machine/ac9257a2-f6d0-4096-9480-c6f40ab833a5/b7d92ed1%2Dbc85%2D4d75%2Daf23%2D4f5ffd9e29e6.%5Fwin11?comp=config&type=hostingEnvironmentConfig&incarnation=2' -Headers @{'x-ms-version' = '2012-11-30'}
-Invoke-RestMethod -Method GET -Uri 'http://168.63.129.16:80/machine/ac9257a2-f6d0-4096-9480-c6f40ab833a5/b7d92ed1%2Dbc85%2D4d75%2Daf23%2D4f5ffd9e29e6.%5Fwin11?comp=config&type=sharedConfig&incarnation=2' -Headers @{'x-ms-version' = '2012-11-30'}
-
-Invoke-RestMethod -Method GET -Uri 'http://168.63.129.16:80/machine/ac9257a2-f6d0-4096-9480-c6f40ab833a5/b7d92ed1%2Dbc85%2D4d75%2Daf23%2D4f5ffd9e29e6.%5Fwin11?comp=config&type=extensionsConfig&incarnation=2' -Headers @{'x-ms-version' = '2012-11-30'}
-
-HostingEnvironmentConfig : http://168.63.129.16:80/machine/ac9257a2-f6d0-4096-9480-c6f40ab833a5/b7d92ed1%2Dbc85%2D4d75%2Daf23%2D4f5ffd9e29e6.%5Fwin11?comp=config&type=hostingEnvironmentConfig&incarnation=2
-SharedConfig             : http://168.63.129.16:80/machine/ac9257a2-f6d0-4096-9480-c6f40ab833a5/b7d92ed1%2Dbc85%2D4d75%2Daf23%2D4f5ffd9e29e6.%5Fwin11?comp=config&type=sharedConfig&incarnation=2
-ExtensionsConfig         : http://168.63.129.16:80/machine/ac9257a2-f6d0-4096-9480-c6f40ab833a5/b7d92ed1%2Dbc85%2D4d75%2Daf23%2D4f5ffd9e29e6.%5Fwin11?comp=config&type=extensionsConfig&incarnation=2
-FullConfig               : http://168.63.129.16:80/machine/ac9257a2-f6d0-4096-9480-c6f40ab833a5/b7d92ed1%2Dbc85%2D4d75%2Daf23%2D4f5ffd9e29e6.%5Fwin11?comp=config&type=fullConfig&incarnation=2
-Certificates             : http://168.63.129.16:80/machine/ac9257a2-f6d0-4096-9480-c6f40ab833a5/b7d92ed1%2Dbc85%2D4d75%2Daf23%2D4f5ffd9e29e6.%5Fwin11?comp=certificates&incarnation=2
-ConfigName               : b7d92ed1-bc85-4d75-af23-4f5ffd9e29e6.1.b7d92ed1-bc85-4d75-af23-4f5ffd9e29e6.4._win11.1.xml
-#>
 
 if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succeeded)
 {
@@ -1659,7 +1646,6 @@ $output = [PSCustomObject]@{
     wireserverPort80Reachable                             = $wireserverPort80Reachable
     wireserverPort32526Reachable                          = $wireserverPort32526Reachable
     windowsAzureFolderExists                              = $windowsAzureFolderExists
-    # packagesFolderExists                                  = $packagesFolderExists
     windowsAzureGuestAgentExeFileVersion                  = $windowsAzureGuestAgentExeFileVersion
     waAppAgentExeFileVersion                              = $waAppAgentExeFileVersion
 
