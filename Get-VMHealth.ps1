@@ -158,7 +158,7 @@ function Test-Port
     )
     <#
     Use TCPClient .NET class since Test-NetConnection cmdlet does not support setting a timeout
-    Equivalent Test-NetConnection command (except no timeout since it doesn't support timeouts):
+    Equivalent Test-NetConnection command (but doesn't support timeouts):
     Test-NetConnection -ComputerName $wireServer -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue
     #>
     $tcpClient = New-Object System.Net.Sockets.TCPClient
@@ -682,45 +682,6 @@ if (Test-Path -Path $windowsAzureFolderPath -PathType Container)
         $waAppAgentExeExists = $false
         Out-Log "WaAppAgent.exe exists: $waAppAgentExeExists" -color Red
     }
-
-    # $waAppAgentLogPath = $windowsAzureFolder | Where-Object {$_.Name -eq 'WaAppAgent.log'} | Select-Object -ExpandProperty FullName
-    # $waAppAgentLog = Get-Content -Path $waAppAgentLogPath
-
-    # WaAppAgent.log errors when there is no wireserver connectivity:
-    # [ERROR] ControlSystem not initialized. Skip getting goal state
-    # [ERROR] GetVersions() failed with exception: System.AggregateException: One or more errors occurred. ---> System.Net.Http.HttpRequestException: An error occurred while sending the request. ---> System.Net.WebException: Unable to connect to the remote server ---> System.Net.Sockets.SocketException: An attempt was made to access a socket in a way forbidden by its access permissions 168.63.129.16:80
-    # [ERROR] There was no match for protocol version. ControlSystem not initialized.
-    # once wireserver connectivity is resolved, you'll see:
-    # ControlSystem initialized with version 2012-11-30.
-
-    <#
-    # $services = ('rdagent','WindowsAzureGuestAgent'); $services | % {Set-Service $_ -StartupType Disabled -PassThru | Set-Service -Status Stopped}; get-service $services | ft -a Name,ServiceName,Status,StartType
-    # stop-azvm rg win11 -force
-    # $services = ('rdagent','WindowsAzureGuestAgent'); $services | % {Set-Service $_ -StartupType Automatic -PassThru | Set-Service -Status Running}; get-service $services | ft -a Name,ServiceName,Status,StartType
-
-    aggregateStatus still says Ready if services are disabled, because the services must be runing for aggregateStatus to be changed
-
-    aggregateStatusGuestAgentStatusVersion                : 2.7.41491.1083
-    aggregateStatusGuestAgentStatusStatus                 : Ready
-    aggregateStatusGuestAgentStatusFormattedMessage       : GuestAgent is running and processing the extensions.
-    aggregateStatusGuestAgentStatusLastStatusUploadMethod : HostGA Plugin - Default
-    aggregateStatusGuestAgentStatusLastStatusUploadTime   : 4/19/2023 9:36:23 PM
-
-    New-NetFirewallRule -DisplayName 'Block outbound traffic to 168.63.129.16' -Direction Outbound –LocalPort Any -Protocol TCP -Action Block -RemoteAddress 168.63.129.16
-    New-NetFirewallRule -DisplayName 'Block outbound traffic to 169.254.169.254' -Direction Outbound –LocalPort Any -Protocol TCP -Action Block -RemoteAddress 169.254.169.254
-
-    get-azvm rg win11 -Status
-
-    MAgent                    :
-    VmAgentVersion           : Unknown
-    Statuses[0]              :
-        Code                   : ProvisioningState/Unavailable
-        Level                  : Warning
-        DisplayStatus          : Not Ready
-        Message                : VM status blob is found but not yet populated.
-        Time                   : 4/23/2023 12:45:05 AM
-
-    #>
 }
 else
 {
@@ -728,26 +689,6 @@ else
     Out-Log "$windowsAzureFolderPath folder exists: $windowsAzureFolderExists" -color Red
     $windowsAzureFolderExists = $false
 }
-
-<#
-# An empty C:\Packages folder does exist if no extensions have ever been installed in the VM
-# But if you delete C:\Packages and then install an extension, C:\Packages is automatically recreated
-# Just checking for its existence is irrelevant as the agent will recreate it if needed
-# And if it is not present, that doesn't mean the agent isn't fully installed, because again, it will create it as needed on extension install
-# However a too-restrictive ACL on C:\Packages can be a problem, that would be a separate check to implement
-$packagesFolderPath = "$env:SystemDrive\Packages"
-Out-Log "Checking if $packagesFolderPath folder exists"
-if (Test-Path -Path $packagesFolderPath -PathType Container)
-{
-    Out-Log "$packagesFolderPath folder exists" -color Green
-    $packagesFolderExists = $true
-}
-else
-{
-    Out-Log "$packagesFolderPath folder does not exist" -color Red
-    $packagesFolderExists = $false
-}
-#>
 
 Add-Type -TypeDefinition @'
 using Microsoft.Win32.SafeHandles;
