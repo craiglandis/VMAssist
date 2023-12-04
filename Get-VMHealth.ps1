@@ -1,19 +1,21 @@
 <#
 .SYNOPSIS
-    Checks health of Azure VM agent
+    Checks Azure VM agent health
 .DESCRIPTION
-    Checks health of Azure VM agent
+    Checks Azure VM agent health
 .NOTES
-    Supported on Windows Server 2012 and later versions of Windows.
-    Can be executed from PowerShell 4.0 and later versions of PowerShell.
+    Supported on Windows Server 2012 R2 and later versions of Windows.
+    Supported in Windows PowerShell 4.0+ and PowerShell 6.0+.
     Not supported on Linux.
 .LINK
     https://github.com/craiglandis/Get-VMHealth/blob/main/README.md
 .EXAMPLE
+    RDP to Azure VM
+    Launch an elevated PowerShell prompt
+    Download Get-VMHealth.ps1 with the following command
+
     Get-VMHealth.ps1
 #>
-
-
 
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
