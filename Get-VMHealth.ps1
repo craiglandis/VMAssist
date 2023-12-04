@@ -1377,17 +1377,9 @@ if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succ
     $storedCertificate = $rdConfig.StoredCertificates.StoredCertificate | Where-Object {$_.name -eq 'TenantEncryptionCert'}
     $tenantEncryptionCertThumbprint = $storedCertificate.certificateId -split ':' | Select-Object -Last 1
     $tenantEncryptionCert = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object {$_.Thumbprint -eq $tenantEncryptionCertThumbprint}
-    # 'x-ms-guest-agent-public-x509-cert' header is missing.
-    # $certificates = Invoke-RestMethod -Method GET -Uri $certificatesUri -Headers $headers -WebSession $webSession | Select-Object -ExpandProperty Certificates
 
     $statusUploadBlobUri = $extensions.StatusUploadBlob.'#text'
-    # $statusUploadBlob = Invoke-RestMethod -Uri $statusUploadBlobUri
     $inVMGoalStateMetaData = $extensions.InVMGoalStateMetaData
-
-    #$inVMArtifactsProfileBlob = Invoke-WebRequest -Uri $extensions.InVMArtifactsProfileBlob | Select-Object -ExpandProperty Content
-    # Remove null characters ('\0') from end of string, else ConvertFrom-Json on PS5.1 and earlier fails with "invalid json primitive"
-    # $inVMArtifactsProfileBlob = $inVMArtifactsProfileBlob -replace '\0' | ConvertFrom-Json
-    # $inVMArtifactsProfileBlob = Invoke-RestMethod -Uri $extensions.InVMArtifactsProfileBlob -WebSession $webSession
 }
 
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
@@ -1501,60 +1493,6 @@ foreach ($ipconfig in $ipconfigs)
     $nics.Add($nic)
 }
 
-#$adapters = Get-NetAdapter
-#$interfaceAliases = $adapters | Select-Object -ExpandProperty InterfaceAlias
-<#
-foreach ($nic in $nics)
-{
-    $adapter = Get-NetAdapter -InterfaceIndex $nic.InterfaceIndex
-    $nic | Add-Member -MemberType NoteProperty -Name ComponentID -Value $adapter.ComponentID -Force
-    $nic | Add-Member -MemberType NoteProperty -Name Status -Value $adapter.Status -Force
-    $nic | Add-Member -MemberType NoteProperty -Name MediaConnectionState -Value $adapter.MediaConnectionState -Force
-    $nic | Add-Member -MemberType NoteProperty -Name DriverInformation -Value $adapter.DriverInformation -Force
-    $nic | Add-Member -MemberType NoteProperty -Name MacAddress -Value $adapter.MacAddress -Force
-
-    $ipV4Addresses = Get-NetIPAddress -InterfaceIndex $nic.InterfaceIndex -AddressFamily IPv4
-    foreach ($ipV4Address in $ipV4Addresses)
-    {
-        $ipV4AddressString = $ipV4Address.IPAddress
-        if ($ipV4Address.PrefixOrigin -eq 'Dhcp' -and $ipV4Address.SuffixOrigin -eq 'Dhcp')
-        {
-            $ipV4AddressString = "$ipV4AddressString (DHCP)"
-        }
-        else
-        {
-            $ipV4AddressString = "$ipV4AddressString (Static)"
-        }
-
-        if ($ipV4Address.SkipAsSource -eq $true)
-        {
-            $ipV4AddressString = "$ipV4AddressString (Primary)"
-        }
-        $ipV4AddressesString += "$ipV4AddressString, "
-    }
-    $ipV4AddressesString.Trim(', ')
-    $nic | Add-Member -MemberType NoteProperty -Name 'IPv4 Addresses' -Value $ipV4AddressesString -Force
-}
-
-$waAppAgentPid = Get-Process -Name WaAppAgent | Select-Object -ExpandProperty Id
-$waAppAgentConnections = Get-NetTCPConnection -OwningProcess $waAppAgentPid
-$windowsAzureGuestAgentPid = Get-Process -Name WindowsAzureGuestAgent | Select-Object -ExpandProperty Id
-$windowsAzureGuestAgentConnections = Get-NetTCPConnection -OwningProcess $windowsAzureGuestAgentPid
-
-
-# Network
-
-Get-NetAdapter
-    InterfaceAlias
-    InterfaceAlias
-
-
-$waAppAgentPid = Get-Process -Name WaAppAgent | Select-Object -ExpandProperty Id
-$waAppAgentConnections = Get-NetTCPConnection -OwningProcess $waAppAgentPid
-$windowsAzureGuestAgentPid = Get-Process -Name WindowsAzureGuestAgent | Select-Object -ExpandProperty Id
-$windowsAzureGuestAgentConnections = Get-NetTCPConnection -OwningProcess $windowsAzureGuestAgentPid
-#>
-
 $nicsImds = New-Object System.Collections.Generic.List[Object]
 foreach ($interface in $interfaces)
 {
@@ -1577,8 +1515,6 @@ foreach ($interface in $interfaces)
     }
     $nicsImds.Add($nicImds)
 }
-
-#$vm.Add([PSCustomObject]@{Property = 'publicIpAddressReportedFromAwsCheckIpService'; Value = $publicIpAddressReportedFromAwsCheckIpService; Type = 'Network'})
 
 # Security
 if ($imdsReachable.Succeeded -eq $false)
