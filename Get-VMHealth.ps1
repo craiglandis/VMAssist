@@ -1847,7 +1847,7 @@ $stringBuilder = New-Object Text.StringBuilder
 
 $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('<h1>VM Health Report</h1>')
-[void]$stringBuilder.Append("<h3>VM: $vmName VMID: $vmId Time Generated: $scriptEndTimeUTCString</h3>")
+[void]$stringBuilder.Append("<h3>VM: $vmName VMID: $vmId Report created: $scriptEndTimeUTCString</h3>")
 <#
 [void]$stringBuilder.Append("<a href=`"#findings`"><strong>Findings</strong></a><br />`r`n")
 [void]$stringBuilder.Append("<a href=`"#checks`"><strong>Checks</strong></a><br />`r`n")
