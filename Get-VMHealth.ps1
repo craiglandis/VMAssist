@@ -1803,12 +1803,13 @@ Out-Log "Log file: $logFilePath"
 $scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f (New-TimeSpan -Start $scriptStartTime -End (Get-Date))
 Out-Log "$scriptName duration: $scriptDuration"
 
-$findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
+[int]$findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
 if ($findingsCount -ge 1)
 {
-    Out-Log "$issuesCount issue(s) found." -color Cyan
+    $color = 'Cyan'
 }
 else
 {
-    Out-Log 'No issues found.' -color Green
+    $color = 'Green'
 }
+Out-Log "$findingsCount issue(s) found." -color $color

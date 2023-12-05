@@ -32,7 +32,28 @@ https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1
 ### Custom Script Extension (Azure PowerShell)
 
 ```powershell
-Set-AzVMCustomScriptExtension -Location westus2 -ResourceGroupName rg -VMName win11 -Name cse -FileUri https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1 -Run Get-VMHealth.ps1 -TypeHandlerVersion 1.10 -ForceRerun (Get-Date).Ticks
+$publisherName = 'Microsoft.Compute'
+$type = 'CustomScriptExtension'
+$location = 'westus2'
+$versions = Get-AzVMExtensionImage -Location $location -PublisherName $publisherName -Type $type
+[version]$version = $versions | Sort-Object {[version]$_.Version} | Select-Object -ExpandProperty Version -Last 1
+$typeHandlerVersion = "$($version.Major).$($version.Minor)"
+
+$resourceGroupName = 'rg'
+$vmName = 'ws22ae'
+$name = 'CustomScriptExtension'
+$fileUri = 'https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1'
+$run = $fileUri -split '/' | Select-Object -Last 1
+Set-AzVMCustomScriptExtension -Location $location -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -FileUri $fileUri -Run $run -TypeHandlerVersion $typeHandlerVersion -ForceRerun (Get-Date).Ticks
+
+$status = Get-AzVMCustomScriptExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Status
+$stdOut = $status.SubStatuses | Where-Object {$_.Code -match 'StdOut'} | Select-Object -ExpandProperty Message
+$stdErr = $status.SubStatuses | Where-Object {$_.Code -match 'StdErr'} | Select-Object -ExpandProperty Message
+
+Get-AzVM -resourceGroupName $resourceGroupName -name $vmName | select-object -expandproperty Extensions | where {$_.Publisher -eq $publisherName -and $_.VirtualMachineExtensionType -eq $name}
+
+Remove-AzVMCustomScriptExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Force
+
 ```
 
 ```powershell
