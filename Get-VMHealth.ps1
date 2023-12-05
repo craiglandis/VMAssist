@@ -891,8 +891,8 @@ if ($rdAgentStatusRunning -and $windowsAzureGuestAgentStatusRunning)
 {
     $vmAgentServicesRunning = $true
     Out-Log "VM agent services running: $vmAgentServicesRunning $messageSuffix" -color Green
-    $message = "VM agent services are running $messageSuffix"
-    New-Finding -type Information -name VMAgentServicesRunning -message $message
+    # $message = "VM agent services are running $messageSuffix"
+    # New-Finding -type Information -name VMAgentServicesRunning -message $message
 }
 else
 {
