@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Checks Azure VM agent health
+    Checks Azure VM agent health foo
 .DESCRIPTION
     Checks Azure VM agent health
 .NOTES
