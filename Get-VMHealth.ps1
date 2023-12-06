@@ -900,7 +900,8 @@ else
     Out-Log "VM agent services running: $vmAgentServicesRunning $messageSuffix" -color Red
     #$message = "VM agent services are not running $messageSuffix"
     $description = "VM agent services are not running $messageSuffix"
-    New-Finding -type Critical -name VMAgentServicesNotRunning -description $description
+    $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows-azure-guest-agent#step-3-check-whether-the-guest-agent-services-are-running">Check guest agent services</a>'
+    New-Finding -type Critical -name VMAgentServicesNotRunning -description $description -mitigation $mitigation
 }
 
 Out-Log 'VM agent installed by provisioning agent or MSI?'
@@ -1795,7 +1796,8 @@ $global:dbgnics = $nics
 $htmFileName = "$($scriptBaseName)_$($computerName)_$($scriptStartTimeString).htm"
 $htmFilePath = "$logFolderPath\$htmFileName"
 
-$htm = $htm.Replace('&lt;', '<').Replace('&gt;', '>')
+$htm = $htm.Replace('&lt;', '<').Replace('&gt;', '>').Replace('&quot;','"')
+
 $htm | Out-File -FilePath $htmFilePath
 Out-Log "HTML report: $htmFilePath"
 Invoke-Item -Path $htmFilePath
