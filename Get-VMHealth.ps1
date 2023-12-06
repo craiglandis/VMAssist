@@ -1029,6 +1029,13 @@ if ($handlerStateKey)
 $proxyConfigured = $false
 Out-Log 'Proxy configured?'
 $netshWinhttpShowProxyOutput = netsh winhttp show proxy
+$proxyServers = $netshWinhttpShowProxyOutput | Select-String -SimpleMatch 'Proxy Server(s)' | Select-Object -ExpandProperty Line
+if ($proxyServers)
+{
+    $proxyServers = $proxyServers.Replace('Proxy Server(s) :','').Trim()
+}
+
+$proxyServers = $proxyServers.Replace('Proxy Server(s) :','').Trim()
 $connectionsKeyPath = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Connections'
 $connectionsKey = Get-ItemProperty -Path $connectionsKeyPath -ErrorAction SilentlyContinue
 $winHttpSettings = $connectionsKey | Select-Object -ExpandProperty WinHttpSettings -ErrorAction SilentlyContinue
@@ -1112,9 +1119,10 @@ Out-Log "$machinePoliciesInternetSettingsKeyPath\ProxySettingsPerUser: $proxySet
 
 if ($proxyConfigured)
 {
-    New-Check -name 'Proxy configured' -result 'Failed' -details ''
-    Out-Log "Proxy configured: $proxyConfigured" -color Yellow
-    New-Finding -type Information -name 'Proxy configured' -description 'A proxy is configured.'
+    New-Check -name 'Proxy configured' -result 'Information' -details $proxyServers
+    Out-Log "Proxy configured: $proxyConfigured" -color Cyan
+    $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows-azure-guest-agent#solution-3-enable-dhcp-and-make-sure-that-the-server-isnt-blocked-by-firewalls-proxies-or-other-sources">Check proxy settings</a>'
+    New-Finding -type Information -name 'Proxy configured' -description 'A proxy is configured.' -mitigation $mitigation
 }
 else
 {
@@ -1741,6 +1749,7 @@ else
 $checksTable = $checks | Select-Object Name, Result, Details | ConvertTo-Html -Fragment -As Table
 $checksTable = $checksTable -replace '<td>Passed</td>', '<td class="PASSED">Passed</td>'
 $checksTable = $checksTable -replace '<td>Failed</td>', '<td class="FAILED">Failed</td>'
+$checksTable = $checksTable -replace '<td>Information</td>', '<td class="INFORMATION">Information</td>'
 $global:dbgChecksTable = $checksTable
 [void]$stringBuilder.Append("<h2 id=`"checks`">Checks</h2>`r`n")
 $checksTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
