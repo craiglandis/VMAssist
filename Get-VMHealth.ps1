@@ -900,7 +900,7 @@ else
     Out-Log "VM agent services running: $vmAgentServicesRunning $messageSuffix" -color Red
     #$message = "VM agent services are not running $messageSuffix"
     $description = "VM agent services are not running $messageSuffix"
-    New-Finding -type Critical -name VMAgentServicesNotRunningZZZ -description $description
+    New-Finding -type Critical -name VMAgentServicesNotRunning -description $description
 }
 
 Out-Log 'VM agent installed by provisioning agent or MSI?'
