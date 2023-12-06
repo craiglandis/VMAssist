@@ -1029,18 +1029,24 @@ if ($handlerStateKey)
 $proxyConfigured = $false
 Out-Log 'Proxy configured?'
 $netshWinhttpShowProxyOutput = netsh winhttp show proxy
+Out-Log "`$netshWinhttpShowProxyOutput: $netshWinhttpShowProxyOutput"
 $proxyServers = $netshWinhttpShowProxyOutput | Select-String -SimpleMatch 'Proxy Server(s)' | Select-Object -ExpandProperty Line
-if ($proxyServers)
+if ([string]::IsNullOrEmpty($proxyServers) -eq $false)
 {
-    $proxyServers = $proxyServers.Replace('Proxy Server(s) :','').Trim()
+    $proxyServers = $proxyServers.Trim()
+    Out-Log "`$proxyServers: $proxyServers"
+    Out-Log "`$proxyServers.Length: $($proxyServers.Length)"
+    Out-Log "`$proxyServers.GetType(): $($proxyServers.GetType())"
+    # $proxyServers = $proxyServers.Replace('Proxy Server(s) :','').Trim()
 }
-
-$proxyServers = $proxyServers.Replace('Proxy Server(s) :','').Trim()
 $connectionsKeyPath = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Connections'
 $connectionsKey = Get-ItemProperty -Path $connectionsKeyPath -ErrorAction SilentlyContinue
 $winHttpSettings = $connectionsKey | Select-Object -ExpandProperty WinHttpSettings -ErrorAction SilentlyContinue
 $winHttpSettings = ($winHttpSettings | ForEach-Object {'{0:X2}' -f $_}) -join ''
-$defaultWinHttpSettings = '1800000000000000010000000000000000000000'
+# '1800000000000000010000000000000000000000' is the default if nothing was ever configured
+# '2800000000000000010000000000000000000000' is the default after running "netsh winhttp reset proxy"
+# So either of those equate to "Direct access (no proxy server)." being returned by "netsh winhttp show proxy"
+$defaultWinHttpSettings = @('1800000000000000010000000000000000000000','2800000000000000010000000000000000000000')
 if ($winHttpSettings -ne $defaultWinHttpSettings)
 {
     $proxyConfigured = $true
@@ -1122,7 +1128,7 @@ if ($proxyConfigured)
     New-Check -name 'Proxy configured' -result 'Information' -details $proxyServers
     Out-Log "Proxy configured: $proxyConfigured" -color Cyan
     $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows-azure-guest-agent#solution-3-enable-dhcp-and-make-sure-that-the-server-isnt-blocked-by-firewalls-proxies-or-other-sources">Check proxy settings</a>'
-    New-Finding -type Information -name 'Proxy configured' -description 'A proxy is configured.' -mitigation $mitigation
+    New-Finding -type Information -name 'Proxy configured' -description $proxyServers -mitigation $mitigation
 }
 else
 {
