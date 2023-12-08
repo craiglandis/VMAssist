@@ -885,7 +885,7 @@ else
     New-Finding -type Critical -Name 'VM agent not installed' -description $description
 }
 
-Out-Log "VM agent services running?"
+Out-Log 'VM agent services running?'
 $messageSuffix = "(rdAgentStatusRunning:$rdAgentStatusRunning windowsAzureGuestAgentStatusRunning:$windowsAzureGuestAgentStatusRunning)"
 if ($rdAgentStatusRunning -and $windowsAzureGuestAgentStatusRunning)
 {
@@ -1046,7 +1046,7 @@ $winHttpSettings = ($winHttpSettings | ForEach-Object {'{0:X2}' -f $_}) -join ''
 # '1800000000000000010000000000000000000000' is the default if nothing was ever configured
 # '2800000000000000010000000000000000000000' is the default after running "netsh winhttp reset proxy"
 # So either of those equate to "Direct access (no proxy server)." being returned by "netsh winhttp show proxy"
-$defaultWinHttpSettings = @('1800000000000000010000000000000000000000','2800000000000000010000000000000000000000')
+$defaultWinHttpSettings = @('1800000000000000010000000000000000000000', '2800000000000000010000000000000000000000')
 if ($winHttpSettings -ne $defaultWinHttpSettings)
 {
     $proxyConfigured = $true
@@ -1147,15 +1147,15 @@ $machineKeysAclString = $machineKeysAcl.Access | Format-Table -AutoSize -HideTab
 
 
 
-Out-Log "DHCP request returns option 245?"
+Out-Log 'DHCP request returns option 245?'
 $dhcpReturnedOption245 = Confirm-AzureVM
 if ($dhcpReturnedOption245)
 {
-    Out-Log "DHCP request returned option 245" -color Green
+    Out-Log 'DHCP request returned option 245' -color Green
 }
 else
 {
-    Out-Log "DHCP request did not return option 245" -color Yellow
+    Out-Log 'DHCP request did not return option 245' -color Yellow
 }
 
 # wireserver doesn't listen on 8080 even though it creates a BFE filter for it
@@ -1345,6 +1345,16 @@ if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succ
 
     $statusUploadBlobUri = $extensions.StatusUploadBlob.'#text'
     $inVMGoalStateMetaData = $extensions.InVMGoalStateMetaData
+}
+
+Out-Log 'Third-party modules in agent processes?'
+$waAppAgentThirdPartyModules = Get-Process -Name waappagent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
+$windowsAzureGuestAgentThirdPartyModules = Get-Process -Name windowsazureguestagent | Select-Object -expand modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
+if ($waAppAgentThirdPartyModules -or $windowsAzureGuestAgentThirdPartyModules)
+{
+    New-Check -name 'Third-party modules in agent processes' -result 'Information' -details ''
+    Out-Log 'Third-party modules in agent processes' -color Cyan
+    $thirdPartyModules = $true
 }
 
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
@@ -1811,7 +1821,7 @@ $global:dbgnics = $nics
 $htmFileName = "$($scriptBaseName)_$($computerName)_$($scriptStartTimeString).htm"
 $htmFilePath = "$logFolderPath\$htmFileName"
 
-$htm = $htm.Replace('&lt;', '<').Replace('&gt;', '>').Replace('&quot;','"')
+$htm = $htm.Replace('&lt;', '<').Replace('&gt;', '>').Replace('&quot;', '"')
 
 $htm | Out-File -FilePath $htmFilePath
 Out-Log "HTML report: $htmFilePath"
