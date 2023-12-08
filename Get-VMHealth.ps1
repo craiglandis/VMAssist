@@ -1348,13 +1348,16 @@ if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succ
 }
 
 Out-Log 'Third-party modules in agent processes?'
-$waAppAgentThirdPartyModules = Get-Process -Name waappagent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
-$windowsAzureGuestAgentThirdPartyModules = Get-Process -Name windowsazureguestagent | Select-Object -expand modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
+$waAppAgentThirdPartyModules = Get-Process -Name waappagent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName,company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
+$windowsAzureGuestAgentThirdPartyModules = Get-Process -Name windowsazureguestagent | Select-Object -expand modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName,company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
 if ($waAppAgentThirdPartyModules -or $windowsAzureGuestAgentThirdPartyModules)
 {
-    New-Check -name 'Third-party modules in agent processes' -result 'Information' -details ''
+    $details = "WaAppAgent.exe: $($($waAppAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
+    $details += "<br>WindowsAzureGuestAgent.exe: $($($windowsAzureGuestAgentThirdPartyModules.FileNamModuleName -join ',').TrimEnd(','))"
+    New-Check -name 'Third-party modules in agent processes' -result 'Information' -details $details
     Out-Log 'Third-party modules in agent processes' -color Cyan
-    $thirdPartyModules = $true
+
+    New-Finding -type Information -name 'Third-party modules in VM agent processes' -description $details -mitigation ''
 }
 
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
