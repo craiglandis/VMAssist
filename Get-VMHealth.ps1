@@ -1353,7 +1353,7 @@ $windowsAzureGuestAgentThirdPartyModules = Get-Process -Name windowsazureguestag
 if ($waAppAgentThirdPartyModules -or $windowsAzureGuestAgentThirdPartyModules)
 {
     $details = "WaAppAgent.exe: $($($waAppAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
-    $details += "<br>WindowsAzureGuestAgent.exe: $($($windowsAzureGuestAgentThirdPartyModules.FileNamModuleName -join ',').TrimEnd(','))"
+    $details += "<br>WindowsAzureGuestAgent.exe: $($($windowsAzureGuestAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
     New-Check -name 'Third-party modules in agent processes' -result 'Information' -details $details
     Out-Log 'Third-party modules in agent processes' -color Cyan
 
