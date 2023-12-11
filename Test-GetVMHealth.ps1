@@ -12,6 +12,7 @@ t -unblockimds
 \\tsclient\c\src\Get-VMHealth\Test-GetVMHealth.ps1 -unblockimds
 \\tsclient\c\src\Get-VMHealth\Test-GetVMHealth.ps1 -enableProxy
 \\tsclient\c\src\Get-VMHealth\Test-GetVMHealth.ps1 -disableProxy
+
 #>
 param(
     [switch]$setprofile,
@@ -20,7 +21,9 @@ param(
     [switch]$unblockwireserver,
     [switch]$unblockimds,
     [switch]$enableProxy,
-    [switch]$disableProxy
+    [switch]$disableProxy,
+    [switch]$loadModule, # https://chat.openai.com/share/cc75e85d-da52-455e-a945-a826af4d3866
+    [switch]$unloadModule
 )
 
 function Out-Log

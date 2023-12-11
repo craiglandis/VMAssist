@@ -44,19 +44,53 @@ function Out-Log
     param(
         [string]$text,
         [switch]$verboseOnly,
-        [string]$prefix,
+        [switch]$startLine,
+        [switch]$endLine,
+        [ValidateSet('timespan', 'both')]
+        [string]$prefix = 'both',
+        [ValidateSet('hours', 'minutes', 'seconds')]
+        [string]$timespanFormat = 'minutes',
+        [ValidateSet('condensedTime', 'time', 'datetime')]
+        [string]$timestampFormat = 'time',
+        [switch]$dateCondensed = $true,
+        [switch]$milliseconds,
         [switch]$raw,
         [switch]$logonly,
         [ValidateSet('Black', 'DarkBlue', 'DarkGreen', 'DarkCyan', 'DarkRed', 'DarkMagenta', 'DarkYellow', 'Gray', 'DarkGray', 'Blue', 'Green', 'Cyan', 'Red', 'Magenta', 'Yellow', 'White')]
         [string]$color = 'White'
     )
 
+    if ($timestampFormat -eq 'condensedTime')
+    {
+        $dateFormat = 'ddhhmmss'
+    }
+    elseif ($timestampFormat -eq 'time')
+    {
+        $dateFormat = 'hh:mm:ss'
+    }
+    elseif ($timestampFormat -eq 'datetime')
+    {
+        $dateFormat = 'yyyy-MM-dd hh:mm:ss'
+    }
+    else
+    {
+        $dateFormat = 'yyyy-MM-dd hh:mm:ss'
+    }
+
     if ($verboseOnly)
     {
+        $callstack = Get-PSCallStack
+        $caller = $callstack | Select-Object -First 1 -Skip 1
+        $caller = $caller.InvocationInfo.MyCommand.Name
+        if ($caller -eq 'Invoke-ExpressionWithLogging')
+        {
+            $caller = $callstack | Select-Object -First 1 -Skip 2
+            $caller = $caller.InvocationInfo.MyCommand.Name
+        }
+        # Write-Host "$scriptName `$verboseOnly: $verboseOnly `$global:verbose: $global:verbose `$verbose: $verbose" -ForegroundColor Magenta
         if ($verbose)
         {
             $outputNeeded = $true
-            $foreGroundColor = 'Yellow'
         }
         else
         {
@@ -66,7 +100,6 @@ function Out-Log
     else
     {
         $outputNeeded = $true
-        $foreGroundColor = 'White'
     }
 
     if ($outputNeeded)
@@ -91,23 +124,64 @@ function Out-Log
         }
         else
         {
-            if ($prefix -eq 'timespan' -and $global:scriptStartTime)
+            if (!$script:scriptStartTime)
             {
-                $timespan = New-TimeSpan -Start $global:scriptStartTime -End (Get-Date)
-                $prefixString = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f $timespan
+                $script:scriptStartTime = Get-Date
             }
-            elseif ($prefix -eq 'both' -and $global:scriptStartTime)
+
+            if ($prefix -eq 'timespan' -and $script:scriptStartTime)
             {
-                $timestamp = Get-Date -Format 'yyyy-MM-dd hh:mm:ss'
-                $timespan = New-TimeSpan -Start $global:scriptStartTime -End (Get-Date)
-                $prefixString = "$($timestamp) $('{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f $timespan)"
+                $timespan = New-TimeSpan -Start $script:scriptStartTime -End (Get-Date)
+                if ($timespanFormat -eq 'hours')
+                {
+                    $format = '{0:hh}:{0:mm}:{0:ss}'
+                }
+                elseif ($timespanFormat -eq 'minutes')
+                {
+                    $format = '{0:mm}:{0:ss}'
+                }
+                elseif ($timespanFormat -eq 'seconds')
+                {
+                    $format = '{0:ss}'
+                }
+                if ($milliseconds)
+                {
+                    $format = "$($format).{0:ff}"
+                }
+                $prefixString = $format -f $timespan
+            }
+            elseif ($prefix -eq 'both' -and $script:scriptStartTime)
+            {
+                $timestamp = Get-Date -Format $dateFormat
+                $timespan = New-TimeSpan -Start $script:scriptStartTime -End (Get-Date)
+
+                if ($timespanFormat -eq 'hours')
+                {
+                    $format = '{0:hh}:{0:mm}:{0:ss}'
+                }
+                elseif ($timespanFormat -eq 'minutes')
+                {
+                    $format = '{0:mm}:{0:ss}'
+                }
+                elseif ($timespanFormat -eq 'seconds')
+                {
+                    $format = '{0:ss}'
+                }
+                if ($milliseconds)
+                {
+                    $format = "$($format).{0:ff}"
+                }
+                $prefixString = $format -f $timespan
+                $prefixString = "$timestamp $prefixString"
             }
             else
             {
-                $prefixString = Get-Date -Format 'yyyy-MM-dd hh:mm:ss'
+                $prefixString = Get-Date -Format $dateFormat
             }
 
-            if ($logonly)
+            $prefixString = "$prefixString "
+
+            if ($logonly -or $global:quiet)
             {
                 if ($logFilePath)
                 {
@@ -116,8 +190,26 @@ function Out-Log
             }
             else
             {
-                Write-Host $prefixString -NoNewline -ForegroundColor Cyan
-                Write-Host " $text" -ForegroundColor $color
+                if ($verboseOnly)
+                {
+                    $prefixString = "$prefixString[$caller] "
+                }
+
+                if ($startLine)
+                {
+                    Write-Host $prefixString -NoNewline -ForegroundColor DarkGray
+                    Write-Host "$text " -NoNewline -ForegroundColor $color
+                }
+                elseif ($endLine)
+                {
+                    Write-Host $text -ForegroundColor $color
+                }
+                else
+                {
+                    Write-Host $prefixString -NoNewline -ForegroundColor DarkGray
+                    Write-Host $text -ForegroundColor $color
+                }
+
                 if ($logFilePath)
                 {
                     "$prefixString $text" | Out-File $logFilePath -Append
@@ -130,9 +222,45 @@ function Out-Log
 function Invoke-ExpressionWithLogging
 {
     param(
-        [string]$command
+        [string]$command,
+        [switch]$raw,
+        [switch]$verboseOnly
     )
-    Out-Log $command -verboseOnly
+
+    if ($verboseOnly)
+    {
+        if ($verbose)
+        {
+            if ($raw)
+            {
+                Out-Log $command -verboseOnly -raw
+            }
+            else
+            {
+                Out-Log $command -verboseOnly
+            }
+        }
+    }
+    else
+    {
+        if ($raw)
+        {
+            Out-Log $command -raw
+        }
+        else
+        {
+            Out-Log $command
+        }
+    }
+
+    <# This results in error:
+
+    Cannot convert argument "newChar", with value: "", for "Replace" to type "System.Char": "Cannot convert value "" to
+    type "System.Char". Error: "String must be exactly one character long.""
+
+    $command = $command.Replace($green, '').Replace($reset, '')
+    #>
+
     try
     {
         Invoke-Expression -Command $command
@@ -259,7 +387,7 @@ function Send-Telemetry
         $ip4Address = $dnsRecord.IP4Address
         if ($ip4Address)
         {
-            Out-Log "Sending telemetry: $ingestionDnsName ($ip4Address)"
+            Out-Log "Sending telemetry to $ingestionDnsName ($ip4Address):" -startLine
             $ingestionEndpointReachable = Test-Port -ipAddress $ip4Address -Port 443
             $global:dbgingestionEndpointReachable = $ingestionEndpointReachable
             if ($ingestionEndpointReachable.Succeeded)
@@ -287,26 +415,26 @@ function Send-Telemetry
                     $itemsReceived = $result | Select-Object -ExpandProperty itemsReceived
                     $itemsAccepted = $result | Select-Object -ExpandProperty itemsAccepted
                     $errors = $result | Select-Object -ExpandProperty errors
-                    $message = "Sending Telemetry: Received: $itemsReceived Accepted: $itemsAccepted"
+                    $message = "Received: $itemsReceived Accepted: $itemsAccepted"
                     if ($errors)
                     {
                         $message = "$message Errors: $errors"
-                        Out-Log $message -color Red
+                        Out-Log $message -color Red -endLine
                     }
                     else
                     {
-                        Out-Log $message -color Green
+                        Out-Log $message -color Green -endLine
                     }
                 }
             }
             else
             {
-                Out-Log "Sending telemetry: ingestion endpoint $($ip4Address):443 not reachable"
+                Out-Log "Ingestion endpoint $($ip4Address):443 not reachable" -endLine
             }
         }
         else
         {
-            Out-Log "Sending telemetry: could not resolve $ingestionDnsName to an IP address"
+            Out-Log "Could not resolve $ingestionDnsName to an IP address" -endLine
         }
     }
 }
@@ -593,7 +721,7 @@ else
 }
 if ((Test-Path -Path $logFolderPath -PathType Container) -eq $false)
 {
-    Invoke-ExpressionWithLogging "New-Item -Path $logFolderPath -ItemType Directory -Force | Out-Null"
+    Invoke-ExpressionWithLogging "New-Item -Path $logFolderPath -ItemType Directory -Force | Out-Null" -verboseOnly
 }
 $computerName = $env:COMPUTERNAME.ToUpper()
 $invokeWmiMethodResult = Invoke-WmiMethod -Path "Win32_Directory.Name='$logFolderPath'" -Name Compress
@@ -613,7 +741,7 @@ $ErrorActionPreference = 'SilentlyContinue'
 $version = [environment]::osversion.version.ToString()
 $buildNumber = [environment]::osversion.version.build
 $currentVersionKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
-$currentVersionKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$currentVersionKeyPath' -ErrorAction SilentlyContinue"
+$currentVersionKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$currentVersionKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 if ($currentVersionKey)
 {
     $productName = $currentVersionKey.ProductName
@@ -640,53 +768,52 @@ else
 {
     $osVersion = "$productName $version"
 }
-Out-Log "$osVersion installed $installDateString"
+Out-Log "$osVersion installed $installDateString" -color Cyan
 
 $windowsAzureFolderPath = "$env:SystemDrive\WindowsAzure"
-Out-Log "$windowsAzureFolderPath folder exists?"
+Out-Log "$windowsAzureFolderPath folder exists:" -startLine
 if (Test-Path -Path $windowsAzureFolderPath -PathType Container)
 {
-    New-Check -name "$windowsAzureFolderPath folder exists" -result 'Passed' -details ''
     $windowsAzureFolderExists = $true
-    Out-Log "$windowsAzureFolderPath folder exists: $windowsAzureFolderExists" -color Green
-    $windowsAzureFolder = Invoke-ExpressionWithLogging "Get-ChildItem -Path $windowsAzureFolderPath -Recurse -ErrorAction SilentlyContinue"
-
-    Out-Log 'WindowsAzureGuestAgent.exe exists?'
+    Out-Log $windowsAzureFolderExists -color Green -endLine
+    New-Check -name "$windowsAzureFolderPath folder exists" -result 'Passed' -details ''
+    $windowsAzureFolder = Invoke-ExpressionWithLogging "Get-ChildItem -Path $windowsAzureFolderPath -Recurse -ErrorAction SilentlyContinue" -verboseOnly
+    Out-Log 'WindowsAzureGuestAgent.exe exists:' -startLine
     $windowsAzureGuestAgentExe = $windowsAzureFolder | Where-Object {$_.Name -eq 'WindowsAzureGuestAgent.exe'}
     if ($windowsAzureGuestAgentExe)
     {
         New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'Passed' -details ''
         $windowsAzureGuestAgentExeExists = $true
         $windowsAzureGuestAgentExeFileVersion = $windowsAzureGuestAgentExe | Select-Object -ExpandProperty VersionInfo | Select-Object -ExpandProperty FileVersion
-        Out-Log "WindowsAzureGuestAgent.exe exists: $windowsAzureGuestAgentExeExists (version $windowsAzureGuestAgentExeFileVersion)" -color Green
+        Out-Log "$windowsAzureGuestAgentExeExists (version $windowsAzureGuestAgentExeFileVersion)" -color Green -endLine
     }
     else
     {
         New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'Failed' -details ''
         $windowsAzureGuestAgentExe = $false
-        Out-Log "WindowsAzureGuestAgent.exe exists: $windowsAzureGuestAgentExeExists" -color Red
+        Out-Log $windowsAzureGuestAgentExeExists -color Red -endLine
     }
 
-    Out-Log 'WaAppAgent.exe exists?'
+    Out-Log 'WaAppAgent.exe exists:' -startLine
     $waAppAgentExe = $windowsAzureFolder | Where-Object {$_.Name -eq 'WaAppAgent.exe'}
     if ($waAppAgentExe)
     {
         New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'Passed' -details ''
         $waAppAgentExeExists = $true
         $waAppAgentExeFileVersion = $waAppAgentExe | Select-Object -ExpandProperty VersionInfo | Select-Object -ExpandProperty FileVersion
-        Out-Log "WaAppAgent.exe exists: $waAppAgentExeExists (version $waAppAgentExeFileVersion)" -color Green
+        Out-Log "$waAppAgentExeExists (version $waAppAgentExeFileVersion)" -color Green -endLine
     }
     else
     {
         New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'Failed' -details ''
         $waAppAgentExeExists = $false
-        Out-Log "WaAppAgent.exe exists: $waAppAgentExeExists" -color Red
+        Out-Log $waAppAgentExeExists -color Red -endLine
     }
 }
 else
 {
     New-Check -name "$windowsAzureFolderPath folder exists" -result 'Failed' -details ''
-    Out-Log "$windowsAzureFolderPath folder exists: $windowsAzureFolderExists" -color Red
+    Out-Log $windowsAzureFolderExists -color Red -endLine
     $windowsAzureFolderExists = $false
 }
 
@@ -731,13 +858,13 @@ namespace Win32.Service
 }
 '@
 
-Out-Log 'RdAgent service installed?'
-$rdAgent = Invoke-ExpressionWithLogging "Get-Service -Name 'RdAgent' -ErrorAction SilentlyContinue"
+Out-Log 'RdAgent service installed:' -startLine
+$rdAgent = Invoke-ExpressionWithLogging "Get-Service -Name 'RdAgent' -ErrorAction SilentlyContinue" -verboseOnly
 if ($rdAgent)
 {
     New-Check -name 'RdAgent service installed' -result 'Passed' -details ''
     $rdAgentServiceExists = $true
-    Out-Log "RdAgent service installed: $rdAgentServiceExists" -color Green
+    Out-Log $rdAgentServiceExists -color Green -endLine
 
     $rdAgentBinaryPathName = $rdAgent.BinaryPathName
     $rdAgentUserName = $rdAgent.UserName
@@ -767,11 +894,11 @@ else
 {
     New-Check -name 'RdAgent service installed' -result 'Failed' -details ''
     $rdAgentServiceExists = $false
-    Out-Log "RdAgent service installed: $rdAgentServiceExists" -color Red
+    Out-Log $rdAgentServiceExists -color Red -endLine
 }
 
 $rdAgentKeyPath = 'HKLM:\SYSTEM\CurrentControlSet\Services\RdAgent'
-$rdAgentKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$rdAgentKeyPath' -ErrorAction SilentlyContinue"
+$rdAgentKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$rdAgentKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 if ($rdAgentKey)
 {
     $rdAgentKeyExists = $true
@@ -788,19 +915,19 @@ else
 
 $scExe = "$env:SystemRoot\System32\sc.exe"
 
-$scQueryExRdAgentOutput = Invoke-ExpressionWithLogging "& $scExe queryex RdAgent"
+$scQueryExRdAgentOutput = Invoke-ExpressionWithLogging "& $scExe queryex RdAgent" -verboseOnly
 $scQueryExRdAgentExitCode = $LASTEXITCODE
 
-$scQcRdAgentOutput = Invoke-ExpressionWithLogging "& $scExe qc RdAgent"
+$scQcRdAgentOutput = Invoke-ExpressionWithLogging "& $scExe qc RdAgent" -verboseOnly
 $scQcRdAgentExitCode = $LASTEXITCODE
 
-Out-Log 'WindowsAzureGuestAgent service installed?'
-$windowsAzureGuestAgent = Invoke-ExpressionWithLogging "Get-Service -Name 'WindowsAzureGuestAgent' -ErrorAction SilentlyContinue"
+Out-Log 'WindowsAzureGuestAgent service installed:' -startLine
+$windowsAzureGuestAgent = Invoke-ExpressionWithLogging "Get-Service -Name 'WindowsAzureGuestAgent' -ErrorAction SilentlyContinue" -verboseOnly
 if ($windowsAzureGuestAgent)
 {
     New-Check -name 'WindowsAzureGuestAgent service installed' -result 'Passed' -details ''
     $windowsAzureGuestAgentServiceExists = $true
-    Out-Log "WindowsAzureGuestAgent service installed: $windowsAzureGuestAgentServiceExists" -color Green
+    Out-Log $windowsAzureGuestAgentServiceExists -color Green -endLine
 
     $windowsAzureGuestAgentBinaryPathName = $windowsAzureGuestAgent.BinaryPathName
     $windowsAzureGuestAgentStatus = $windowsAzureGuestAgent.Status
@@ -830,11 +957,11 @@ else
 {
     New-Check -name 'WindowsAzureGuestAgent service installed' -result 'Failed' -details ''
     $windowsAzureGuestAgentServiceExists = $false
-    Out-Log "WindowsAzureGuestAgent service installed: $windowsAzureGuestAgentServiceExists" -color Red
+    Out-Log $windowsAzureGuestAgentServiceExists -color Red -endLine
 }
 
 $windowsAzureGuestAgentKeyPath = 'HKLM:\SYSTEM\CurrentControlSet\Services\WindowsAzureGuestAgent'
-$windowsAzureGuestAgentKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$windowsAzureGuestAgentKeyPath' -ErrorAction SilentlyContinue"
+$windowsAzureGuestAgentKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$windowsAzureGuestAgentKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 if ($windowsAzureGuestAgentKey)
 {
     $windowsAzureGuestAgentKeyExists = $true
@@ -852,7 +979,7 @@ else
 if ($useWMI)
 {
     $windowsAzureGuestAgentFilter = "Name='WindowsAzureGuestAgent'"
-    $windowsAzureGuestAgentFromWMI = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName Win32_Service -Filter $windowsAzureGuestAgentFilter -ErrorAction SilentlyContinue"
+    $windowsAzureGuestAgentFromWMI = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName Win32_Service -Filter $windowsAzureGuestAgentFilter -ErrorAction SilentlyContinue" -verboseOnly
     if ($windowsAzureGuestAgentFromWMI)
     {
         $windowsAzureGuestAgentExitCode = $windowsAzureGuestAgentFromWMI.ExitCode
@@ -860,53 +987,53 @@ if ($useWMI)
     }
 }
 
-$scQueryExWindowsAzureGuestAgentOutput = Invoke-ExpressionWithLogging "& $scExe queryex WindowsAzureGuestAgent"
+$scQueryExWindowsAzureGuestAgentOutput = Invoke-ExpressionWithLogging "& $scExe queryex WindowsAzureGuestAgent" -verboseOnly
 $scQueryExWindowsAzureGuestAgentExitCode = $LASTEXITCODE
 
-$scQcWindowsAzureGuestAgentOutput = Invoke-ExpressionWithLogging "& $scExe qc WindowsAzureGuestAgent"
+$scQcWindowsAzureGuestAgentOutput = Invoke-ExpressionWithLogging "& $scExe qc WindowsAzureGuestAgent" -verboseOnly
 $scQcWindowsAzureGuestAgentExitCode = $LASTEXITCODE
 
-Out-Log 'VM Agent installed?'
+Out-Log 'VM Agent installed:' -startLine
 $messageSuffix = "(windowsAzureFolderExists:$windowsAzureFolderExists rdAgentServiceExists:$rdAgentServiceExists windowsAzureGuestAgentServiceExists:$windowsAzureGuestAgentServiceExists rdAgentKeyExists:$rdAgentKeyExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists waAppAgentExeExists:$waAppAgentExeExists windowsAzureGuestAgentExeExists:$windowsAzureGuestAgentExeExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists)"
 if ($windowsAzureFolderExists -and $rdAgentServiceExists -and $windowsAzureGuestAgentServiceExists -and $rdAgentKeyExists -and $windowsAzureGuestAgentKeyExists -and $waAppAgentExeExists -and $windowsAzureGuestAgentExeExists -and $windowsAzureGuestAgentKeyExists -and $windowsAzureGuestAgentKeyExists)
 {
     New-Check -name 'VM agent installed' -result 'Passed' -details ''
     $vmAgentInstalled = $true
-    Out-Log "VM Agent installed: $vmAgentInstalled $messageSuffix" -color Green
+    Out-Log "$vmAgentInstalled $messageSuffix" -color Green -endLine
     $message = "VM agent is installed $messageSuffix"
 }
 else
 {
     New-Check -name 'VM agent installed' -result 'Failed' -details ''
     $vmAgentInstalled = $false
-    Out-Log "VM Agent installed: $vmAgentInstalled" -color Red
+    Out-Log $vmAgentInstalled -color Red -endLine
     $description = "VM agent is not installed $messageSuffix"
     Out-Log $message -color Red
     New-Finding -type Critical -Name 'VM agent not installed' -description $description
 }
 
-Out-Log 'VM agent services running?'
+Out-Log 'VM agent services running:' -startLine
 $messageSuffix = "(rdAgentStatusRunning:$rdAgentStatusRunning windowsAzureGuestAgentStatusRunning:$windowsAzureGuestAgentStatusRunning)"
 if ($rdAgentStatusRunning -and $windowsAzureGuestAgentStatusRunning)
 {
     $vmAgentServicesRunning = $true
-    Out-Log "VM agent services running: $vmAgentServicesRunning $messageSuffix" -color Green
+    Out-Log "$vmAgentServicesRunning $messageSuffix" -color Green -endLine
     #$message = "VM agent services are running $messageSuffix"
     #New-Finding -type Information -name VMAgentServicesRunning -message $message
 }
 else
 {
     $vmAgentServicesRunning = $false
-    Out-Log "VM agent services running: $vmAgentServicesRunning $messageSuffix" -color Red
+    Out-Log "$vmAgentServicesRunning $messageSuffix" -color Red -endLine
     #$message = "VM agent services are not running $messageSuffix"
     $description = "VM agent services are not running $messageSuffix"
     $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows-azure-guest-agent#step-3-check-whether-the-guest-agent-services-are-running">Check guest agent services</a>'
     New-Finding -type Critical -name VMAgentServicesNotRunning -description $description -mitigation $mitigation
 }
 
-Out-Log 'VM agent installed by provisioning agent or MSI?'
+Out-Log 'VM agent installed by provisioning agent or MSI:' -startLine
 $uninstallKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'
-$uninstallKey = Invoke-ExpressionWithLogging "Get-Item -Path '$uninstallKeyPath' -ErrorAction SilentlyContinue"
+$uninstallKey = Invoke-ExpressionWithLogging "Get-Item -Path '$uninstallKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 $agentUninstallKey = $uninstallkey.GetSubKeyNames() | ForEach-Object {Get-ItemProperty -Path $uninstallKeyPath\$_ | Where-Object {$_.Publisher -eq 'Microsoft Corporation' -and $_.DisplayName -match 'Windows Azure VM Agent'}}
 $agentUninstallKeyDisplayName = $agentUninstallKey.DisplayName
 $agentUninstallKeyDisplayVersion = $agentUninstallKey.DisplayVersion
@@ -915,17 +1042,17 @@ $agentUninstallKeyInstallDate = $agentUninstallKey.InstallDate
 if ($agentUninstallKey)
 {
     New-Check -name 'VM agent installed by provisioning agent' -result 'Passed' -details ''
-    Out-Log 'VM agent installed by provisioning agent or MSI: MSI' -color Green
+    Out-Log 'MSI: MSI' -color Green -endLine
 }
 else
 {
     New-Check -name 'VM agent installed by provisioning agent' -result 'Passed' -details ''
-    Out-Log 'VM agent installed by provisioning agent or MSI: Provisioning agent' -color Green
+    Out-Log 'Provisioning agent' -color Green -endLine
 }
 
-Out-Log 'VM agent is a supported version?'
+Out-Log 'VM agent is supported version:' -startLine
 $guestKeyPath = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest'
-$guestKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestKeyPath' -ErrorAction SilentlyContinue"
+$guestKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 if ($guestKey)
 {
     $guestKeyDHCPStatus = $guestKey.DHCPStatus
@@ -944,24 +1071,24 @@ if ($guestKey)
     {
         New-Check -name 'VM agent is supported version' -result 'Passed' -details "Installed version: $guestKeyGuestAgentVersion, minimum supported version: $minSupportedGuestAgentVersion"
         $isAtLeastMinSupportedVersion = $true
-        Out-Log "VM agent is a supported version: $isAtLeastMinSupportedVersion (installed version: $guestKeyGuestAgentVersion, minimum supported version: $minSupportedGuestAgentVersion)" -color Green
+        Out-Log "$isAtLeastMinSupportedVersion (installed: $guestKeyGuestAgentVersion, minimum supported: $minSupportedGuestAgentVersion)" -color Green -endLine
     }
     else
     {
         New-Check -name 'VM agent is supported version' -result 'Failed' -details "Installed version: $guestKeyGuestAgentVersion, minimum supported version: $minSupportedGuestAgentVersion"
-        Out-Log "VM agent is a supported version: $isAtLeastMinSupportedVersion (installed version: $guestKeyGuestAgentVersion, minimum supported version: $minSupportedGuestAgentVersion)" -color Red
+        Out-Log "$isAtLeastMinSupportedVersion (installed: $guestKeyGuestAgentVersion, minimum supported: $minSupportedGuestAgentVersion)" -color Red -endLine
     }
 }
 
 $autoKeyPath = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Auto'
-$autoKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$autoKeyPath' -ErrorAction SilentlyContinue"
+$autoKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$autoKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 if ($autoKey)
 {
 
 }
 
 $guestAgentKeyPath = 'HKLM:\SOFTWARE\Microsoft\GuestAgent'
-$guestAgentKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestAgentKeyPath' -ErrorAction SilentlyContinue"
+$guestAgentKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestAgentKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 if ($guestAgentKey)
 {
     $guestAgentKeyContainerId = $guestAgentKey.ContainerId
@@ -978,7 +1105,7 @@ if ($guestAgentKey)
 }
 
 $windowsAzureKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure'
-$windowsAzureKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$windowsAzureKeyPath' -ErrorAction SilentlyContinue"
+$windowsAzureKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$windowsAzureKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 if ($windowsAzureKey)
 {
     $vmId = $windowsAzureKey.vmId
@@ -989,11 +1116,11 @@ if ($windowsAzureKey)
 }
 
 $guestAgentUpdateStateKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState'
-$guestAgentUpdateStateKey = Invoke-ExpressionWithLogging "Get-Item -Path '$guestAgentUpdateStateKeyPath' -ErrorAction SilentlyContinue"
+$guestAgentUpdateStateKey = Invoke-ExpressionWithLogging "Get-Item -Path '$guestAgentUpdateStateKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 if ($guestAgentUpdateStateKey)
 {
     $guestAgentUpdateStateSubKeyName = $guestAgentUpdateStateKey.GetSubKeyNames() | Sort-Object {[Version]$_} | Select-Object -Last 1
-    $guestAgentUpdateStateSubKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestAgentUpdateStateKeyPath\$guestAgentUpdateStateSubKeyName' -ErrorAction SilentlyContinue"
+    $guestAgentUpdateStateSubKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestAgentUpdateStateKeyPath\$guestAgentUpdateStateSubKeyName' -ErrorAction SilentlyContinue" -verboseOnly
     if ($guestAgentUpdateStateSubKey)
     {
         $guestAgentUpdateStateCode = $guestAgentUpdateStateSubKey.Code
@@ -1003,7 +1130,7 @@ if ($guestAgentUpdateStateKey)
 }
 
 $handlerStateKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure\HandlerState'
-$handlerStateKey = Invoke-ExpressionWithLogging "Get-Item -Path '$handlerStateKeyPath' -ErrorAction SilentlyContinue"
+$handlerStateKey = Invoke-ExpressionWithLogging "Get-Item -Path '$handlerStateKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 if ($handlerStateKey)
 {
     $handlerNames = $handlerStateKey.GetSubKeyNames()
@@ -1012,7 +1139,7 @@ if ($handlerStateKey)
         $handlerStates = New-Object System.Collections.Generic.List[Object]
         foreach ($handlerName in $handlerNames)
         {
-            $handlerState = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$handlerStateKeyPath\$handlerName' -ErrorAction SilentlyContinue"
+            $handlerState = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$handlerStateKeyPath\$handlerName' -ErrorAction SilentlyContinue" -verboseOnly
             if ($handlerState)
             {
                 $handlerStates.Add($handlerState)
@@ -1027,17 +1154,16 @@ if ($handlerStateKey)
 # If you are using a proxy, you will get its value under the ProxyServer key.
 # This gets the same settings as running "netsh winhttp show proxy"
 $proxyConfigured = $false
-Out-Log 'Proxy configured?'
+Out-Log 'Proxy configured:' -startLine
 $netshWinhttpShowProxyOutput = netsh winhttp show proxy
-Out-Log "`$netshWinhttpShowProxyOutput: $netshWinhttpShowProxyOutput"
+Out-Log "`$netshWinhttpShowProxyOutput: $netshWinhttpShowProxyOutput" -verboseOnly
 $proxyServers = $netshWinhttpShowProxyOutput | Select-String -SimpleMatch 'Proxy Server(s)' | Select-Object -ExpandProperty Line
 if ([string]::IsNullOrEmpty($proxyServers) -eq $false)
 {
     $proxyServers = $proxyServers.Trim()
-    Out-Log "`$proxyServers: $proxyServers"
-    Out-Log "`$proxyServers.Length: $($proxyServers.Length)"
-    Out-Log "`$proxyServers.GetType(): $($proxyServers.GetType())"
-    # $proxyServers = $proxyServers.Replace('Proxy Server(s) :','').Trim()
+    Out-Log "`$proxyServers: $proxyServers" -verboseOnly
+    Out-Log "`$proxyServers.Length: $($proxyServers.Length)" -verboseOnly
+    Out-Log "`$proxyServers.GetType(): $($proxyServers.GetType())" -verboseOnly
 }
 $connectionsKeyPath = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Connections'
 $connectionsKey = Get-ItemProperty -Path $connectionsKeyPath -ErrorAction SilentlyContinue
@@ -1047,13 +1173,13 @@ $winHttpSettings = ($winHttpSettings | ForEach-Object {'{0:X2}' -f $_}) -join ''
 # '2800000000000000010000000000000000000000' is the default after running "netsh winhttp reset proxy"
 # So either of those equate to "Direct access (no proxy server)." being returned by "netsh winhttp show proxy"
 $defaultWinHttpSettings = @('1800000000000000010000000000000000000000', '2800000000000000010000000000000000000000')
-if ($winHttpSettings -ne $defaultWinHttpSettings)
+if ($winHttpSettings -notin $defaultWinHttpSettings)
 {
     $proxyConfigured = $true
 }
 
 # [System.Net.WebProxy]::GetDefaultProxy() works on Windows PowerShell but not PowerShell Core
-$defaultProxy = Invoke-ExpressionWithLogging '[System.Net.WebProxy]::GetDefaultProxy()'
+$defaultProxy = Invoke-ExpressionWithLogging '[System.Net.WebProxy]::GetDefaultProxy()' -verboseOnly
 $defaultProxyAddress = $defaultProxy.Address
 $defaultProxyBypassProxyOnLocal = $defaultProxy.BypassProxyOnLocal
 $defaultProxyBypassList = $defaultProxy.BypassList
@@ -1089,7 +1215,7 @@ if ($env:HTTP_PROXY -or $env:HTTPS_PROXY -or $env:ALL_PROXY)
 }
 
 $userInternetSettingsKeyPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'
-$userInternetSettingsKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path $userInternetSettingsKeyPath -ErrorAction SilentlyContinue"
+$userInternetSettingsKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path $userInternetSettingsKeyPath -ErrorAction SilentlyContinue" -verboseOnly
 $userProxyEnable = $userInternetSettingsKey | Select-Object -ExpandProperty ProxyEnable -ErrorAction SilentlyContinue
 $userProxyServer = $userInternetSettingsKey | Select-Object -ExpandProperty ProxyServer -ErrorAction SilentlyContinue
 $userProxyOverride = $userInternetSettingsKey | Select-Object -ExpandProperty ProxyOverride -ErrorAction SilentlyContinue
@@ -1104,7 +1230,7 @@ if ($userProxyEnable -and $userProxyServer)
 }
 
 $machineInternetSettingsKeyPath = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'
-$machineInternetSettingsKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path $machineInternetSettingsKeyPath -ErrorAction SilentlyContinue"
+$machineInternetSettingsKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path $machineInternetSettingsKeyPath -ErrorAction SilentlyContinue" -verboseOnly
 $machineProxyEnable = $machineInternetSettingsKey | Select-Object -ExpandProperty ProxyEnable -ErrorAction SilentlyContinue
 $machineProxyServer = $machineInternetSettingsKey | Select-Object -ExpandProperty ProxyServer -ErrorAction SilentlyContinue
 $machineProxyOverride = $machineInternetSettingsKey | Select-Object -ExpandProperty ProxyOverride -ErrorAction SilentlyContinue
@@ -1119,21 +1245,21 @@ if ($machineProxyEnable -and $machineProxyServer)
 }
 
 $machinePoliciesInternetSettingsKeyPath = 'HKLM:\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings'
-$machinePoliciesInternetSettingsKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path $machinePoliciesInternetSettingsKeyPath -ErrorAction SilentlyContinue"
+$machinePoliciesInternetSettingsKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path $machinePoliciesInternetSettingsKeyPath -ErrorAction SilentlyContinue" -verboseOnly
 $proxySettingsPerUser = $machinePoliciesInternetSettingsKey | Select-Object -ExpandProperty ProxySettingsPerUser -ErrorAction SilentlyContinue
 Out-Log "$machinePoliciesInternetSettingsKeyPath\ProxySettingsPerUser: $proxySettingsPerUser" -verboseOnly
 
 if ($proxyConfigured)
 {
     New-Check -name 'Proxy configured' -result 'Information' -details $proxyServers
-    Out-Log "Proxy configured: $proxyConfigured" -color Cyan
+    Out-Log $proxyConfigured -color Cyan -endLine
     $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows-azure-guest-agent#solution-3-enable-dhcp-and-make-sure-that-the-server-isnt-blocked-by-firewalls-proxies-or-other-sources">Check proxy settings</a>'
     New-Finding -type Information -name 'Proxy configured' -description $proxyServers -mitigation $mitigation
 }
 else
 {
-    New-Check -name 'Proxy configured' -result 'Passed' -details ''
-    Out-Log "Proxy configured: $proxyConfigured" -color Green
+    New-Check -name 'Proxy configured' -result 'Passed' -details 'No proxy configured'
+    Out-Log $proxyConfigured -color Green -endLine
 }
 
 $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
@@ -1142,75 +1268,72 @@ $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.3031
 
 $machineKeysPath = "$env:ALLUSERSPROFILE\Microsoft\Crypto\RSA\MachineKeys"
 $machineKeysAcl = Get-Acl -Path $machineKeysPath
-$machineKeysAcl.Access
 $machineKeysAclString = $machineKeysAcl.Access | Format-Table -AutoSize -HideTableHeaders IdentityReference, AccessControlType, FileSystemRights | Out-String
 
-
-
-Out-Log 'DHCP request returns option 245?'
+Out-Log 'DHCP request returns option 245:' -startLine
 $dhcpReturnedOption245 = Confirm-AzureVM
 if ($dhcpReturnedOption245)
 {
-    Out-Log 'DHCP request returned option 245' -color Green
+    Out-Log $dhcpReturnedOption245 -color Green -endLine
 }
 else
 {
-    Out-Log 'DHCP request did not return option 245' -color Yellow
+    Out-Log $dhcpReturnedOption245 -color Yellow
 }
 
 # wireserver doesn't listen on 8080 even though it creates a BFE filter for it
 # Test-NetConnection -ComputerName 168.63.129.16 -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue
 # Test-NetConnection -ComputerName 168.63.129.16 -Port 32526 -InformationLevel Quiet -WarningAction SilentlyContinue
 # Test-NetConnection -ComputerName 169.254.169.254 -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue
-Out-Log '168.63.129.16:80 reachable?'
+Out-Log 'Wireserver 168.63.129.16:80 reachable:' -startLine
 $wireserverPort80Reachable = Test-Port -ipAddress '168.63.129.16' -port 80 -timeout 1000
 $description = "168.63.129.16:80 reachable: $($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
 $mitigation = '<a href="https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16">What is IP address 168.63.129.16?</a>'
 if ($wireserverPort80Reachable.Succeeded)
 {
     New-Check -name '168.63.129.16:80 reachable' -result 'Passed' -details ''
-    Out-Log $description -color Green
+    Out-Log "$($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)" -color Green -endline
 }
 else
 {
     New-Check -name '168.63.129.16:80 reachable' -result 'Failed' -details ''
-    Out-Log $description -color Red
+    Out-Log $wireserverPort80Reachable.Succeeded -color Red -endLine
     New-Finding -type Critical -name '168.63.129.16:80 not reachable' -description $description -mitigation $mitigation
 }
 
-Out-Log '168.63.129.16:32526 reachable?'
+Out-Log 'Wireserver 168.63.129.16:32526 reachable:' -startLine
 $wireserverPort32526Reachable = Test-Port -ipAddress '168.63.129.16' -port 32526 -timeout 1000
 $description = "168.63.129.16:32526 reachable: $($wireserverPort32526Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
 if ($wireserverPort32526Reachable.Succeeded)
 {
     New-Check -name '168.63.129.16:32526 reachable' -result 'Passed' -details ''
-    Out-Log $description -color Green
+    Out-Log $wireserverPort32526Reachable.Succeeded -color Green -endLine
 }
 else
 {
     New-Check -name '168.63.129.16:32526 reachable' -result 'Failed' -details ''
-    Out-Log $description -color Red
+    Out-Log "$($wireserverPort32526Reachable.Succeeded) $($wireserverPort80Reachable.Error)" -color Red -endLine
     New-Finding -type Critical -name '168.63.129.16:32526 not reachable' -description $description -mitigation $mitigation
 }
 
-Out-Log 'Instance Metadata Service 169.254.169.254:80 reachable?'
+Out-Log 'IMDS 169.254.169.254:80 reachable:' -startLine
 $imdsReachable = Test-Port -ipAddress '169.254.169.254' -port 80 -timeout 1000
-$description = "Instance Metadata Service 169.254.169.254:80 reachable: $($imdsReachable.Succeeded) $($imdsReachable.Error)"
+$description = "IMDS 169.254.169.254:80 reachable: $($imdsReachable.Succeeded) $($imdsReachable.Error)"
 if ($imdsReachable.Succeeded)
 {
-    New-Check -name 'Instance Metadata Service 169.254.169.254:80 reachable' -result 'Passed' -details ''
-    Out-Log $description -color Green
+    New-Check -name 'IMDS 169.254.169.254:80 reachable' -result 'Passed' -details ''
+    Out-Log $imdsReachable.Succeeded -color Green -endLine
 }
 else
 {
-    New-Check -name 'Instance Metadata Service 169.254.169.254:80 reachable' -result 'Failed' -details ''
-    Out-Log $description -color Red
-    New-Finding -type Information -name 'Instance Metadata Service 169.254.169.254:80 not reachable' -description $description
+    New-Check -name 'IMDS 169.254.169.254:80 reachable' -result 'Failed' -details ''
+    Out-Log "$($imdsReachable.Succeeded) $($imdsReachable.Error)" -color Red -endLine
+    New-Finding -type Information -name 'IMDS 169.254.169.254:80 not reachable' -description $description
 }
 
 if ($imdsReachable.Succeeded)
 {
-    Out-Log 'Querying Instance Metadata service 169.254.169.254:80'
+    Out-Log 'IMDS 169.254.169.254:80 returned expected result:' -startLine
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072
     # Below three lines have it use a null proxy, bypassing any configured proxy
     # See also https://github.com/microsoft/azureimds/blob/master/IMDSSample.ps1
@@ -1220,10 +1343,13 @@ if ($imdsReachable.Succeeded)
     $apiVersions = Invoke-RestMethod -Headers @{'Metadata' = 'true'} -Method GET -Uri 'http://169.254.169.254/metadata/versions' -WebSession $webSession | Select-Object -ExpandProperty apiVersions
     $apiVersion = $apiVersions | Select-Object -Last 1
     $metadata = Invoke-RestMethod -Headers @{'Metadata' = 'true'} -Method GET -Uri "http://169.254.169.254/metadata/instance?api-version=$apiVersion" -WebSession $webSession
-    if ($metadata)
+    $compute = $metadata | Select-Object -ExpandProperty compute -ErrorAction SilentlyContinue
+
+    if ($compute)
     {
+        Out-Log $true -color Green -endLine
+
         $global:dbgMetadata = $metadata
-        Out-Log 'Querying Instance Metadata service 169.254.169.254:80 succeeded' -color Green
 
         $azEnvironment = $metadata.compute.azEnvironment
         $vmName = $metadata.compute.name
@@ -1298,13 +1424,13 @@ if ($imdsReachable.Succeeded)
     }
     else
     {
-        Out-Log 'Querying Instance Metadata service 169.254.169.254:80 failed' -color Red
+        Out-Log $false -color Red -endLine
     }
 }
 
 if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succeeded)
 {
-    Out-Log 'Getting status from aggregatestatus.json'
+    Out-Log 'Getting status from aggregatestatus.json' -verboseOnly
     $aggregateStatusJsonFilePath = $windowsAzureFolder | Where-Object {$_.Name -eq 'aggregatestatus.json'} | Select-Object -ExpandProperty FullName
     $aggregateStatus = Get-Content -Path $aggregateStatusJsonFilePath
     $aggregateStatus = $aggregateStatus -replace '\0' | ConvertFrom-Json
@@ -1315,11 +1441,11 @@ if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succ
     $aggregateStatusGuestAgentStatusLastStatusUploadMethod = $aggregateStatus.aggregateStatus.guestAgentStatus.lastStatusUploadMethod
     $aggregateStatusGuestAgentStatusLastStatusUploadTime = $aggregateStatus.aggregateStatus.guestAgentStatus.lastStatusUploadTime
 
-    Out-Log "Version: $aggregateStatusGuestAgentStatusVersion"
-    Out-Log "Status: $aggregateStatusGuestAgentStatusStatus"
-    Out-Log "Message: $aggregateStatusGuestAgentStatusMessage"
-    Out-Log "LastStatusUploadMethod: $aggregateStatusGuestAgentStatusLastStatusUploadMethod"
-    Out-Log "LastStatusUploadTime: $aggregateStatusGuestAgentStatusLastStatusUploadTime"
+    Out-Log "Version: $aggregateStatusGuestAgentStatusVersion" -verboseOnly
+    Out-Log "Status: $aggregateStatusGuestAgentStatusStatus" -verboseOnly
+    Out-Log "Message: $aggregateStatusGuestAgentStatusMessage" -verboseOnly
+    Out-Log "LastStatusUploadMethod: $aggregateStatusGuestAgentStatusLastStatusUploadMethod" -verboseOnly
+    Out-Log "LastStatusUploadTime: $aggregateStatusGuestAgentStatusLastStatusUploadTime" -verboseOnly
 
     $headers = @{'x-ms-version' = '2012-11-30'}
     $proxy = New-Object System.Net.WebProxy
@@ -1347,7 +1473,7 @@ if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succ
     $inVMGoalStateMetaData = $extensions.InVMGoalStateMetaData
 }
 
-Out-Log 'Third-party modules in agent processes?'
+Out-Log '3rd-party modules in VM agent processes:' -startLine
 $waAppAgentThirdPartyModules = Get-Process -Name waappagent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName,company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
 $windowsAzureGuestAgentThirdPartyModules = Get-Process -Name windowsazureguestagent | Select-Object -expand modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName,company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
 if ($waAppAgentThirdPartyModules -or $windowsAzureGuestAgentThirdPartyModules)
@@ -1355,9 +1481,13 @@ if ($waAppAgentThirdPartyModules -or $windowsAzureGuestAgentThirdPartyModules)
     $details = "WaAppAgent.exe: $($($waAppAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
     $details += "<br>WindowsAzureGuestAgent.exe: $($($windowsAzureGuestAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
     New-Check -name 'Third-party modules in agent processes' -result 'Information' -details $details
-    Out-Log 'Third-party modules in agent processes' -color Cyan
-
+    Out-Log $true -color Cyan -endLine
     New-Finding -type Information -name 'Third-party modules in VM agent processes' -description $details -mitigation ''
+}
+else
+{
+    New-Check -name 'Third-party modules in agent processes' -result 'Information' -details 'No 3rd-party modules in WaAppAgent.exe and WindowsAzureGuestAgent.exe'
+    Out-Log $false -color Green -endLine
 }
 
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
