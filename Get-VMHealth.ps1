@@ -1976,21 +1976,22 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 $todo = @'
-#1 Add test-getvmhealth.ps1 operations to RUN.PS1
-#0 Clean up 'VM agent installed' check
-#1 Need to also check for ProxySettingsPerUser https://admx.help/?Category=Windows_10_2016&Policy=Microsoft.Policies.InternetExplorer::UserProxy
+### Have testgetvmhealth testCSE default to running a script from https://github.com/azure/azure-support-scripts instead of an inline command
+This is a better test for network connectivity/proxy since it must go out to the internet, whereas an inline command does not.
+### Clean up 'VM agent installed' check
+### Need to also check for ProxySettingsPerUser https://admx.help/?Category=Windows_10_2016&Policy=Microsoft.Policies.InternetExplorer::UserProxy
 Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
-#2 permissions on C:\WindowsAzure and c:\Packages folder during startup. It first removes all user/groups and then sets the following permission (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders. If GA fails to remove/set the permission, it can't proceed further.
+### permissions on C:\WindowsAzure and c:\Packages folder during startup. It first removes all user/groups and then sets the following permission (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders. If GA fails to remove/set the permission, it can't proceed further.
 WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set access rules for agent directories. Exception: System.Security.Principal.IdentityNotMappedException: {Namepii} or all identity references could not be translated. Symptom reported: Guest agent not ready (Unresponsive status).
-#3 Check for presence and validity of CRP cert
-#4 Check for WCF Profiling being enabled
-#5 Check for out-dated netvsc.sys
+### Check for presence and validity of CRP cert
+### Check for WCF Profiling being enabled
+### Check for out-dated netvsc.sys
 Get-CimInstance -Query "'SELECT Name,Status,ExitCode,Started,StartMode,ErrorControl,PathName FROM Win32_SystemDriver WHERE Name='netvsc'"
 get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
 \SystemRoot\System32\drivers\netvsc63.sys - ws12r2
 \SystemRoot\System32\drivers\netvsc.sys - win11,ws22
 get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
-#6 Add mitigations for existing checks (XL)
+### Add mitigations for existing checks (XL)
 '@
 $todo = $todo.Split("`n").Trim()
 
