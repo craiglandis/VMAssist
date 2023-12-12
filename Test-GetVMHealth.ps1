@@ -23,7 +23,11 @@ param(
     [switch]$enableProxy,
     [switch]$disableProxy,
     [switch]$loadModule, # https://chat.openai.com/share/cc75e85d-da52-455e-a945-a826af4d3866
-    [switch]$unloadModule
+    [switch]$unloadModule,
+    [switch]$testCSE,
+    [switch]$removeCSE,
+    [string]$resourceGroupName,
+    [string]$vmName
 )
 
 function Out-Log
@@ -297,6 +301,84 @@ function Invoke-ExpressionWithLogging
     }
 }
 
+$scriptStartTime = Get-Date
+$scriptStartTimeString = Get-Date -Date $scriptStartTime -Format yyyyMMddHHmmss
+$scriptFullName = $MyInvocation.MyCommand.Path
+$scriptFolderPath = Split-Path -Path $scriptFullName
+$scriptName = Split-Path -Path $scriptFullName -Leaf
+$scriptBaseName = $scriptName.Split('.')[0]
+
+$PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+$PSDefaultParameterValues['*:WarningAction'] = 'SilentlyContinue'
+$ProgressPreference = 'SilentlyContinue'
+$WarningPreference = 'SilentlyContinue'
+
+$verbose = [bool]$PSBoundParameters['verbose']
+$debug = [bool]$PSBoundParameters['debug']
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')
+if ($isAdmin -eq $false)
+{
+    Write-Host 'Script must be run from an elevated PowerShell session' -ForegroundColor Cyan
+    exit
+}
+
+if ($outputPath)
+{
+    $logFolderPath = $outputPath
+}
+else
+{
+    $logFolderParentPath = $env:TEMP
+    $logFolderPath = "$logFolderParentPath\$scriptBaseName"
+}
+if ((Test-Path -Path $logFolderPath -PathType Container) -eq $false)
+{
+    Invoke-ExpressionWithLogging "New-Item -Path $logFolderPath -ItemType Directory -Force | Out-Null" -verboseOnly
+}
+$computerName = $env:COMPUTERNAME.ToUpper()
+$invokeWmiMethodResult = Invoke-WmiMethod -Path "Win32_Directory.Name='$logFolderPath'" -Name Compress
+$logFilePath = "$logFolderPath\$($scriptBaseName)_$($computerName)_$($scriptStartTimeString).log"
+if ((Test-Path -Path $logFilePath -PathType Leaf) -eq $false)
+{
+    New-Item -Path $logFilePath -ItemType File -Force | Out-Null
+}
+Out-Log "Log file: $logFilePath"
+
+if ($testCSE)
+{
+    Import-Module Az.Compute
+    $vm = Get-AzVM -resourceGroupName $resourceGroupName -Name $vmName -ErrorAction Stop
+    $location = $vm.Location
+    $publisher = 'Microsoft.Compute'
+    $extensionType = 'CustomScriptExtension'
+    $name = "$publisher.$extensionType"
+    [version]$version = (Get-AzVMExtensionImage -Location $location -PublisherName $publisher -Type $extensionType | Sort-Object {[Version]$_.Version} -Desc | Select-Object Version -First 1).Version
+    $typeHandlerVersion = "$($version.Major).$($version.Minor)" #'1.10'
+    $timestamp = Get-Date -Format yyyy-MM-ddTHH:mm:ss
+    $settingString = "'{`"commandToExecute`": `"powershell.exe -ExecutionPolicy Unrestricted -command write-host HelloWorld $timestamp`"}'"
+    $result = Invoke-ExpressionWithLogging "Set-AzVMExtension -Location $location -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Publisher $publisher -ExtensionType $extensionType -TypeHandlerVersion $typeHandlerVersion -SettingString $settingString"
+    Out-Log ($result | Out-String) -raw
+
+    $extensionStatus = Get-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Status
+    $statuses = $extensionStatus.Statuses
+    $subStatuses = $extensionStatus.SubStatuses
+    $subStatusesStdOut = ($subStatuses | where Code -match 'StdOut').Message
+    $subStatusesStdErr = ($subStatuses | where Code -match 'StdErr').Message
+    Out-Log "STDOUT: $($subStatusesStdOut.Trim())" -raw
+    Out-Log "STDERR: $($subStatusesStdErr.Trim())" -raw
+}
+
+if ($removeCSE)
+{
+    Import-Module Az.Compute
+    $publisher = 'Microsoft.Compute'
+    $extensionType = 'CustomScriptExtension'
+    $name = "$publisher.$extensionType"
+    $result = Invoke-ExpressionWithLogging "Remove-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Force"
+    Out-Log ($result | Out-String) -raw
+}
+
 if ($setprofile)
 {
     Set-ExecutionPolicy Bypass -Force
@@ -310,32 +392,40 @@ if ($setprofile)
 
 if ($blockwireserver)
 {
-    New-NetFirewallRule -DisplayName 'Block outbound traffic to 168.63.129.16' -Direction Outbound -LocalPort Any -Protocol TCP -Action Block -RemoteAddress 168.63.129.16
+    $result = Invoke-ExpressionWithLogging "New-NetFirewallRule -DisplayName 'Block outbound traffic to 168.63.129.16' -Direction Outbound -LocalPort Any -Protocol TCP -Action Block -RemoteAddress 168.63.129.16"
+    Out-Log ($result | Out-String) -raw
 }
 
 if ($unblockwireserver)
 {
-    Remove-NetFirewallRule -DisplayName 'Block outbound traffic to 168.63.129.16'
+    $result = Invoke-ExpressionWithLogging "Remove-NetFirewallRule -DisplayName 'Block outbound traffic to 168.63.129.16'"
+    Out-Log ($result | Out-String) -raw
 }
 
 if ($blockimds)
 {
-    New-NetFirewallRule -DisplayName 'Block outbound traffic to 169.254.169.254' -Direction Outbound -LocalPort Any -Protocol TCP -Action Block -RemoteAddress 169.254.169.254
+    $result = Invoke-ExpressionWithLogging "New-NetFirewallRule -DisplayName 'Block outbound traffic to 169.254.169.254' -Direction Outbound -LocalPort Any -Protocol TCP -Action Block -RemoteAddress 169.254.169.254"
+    Out-Log ($result | Out-String) -raw
 }
 
 if ($unblockimds)
 {
-    Remove-NetFirewallRule -DisplayName 'Block outbound traffic to 169.254.169.254'
+    $result = Invoke-ExpressionWithLogging "Remove-NetFirewallRule -DisplayName 'Block outbound traffic to 169.254.169.254'"
+    Out-Log ($result | Out-String) -raw
 }
 
 if ($enableProxy)
 {
-    Invoke-ExpressionWithLogging "netsh winhttp set proxy proxy-server='http=192.168.0.1:8080;https=192.168.0.1:8080'"
-    Invoke-ExpressionWithLogging "netsh winhttp show proxy"
+    $result = Invoke-ExpressionWithLogging "netsh winhttp set proxy proxy-server='http=192.168.0.1:8080;https=192.168.0.1:8080'"
+    Out-Log ($result | Out-String) -raw
+    $result = Invoke-ExpressionWithLogging "netsh winhttp show proxy"
+    Out-Log ($result | Out-String) -raw
 }
 
 if ($disableProxy)
 {
-    Invoke-ExpressionWithLogging "netsh winhttp reset proxy"
-    Invoke-ExpressionWithLogging "netsh winhttp show proxy"
+    $result = Invoke-ExpressionWithLogging "netsh winhttp reset proxy"
+    Out-Log ($result | Out-String) -raw
+    $result = Invoke-ExpressionWithLogging "netsh winhttp show proxy"
+    Out-Log ($result | Out-String) -raw
 }

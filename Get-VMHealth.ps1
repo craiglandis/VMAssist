@@ -1474,8 +1474,8 @@ if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succ
 }
 
 Out-Log '3rd-party modules in VM agent processes:' -startLine
-$waAppAgentThirdPartyModules = Get-Process -Name waappagent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName,company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
-$windowsAzureGuestAgentThirdPartyModules = Get-Process -Name windowsazureguestagent | Select-Object -expand modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName,company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
+$waAppAgentThirdPartyModules = Get-Process -Name waappagent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
+$windowsAzureGuestAgentThirdPartyModules = Get-Process -Name windowsazureguestagent | Select-Object -expand modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
 if ($waAppAgentThirdPartyModules -or $windowsAzureGuestAgentThirdPartyModules)
 {
     $details = "WaAppAgent.exe: $($($waAppAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
@@ -1974,3 +1974,29 @@ else
     $color = 'Green'
 }
 Out-Log "$findingsCount issue(s) found." -color $color
+
+$todo = @'
+#1 Add test-getvmhealth.ps1 operations to RUN.PS1
+#0 Clean up 'VM agent installed' check
+#1 Need to also check for ProxySettingsPerUser https://admx.help/?Category=Windows_10_2016&Policy=Microsoft.Policies.InternetExplorer::UserProxy
+Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
+#2 permissions on C:\WindowsAzure and c:\Packages folder during startup. It first removes all user/groups and then sets the following permission (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders. If GA fails to remove/set the permission, it can't proceed further.
+WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set access rules for agent directories. Exception: System.Security.Principal.IdentityNotMappedException: {Namepii} or all identity references could not be translated. Symptom reported: Guest agent not ready (Unresponsive status).
+#3 Check for presence and validity of CRP cert
+#4 Check for WCF Profiling being enabled
+#5 Check for out-dated netvsc.sys
+Get-CimInstance -Query "'SELECT Name,Status,ExitCode,Started,StartMode,ErrorControl,PathName FROM Win32_SystemDriver WHERE Name='netvsc'"
+get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
+\SystemRoot\System32\drivers\netvsc63.sys - ws12r2
+\SystemRoot\System32\drivers\netvsc.sys - win11,ws22
+get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
+#6 Add mitigations for existing checks (XL)
+'@
+$todo = $todo.Split("`n").Trim()
+
+if ($env:USERNAME -in ('clandis', 'craig') -or [bool](Get-LocalUser -Name craig | Where-Object {$_.SID.ToString().Endswith('-500')}))
+{
+    $todo | ForEach-Object {
+        Out-Log $_ -raw -color Cyan
+    }
+}
