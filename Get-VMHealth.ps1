@@ -760,14 +760,31 @@ if ($currentVersionKey)
 }
 $ErrorActionPreference = 'Continue'
 
-if ($releaseId -and $displayVersion)
+$installationType = Get-ItemProperty 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion' -Name InstallationType | Select-Object -ExpandProperty InstallationType
+
+if ($displayVersion)
 {
-    $osVersion = "$productName $displayVersion $releaseId $version"
+    if ($installationType -eq 'Server Core')
+    {
+        $osVersion = "$productName $installationType $displayVersion $releaseId $version"
+    }
+    else
+    {
+        $osVersion = "$productName $displayVersion $releaseId $version"
+    }
 }
 else
 {
-    $osVersion = "$productName $version"
+    if ($installationType -eq 'Server Core')
+    {
+        $osVersion = "$productName $installationType $version"
+    }
+    else
+    {
+        $osVersion = "$productName $version"
+    }
 }
+
 Out-Log "$osVersion installed $installDateString" -color Cyan
 
 $windowsAzureFolderPath = "$env:SystemDrive\WindowsAzure"
@@ -1958,7 +1975,10 @@ $htm = $htm.Replace('&lt;', '<').Replace('&gt;', '>').Replace('&quot;', '"')
 
 $htm | Out-File -FilePath $htmFilePath
 Out-Log "HTML report: $htmFilePath"
-Invoke-Item -Path $htmFilePath
+if ($installationType -ne 'Server Core')
+{
+    Invoke-Item -Path $htmFilePath
+}
 
 Out-Log "Log file: $logFilePath"
 $scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f (New-TimeSpan -Start $scriptStartTime -End (Get-Date))
