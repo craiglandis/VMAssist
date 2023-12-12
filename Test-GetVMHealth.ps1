@@ -24,7 +24,8 @@ param(
     [switch]$disableProxy,
     [switch]$loadModule, # https://chat.openai.com/share/cc75e85d-da52-455e-a945-a826af4d3866
     [switch]$unloadModule,
-    [switch]$testCSE,
+    [switch]$testCSEWithCommand,
+    [switch]$testCSEWithScript,
     [switch]$removeCSE,
     [string]$resourceGroupName,
     [string]$vmName
@@ -345,9 +346,8 @@ if ((Test-Path -Path $logFilePath -PathType Leaf) -eq $false)
 }
 Out-Log "Log file: $logFilePath"
 
-if ($testCSE)
+if ($testCSEWithCommand -or $testCSEWithScript)
 {
-    Import-Module Az.Compute
     $vm = Get-AzVM -resourceGroupName $resourceGroupName -Name $vmName -ErrorAction Stop
     $location = $vm.Location
     $publisher = 'Microsoft.Compute'
@@ -356,8 +356,25 @@ if ($testCSE)
     [version]$version = (Get-AzVMExtensionImage -Location $location -PublisherName $publisher -Type $extensionType | Sort-Object {[Version]$_.Version} -Desc | Select-Object Version -First 1).Version
     $typeHandlerVersion = "$($version.Major).$($version.Minor)" #'1.10'
     $timestamp = Get-Date -Format yyyy-MM-ddTHH:mm:ss
-    $settingString = "'{`"commandToExecute`": `"powershell.exe -ExecutionPolicy Unrestricted -command write-host HelloWorld $timestamp`"}'"
-    $result = Invoke-ExpressionWithLogging "Set-AzVMExtension -Location $location -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Publisher $publisher -ExtensionType $extensionType -TypeHandlerVersion $typeHandlerVersion -SettingString $settingString"
+
+    if ($testCSEWithCommand)
+    {
+        $settingString = "'{`"commandToExecute`": `"powershell.exe -ExecutionPolicy Unrestricted -command write-host HelloWorld $timestamp`"}'"
+        $result = Invoke-ExpressionWithLogging "Set-AzVMExtension -Location $location -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Publisher $publisher -ExtensionType $extensionType -TypeHandlerVersion $typeHandlerVersion -SettingString $settingString"
+    }
+    elseif ($testCSEWithScript)
+    {
+        $scriptUrl = 'https://raw.githubusercontent.com/Azure/azure-support-scripts/master/VMAgent/Test-CustomScriptExtension.ps1'
+        $scriptFileName = $scriptUrl.Split('/')[-1]
+        $settings = @{
+            'fileUris'         = @($scriptUrl)
+            'commandToExecute' = "powerShell -ExecutionPolicy Bypass -Nologo -NoProfile -File $scriptFileName"
+            'ticks'            = (Get-Date).Ticks
+        }
+        $command = "Set-AzVMExtension -Location $location -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Publisher $publisher -ExtensionType $extensionType -TypeHandlerVersion $typeHandlerVersion -Settings `$settings"
+        Out-Log $command
+        $result = Set-AzVMExtension -Location $location -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Publisher $publisher -ExtensionType $extensionType -TypeHandlerVersion $typeHandlerVersion -Settings $settings
+    }
     Out-Log ($result | Out-String) -raw
 
     $extensionStatus = Get-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Status
