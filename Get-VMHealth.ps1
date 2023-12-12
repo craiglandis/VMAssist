@@ -1996,8 +1996,6 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 $todo = @'
-### Have testgetvmhealth testCSE default to running a script from https://github.com/azure/azure-support-scripts instead of an inline command
-This is a better test for network connectivity/proxy since it must go out to the internet, whereas an inline command does not.
 ### Clean up 'VM agent installed' check
 ### Need to also check for ProxySettingsPerUser https://admx.help/?Category=Windows_10_2016&Policy=Microsoft.Policies.InternetExplorer::UserProxy
 Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
