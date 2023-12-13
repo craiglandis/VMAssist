@@ -16,6 +16,12 @@ t -unblockimds
 #>
 param(
     [switch]$setprofile,
+    [switch]$disableRdagent,
+    [switch]$disableWindowsAzureGuestAgent,
+    [switch]$disableGAServices,
+    [switch]$enableRdagent,
+    [switch]$enableWindowsAzureGuestAgent,
+    [switch]$enableGAServices,
     [switch]$blockwireserver,
     [switch]$blockimds,
     [switch]$unblockwireserver,
@@ -405,6 +411,80 @@ if ($setprofile)
     Add-Content -Path $profile -Value "Set-Alias w '\\tsclient\c\onedrive\my\Set-Wallpaper.ps1'" -Force
     Add-Content -Path $profile -Value "Set-Location -Path C:\" -Force
     Add-Content -Path $profile -Value "Clear-Host" -Force
+}
+
+if ($stopRdagent)
+{
+    Invoke-ExpressionWithLogging 'Stop-Service -Name rdagent'
+    Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
+}
+
+if ($stopWindowsAzureGuestAgent)
+{
+    Invoke-ExpressionWithLogging 'Stop-Service -Name WindowsAzureGuestAgent'
+    Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
+}
+
+if ($startRdagent)
+{
+    Invoke-ExpressionWithLogging 'Start-Service -Name rdagent'
+    Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
+}
+
+if ($startWindowsAzureGuestAgent)
+{
+    Invoke-ExpressionWithLogging 'Start-Service -Name WindowsAzureGuestAgent'
+    Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
+}
+
+if ($stopGAServices)
+{
+    Invoke-ExpressionWithLogging 'Stop-Service -Name rdagent,WindowsAzureGuestAgent'
+    Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
+}
+
+if ($startGAServices)
+{
+    Invoke-ExpressionWithLogging 'Start-Service -Name rdagent,WindowsAzureGuestAgent'
+    Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
+}
+
+if ($disableRdagent)
+{
+    Invoke-ExpressionWithLogging 'Set-Service -Name rdagent -StartupType Disabled -PassThru'
+    Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
+}
+
+if ($disableWindowsAzureGuestAgent)
+{
+    Invoke-ExpressionWithLogging 'Set-Service -Name WindowsAzureGuestAgent -StartupType Disabled -PassThru',
+    Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
+}
+
+if ($enableRdagent)
+{
+    Invoke-ExpressionWithLogging 'Set-Service -Name rdagent -StartupType Automatic -PassThru',
+    Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
+}
+
+if ($enableWindowsAzureGuestAgent)
+{
+    Invoke-ExpressionWithLogging 'Set-Service -Name WindowsAzureGuestAgent -StartupType Automatic -PassThru',
+    Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
+}
+
+if ($disableGAServices)
+{
+    Invoke-ExpressionWithLogging 'Set-Service -Name rdagent -StartupType Disabled -PassThru',
+    Invoke-ExpressionWithLogging 'Set-Service -Name WindowsAzureGuestAgent -StartupType Disabled -PassThru',
+    Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
+}
+
+if ($enableGAServices)
+{
+    Invoke-ExpressionWithLogging 'Set-Service -Name rdagent -StartupType Automatic -PassThru',
+    Invoke-ExpressionWithLogging 'Set-Service -Name WindowsAzureGuestAgent -StartupType Automatic -PassThru',
+    Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
 }
 
 if ($blockwireserver)
