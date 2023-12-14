@@ -2089,6 +2089,7 @@ WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set ac
 ### Check for presence and validity of CRP cert
 ### Check MachineKeys ACL
 ### Check for WCF Profiling being enabled
+### Check that the service EXE files exist in the path specified in the registry, since we've seen those get confused
 ### Check for app crashes referencing guest agent processes (Application log event ID 1000), surface most recent one as well as crash count last 24 hours
 ### Check for system crashes (bugchecks), surface most recent one as well as crash count last 24 hours
 ### Update github repo readme with additional ways to run Get-VMHealth.ps1
