@@ -2073,6 +2073,8 @@ Computer Configuration\Administrative Templates\Windows Components\Internet Expl
 WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set access rules for agent directories. Exception: System.Security.Principal.IdentityNotMappedException: {Namepii} or all identity references could not be translated. Symptom reported: Guest agent not ready (Unresponsive status).
 ### Check for presence and validity of CRP cert
 ### Check for WCF Profiling being enabled
+### Update github repo readme with additional ways to run Get-VMHealth.ps1
+### Update Loop for bug bash to include ways to test using both Test-GetVMhealth.ps1 but also the manual commands
 ### Check for out-dated netvsc.sys
 Get-CimInstance -Query "'SELECT Name,Status,ExitCode,Started,StartMode,ErrorControl,PathName FROM Win32_SystemDriver WHERE Name='netvsc'"
 get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
