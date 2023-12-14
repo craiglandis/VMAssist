@@ -905,6 +905,11 @@ if ($rdAgent)
     {
         New-Check -name 'RdAgent service running' -result 'Failed' -details ''
         $rdAgentStatusRunning = $false
+        Out-Log $rdAgentStatusRunning -color Red -endLine
+        $description = "RdAgent service is not running"
+        $description = "RdAgent service is not running (Status: $rdAgentStatus Win32ExitCode: $rdAgentWin32ExitCode ServiceSpecificExitCode: $rdAgentServiceSpecificExitCode)"
+        $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows-azure-guest-agent#step-3-check-whether-the-guest-agent-services-are-running">Check guest agent services</a>'
+        New-Finding -type Critical -name RdAgentServiceNotRunning -description $description -mitigation $mitigation
     }
 }
 else
@@ -968,6 +973,10 @@ if ($windowsAzureGuestAgent)
     {
         New-Check -name 'WindowsAzureGuestAgent service running' -result 'Failed' -details ''
         $windowsAzureGuestAgentStatusRunning = $false
+        Out-Log $windowsAzureGuestAgentStatusRunning -color Red -endLine
+        $description = "WindowsAzureGuestAgent service is not running (Status: $windowsAzureGuestAgentStatus Win32ExitCode: $windowsAzureGuestAgentWin32ExitCode ServiceSpecificExitCode: $windowsAzureGuestAgentServiceSpecificExitCode)"
+        $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows-azure-guest-agent#step-3-check-whether-the-guest-agent-services-are-running">Check guest agent services</a>'
+        New-Finding -type Critical -name WindowsAzureGuestAgentServiceNotRunning -description $description -mitigation $mitigation
     }
 }
 else
@@ -1029,6 +1038,7 @@ else
     New-Finding -type Critical -Name 'VM agent not installed' -description $description
 }
 
+<#
 Out-Log 'VM agent services running:' -startLine
 $messageSuffix = "(rdAgentStatusRunning:$rdAgentStatusRunning windowsAzureGuestAgentStatusRunning:$windowsAzureGuestAgentStatusRunning)"
 if ($rdAgentStatusRunning -and $windowsAzureGuestAgentStatusRunning)
@@ -1047,8 +1057,9 @@ else
     $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows-azure-guest-agent#step-3-check-whether-the-guest-agent-services-are-running">Check guest agent services</a>'
     New-Finding -type Critical -name VMAgentServicesNotRunning -description $description -mitigation $mitigation
 }
+#>
 
-Out-Log 'VM agent installed by provisioning agent or MSI:' -startLine
+Out-Log 'VM agent installed by provisioning agent or Windows Installer package (MSI):' -startLine
 $uninstallKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'
 $uninstallKey = Invoke-ExpressionWithLogging "Get-Item -Path '$uninstallKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 $agentUninstallKey = $uninstallkey.GetSubKeyNames() | ForEach-Object {Get-ItemProperty -Path $uninstallKeyPath\$_ | Where-Object {$_.Publisher -eq 'Microsoft Corporation' -and $_.DisplayName -match 'Windows Azure VM Agent'}}
@@ -1302,50 +1313,50 @@ else
 # Test-NetConnection -ComputerName 168.63.129.16 -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue
 # Test-NetConnection -ComputerName 168.63.129.16 -Port 32526 -InformationLevel Quiet -WarningAction SilentlyContinue
 # Test-NetConnection -ComputerName 169.254.169.254 -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue
-Out-Log 'Wireserver 168.63.129.16:80 reachable:' -startLine
+Out-Log 'Wireserver endpoint 168.63.129.16:80 reachable:' -startLine
 $wireserverPort80Reachable = Test-Port -ipAddress '168.63.129.16' -port 80 -timeout 1000
-$description = "168.63.129.16:80 reachable: $($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
+$description = "Wireserver endpoint 168.63.129.16:80 reachable: $($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
 $mitigation = '<a href="https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16">What is IP address 168.63.129.16?</a>'
 if ($wireserverPort80Reachable.Succeeded)
 {
-    New-Check -name '168.63.129.16:80 reachable' -result 'Passed' -details ''
+    New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'Passed' -details ''
     Out-Log "$($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)" -color Green -endline
 }
 else
 {
-    New-Check -name '168.63.129.16:80 reachable' -result 'Failed' -details ''
+    New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'Failed' -details ''
     Out-Log $wireserverPort80Reachable.Succeeded -color Red -endLine
-    New-Finding -type Critical -name '168.63.129.16:80 not reachable' -description $description -mitigation $mitigation
+    New-Finding -type Critical -name 'Wireserver endpoint 168.63.129.16:80 not reachable' -description $description -mitigation $mitigation
 }
 
-Out-Log 'Wireserver 168.63.129.16:32526 reachable:' -startLine
+Out-Log 'Wireserver endpoint 168.63.129.16:32526 reachable:' -startLine
 $wireserverPort32526Reachable = Test-Port -ipAddress '168.63.129.16' -port 32526 -timeout 1000
-$description = "168.63.129.16:32526 reachable: $($wireserverPort32526Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
+$description = "Wireserver endpoint 168.63.129.16:32526 reachable: $($wireserverPort32526Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
 if ($wireserverPort32526Reachable.Succeeded)
 {
-    New-Check -name '168.63.129.16:32526 reachable' -result 'Passed' -details ''
+    New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'Passed' -details ''
     Out-Log $wireserverPort32526Reachable.Succeeded -color Green -endLine
 }
 else
 {
-    New-Check -name '168.63.129.16:32526 reachable' -result 'Failed' -details ''
+    New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'Failed' -details ''
     Out-Log "$($wireserverPort32526Reachable.Succeeded) $($wireserverPort80Reachable.Error)" -color Red -endLine
-    New-Finding -type Critical -name '168.63.129.16:32526 not reachable' -description $description -mitigation $mitigation
+    New-Finding -type Critical -name 'Wireserver endpoint 168.63.129.16:32526 not reachable' -description $description -mitigation $mitigation
 }
 
-Out-Log 'IMDS 169.254.169.254:80 reachable:' -startLine
+Out-Log 'IMDS endpoint 169.254.169.254:80 reachable:' -startLine
 $imdsReachable = Test-Port -ipAddress '169.254.169.254' -port 80 -timeout 1000
-$description = "IMDS 169.254.169.254:80 reachable: $($imdsReachable.Succeeded) $($imdsReachable.Error)"
+$description = "IMDS endpoint 169.254.169.254:80 reachable: $($imdsReachable.Succeeded) $($imdsReachable.Error)"
 if ($imdsReachable.Succeeded)
 {
-    New-Check -name 'IMDS 169.254.169.254:80 reachable' -result 'Passed' -details ''
+    New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'Passed' -details ''
     Out-Log $imdsReachable.Succeeded -color Green -endLine
 }
 else
 {
-    New-Check -name 'IMDS 169.254.169.254:80 reachable' -result 'Failed' -details ''
+    New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'Failed' -details ''
     Out-Log "$($imdsReachable.Succeeded) $($imdsReachable.Error)" -color Red -endLine
-    New-Finding -type Information -name 'IMDS 169.254.169.254:80 not reachable' -description $description
+    New-Finding -type Information -name 'IMDS endpoint 169.254.169.254:80 not reachable' -description $description
 }
 
 if ($imdsReachable.Succeeded)
@@ -1490,21 +1501,73 @@ if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succ
     $inVMGoalStateMetaData = $extensions.InVMGoalStateMetaData
 }
 
-Out-Log '3rd-party modules in VM agent processes:' -startLine
-$waAppAgentThirdPartyModules = Get-Process -Name waappagent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
-$windowsAzureGuestAgentThirdPartyModules = Get-Process -Name windowsazureguestagent | Select-Object -expand modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
-if ($waAppAgentThirdPartyModules -or $windowsAzureGuestAgentThirdPartyModules)
+Out-Log '3rd-party modules in WaAppAgent.exe:' -startLine
+if ($rdAgentStatusRunning)
 {
-    $details = "WaAppAgent.exe: $($($waAppAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
-    $details += "<br>WindowsAzureGuestAgent.exe: $($($windowsAzureGuestAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
-    New-Check -name 'Third-party modules in agent processes' -result 'Information' -details $details
-    Out-Log $true -color Cyan -endLine
-    New-Finding -type Information -name 'Third-party modules in VM agent processes' -description $details -mitigation ''
+    $waAppAgent = Get-Process -Name WaAppAgent -ErrorAction SilentlyContinue
+    if ($waAppAgent)
+    {
+        $waAppAgentThirdPartyModules = $waAppAgent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
+        if ($waAppAgentThirdPartyModules)
+        {
+            $details = "$($($waAppAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
+            New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Information' -details $details
+            Out-Log $true -color Cyan -endLine
+            New-Finding -type Information -name '3rd-party modules in WaAppAgent.exe' -description $details -mitigation ''
+        }
+        else
+        {
+            New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Information' -details 'No 3rd-party modules in WaAppAgent.exe'
+            Out-Log $false -color Green -endLine
+        }
+    }
+    else
+    {
+        $details = 'WaAppAgent.exe process not running'
+        New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Information' -details $details
+        Out-Log $details -color Cyan -endLine
+    }
 }
 else
 {
-    New-Check -name 'Third-party modules in agent processes' -result 'Information' -details 'No 3rd-party modules in WaAppAgent.exe and WindowsAzureGuestAgent.exe'
-    Out-Log $false -color Green -endLine
+    $details = 'RdAgent service not running'
+    New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Skipped' -details $details
+    Out-Log $details -color DarkGray -endLine
+}
+
+
+Out-Log '3rd-party modules in WindowsAzureGuestAgent.exe:' -startLine
+if ($windowsAzureGuestAgentStatusRunning)
+{
+    $windowsAzureGuestAgent = Get-Process -Name WindowsAzureGuestAgent -ErrorAction SilentlyContinue
+    if ($windowsAzureGuestAgent)
+    {
+        $windowsAzureGuestAgentThirdPartyModules = $windowsAzureGuestAgent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
+        if ($windowsAzureGuestAgentThirdPartyModules)
+        {
+            $details = "$($($windowsAzureGuestAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
+            New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Information' -details $details
+            Out-Log $true -color Cyan -endLine
+            New-Finding -type Information -name '3rd-party modules in WindowsAzureGuestAgent.exe' -description $details -mitigation ''
+        }
+        else
+        {
+            New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Information' -details 'No 3rd-party modules in WindowsAzureGuestAgent.exe'
+            Out-Log $false -color Green -endLine
+        }
+    }
+    else
+    {
+        $details = 'WindowsAzureGuestAgent.exe process not running'
+        New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Information' -details $details
+        Out-Log $details -color Cyan -endLine
+    }
+}
+else
+{
+    $details = 'WindowsAzureGuestAgent service not running'
+    New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Skipped' -details $details
+    Out-Log $details -color DarkGray -endLine
 }
 
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
@@ -1885,6 +1948,11 @@ $css = @'
             color: Black;
             text-align: left
         }
+        td.SKIPPED {
+            background: LightGrey;
+            color: Black;
+            text-align: left
+        }
     </style>
 </head>
 <body>
@@ -1913,9 +1981,10 @@ else
 }
 
 $checksTable = $checks | Select-Object Name, Result, Details | ConvertTo-Html -Fragment -As Table
+$checksTable = $checksTable -replace '<td>Information</td>', '<td class="INFORMATION">Information</td>'
 $checksTable = $checksTable -replace '<td>Passed</td>', '<td class="PASSED">Passed</td>'
 $checksTable = $checksTable -replace '<td>Failed</td>', '<td class="FAILED">Failed</td>'
-$checksTable = $checksTable -replace '<td>Information</td>', '<td class="INFORMATION">Information</td>'
+$checksTable = $checksTable -replace '<td>Skipped</td>', '<td class="SKIPPED">Skipped</td>'
 $global:dbgChecksTable = $checksTable
 [void]$stringBuilder.Append("<h2 id=`"checks`">Checks</h2>`r`n")
 $checksTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
@@ -1996,6 +2065,7 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 $todo = @'
+### Create warning finding for "service running but set to disabled instead of automatic" for Rdagent and WindowsAzureGuestAgent services
 ### Clean up 'VM agent installed' check
 ### Need to also check for ProxySettingsPerUser https://admx.help/?Category=Windows_10_2016&Policy=Microsoft.Policies.InternetExplorer::UserProxy
 Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
