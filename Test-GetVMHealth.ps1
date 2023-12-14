@@ -439,7 +439,7 @@ if ($disableRdagent)
 
 if ($enableRdagent)
 {
-    Invoke-ExpressionWithLogging 'Set-Service -Name rdagent -StartupType Automatic',
+    Invoke-ExpressionWithLogging 'Set-Service -Name rdagent -StartupType Automatic'
     Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
 }
 
@@ -457,13 +457,13 @@ if ($startWindowsAzureGuestAgent)
 
 if ($disableWindowsAzureGuestAgent)
 {
-    Invoke-ExpressionWithLogging 'Set-Service -Name WindowsAzureGuestAgent -StartupType Disabled',
+    Invoke-ExpressionWithLogging 'Set-Service -Name WindowsAzureGuestAgent -StartupType Disabled'
     Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
 }
 
 if ($enableWindowsAzureGuestAgent)
 {
-    Invoke-ExpressionWithLogging 'Set-Service -Name WindowsAzureGuestAgent -StartupType Automatic',
+    Invoke-ExpressionWithLogging 'Set-Service -Name WindowsAzureGuestAgent -StartupType Automatic'
     Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
 }
 
@@ -481,15 +481,15 @@ if ($startGAServices)
 
 if ($disableGAServices)
 {
-    Invoke-ExpressionWithLogging 'Set-Service -Name rdagent -StartupType Disabled',
-    Invoke-ExpressionWithLogging 'Set-Service -Name WindowsAzureGuestAgent -StartupType Disabled',
+    Invoke-ExpressionWithLogging 'Set-Service -Name rdagent -StartupType Disabled'
+    Invoke-ExpressionWithLogging 'Set-Service -Name WindowsAzureGuestAgent -StartupType Disabled'
     Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
 }
 
 if ($enableGAServices)
 {
-    Invoke-ExpressionWithLogging 'Set-Service -Name rdagent -StartupType Automatic',
-    Invoke-ExpressionWithLogging 'Set-Service -Name WindowsAzureGuestAgent -StartupType Automatic',
+    Invoke-ExpressionWithLogging 'Set-Service -Name rdagent -StartupType Automatic'
+    Invoke-ExpressionWithLogging 'Set-Service -Name WindowsAzureGuestAgent -StartupType Automatic'
     Invoke-ExpressionWithLogging "Get-Service -Name ('rdagent','WindowsAzureGuestAgent') | Format-Table -Autosize Name,ServiceName,Status,StartType"
 }
 
