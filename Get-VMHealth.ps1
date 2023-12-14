@@ -2079,6 +2079,8 @@ $todo = @'
 ### 3rd-party processes
 ### 3rd-party kernel drivers
 ### Mellanox driver version
+### installed extensions and their statuses (if possible to get this cleanly from inside the guest without calling CRP)
+### Windows activation status, relevant reg settings, most recent software licensing service events
 ### Add relevant checks from Set-Wallpaper.ps1
 ### Need to also check for ProxySettingsPerUser https://admx.help/?Category=Windows_10_2016&Policy=Microsoft.Policies.InternetExplorer::UserProxy
 Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
