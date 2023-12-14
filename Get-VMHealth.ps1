@@ -1297,6 +1297,7 @@ $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.3031
 $machineKeysPath = "$env:ALLUSERSPROFILE\Microsoft\Crypto\RSA\MachineKeys"
 $machineKeysAcl = Get-Acl -Path $machineKeysPath
 $machineKeysAclString = $machineKeysAcl.Access | Format-Table -AutoSize -HideTableHeaders IdentityReference, AccessControlType, FileSystemRights | Out-String
+$machineKeysAclSddl = $machineKeysAcl | Select-Object -ExpandProperty Sddl
 
 Out-Log 'DHCP request returns option 245:' -startLine
 $dhcpReturnedOption245 = Confirm-AzureVM
@@ -1569,6 +1570,9 @@ else
     New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Skipped' -details $details
     Out-Log $details -color DarkGray -endLine
 }
+
+$machineKeysAcl = Get-Acl -Path C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys
+$machineKeysAcl | Select-Object -ExpandProperty Sddl
 
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
 $scriptStartTimeUTCString = Get-Date -Date $scriptStartTime -Format o
