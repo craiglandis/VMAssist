@@ -2068,6 +2068,17 @@ $todo = @'
 ### Create warning finding for "service running but set to disabled instead of automatic" for Rdagent and WindowsAzureGuestAgent services
 ### Clean up 'VM agent installed' check
 ### Use checkaws to verify external IP, which then confirms internet access as well
+### Create table with service details
+### Create table with installed app details
+### Available memory
+### Disk space
+### Page file settings
+### Commit
+### workgroup vs. domain join vs AAD joined
+### filter drivers
+### 3rd-party processes
+### 3rd-party kernel drivers
+### Mellanox driver version
 ### Add relevant checks from Set-Wallpaper.ps1
 ### Need to also check for ProxySettingsPerUser https://admx.help/?Category=Windows_10_2016&Policy=Microsoft.Policies.InternetExplorer::UserProxy
 Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
