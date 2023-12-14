@@ -2067,14 +2067,20 @@ Out-Log "$findingsCount issue(s) found." -color $color
 $todo = @'
 ### Create warning finding for "service running but set to disabled instead of automatic" for Rdagent and WindowsAzureGuestAgent services
 ### Clean up 'VM agent installed' check
+### Use checkaws to verify external IP, which then confirms internet access as well
+### Add relevant checks from Set-Wallpaper.ps1
 ### Need to also check for ProxySettingsPerUser https://admx.help/?Category=Windows_10_2016&Policy=Microsoft.Policies.InternetExplorer::UserProxy
 Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
 ### permissions on C:\WindowsAzure and c:\Packages folder during startup. It first removes all user/groups and then sets the following permission (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders. If GA fails to remove/set the permission, it can't proceed further.
 WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set access rules for agent directories. Exception: System.Security.Principal.IdentityNotMappedException: {Namepii} or all identity references could not be translated. Symptom reported: Guest agent not ready (Unresponsive status).
 ### Check for presence and validity of CRP cert
+### Check MachineKeys ACL
 ### Check for WCF Profiling being enabled
+### Check for app crashes referencing guest agent processes (Application log event ID 1000), surface most recent one as well as crash count last 24 hours
+### Check for system crashes (bugchecks), surface most recent one as well as crash count last 24 hours
 ### Update github repo readme with additional ways to run Get-VMHealth.ps1
 ### Update Loop for bug bash to include ways to test using both Test-GetVMhealth.ps1 but also the manual commands
+### Check if WinPA and/or VM agent MSI still use StdRegProv WMI, if so, add basic WMI functionality check
 ### Check for out-dated netvsc.sys
 Get-CimInstance -Query "'SELECT Name,Status,ExitCode,Started,StartMode,ErrorControl,PathName FROM Win32_SystemDriver WHERE Name='netvsc'"
 get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
