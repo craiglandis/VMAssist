@@ -1290,6 +1290,40 @@ else
     Out-Log $proxyConfigured -color Green -endLine
 }
 
+Out-Log 'TenantEncryptionCert installed:' -startLine
+$tenantEncryptionCert = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object {$_.FriendlyName -eq 'TenantEncryptionCert' -and $_.Issuer -eq 'DC=Windows Azure CRP Certificate Generator' -and $_.Subject -eq 'DC=Windows Azure CRP Certificate Generator'}
+if ($tenantEncryptionCert)
+{
+    $tenantEncryptionCertInstalled = $true
+    Out-Log $tenantEncryptionCertInstalled -color Green -endLine
+    $subject = $tenantEncryptionCert.Subject
+    $issuer =  $tenantEncryptionCert.Issuer
+    $effective = Get-Date -Date $tenantEncryptionCert.NotBefore.ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
+    $expires = Get-Date -Date $tenantEncryptionCert.NotAfter.ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
+    $now = Get-Date -Date (Get-Date).ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
+    New-Check -name 'TenantEncryptionCert installed' -result 'Passed' -details "Subject: $subject Issuer: $issuer"
+
+    Out-Log 'TenantEncryptionCert within validity period:' -startLine
+    if ($tenantEncryptionCert.NotBefore -le [System.DateTime]::Now -and $tenantEncryptionCert.NotAfter -gt [System.DateTime]::Now)
+    {
+        $tenantEncryptionCertWithinValidityPeriod = $true
+        Out-Log $tenantEncryptionCertWithinValidityPeriod -endLine
+        New-Check -name 'TenantEncryptionCert within validity period' -result 'Passed' -details "Now: $now Effective: $effective Expires: $expires"
+    }
+    else
+    {
+        $tenantEncryptionCertWithinValidityPeriod = $false
+        Out-Log $tenantEncryptionCertWithinValidityPeriod -endLine
+        New-Check -name 'TenantEncryptionCert within validity period' -result 'Failed' -details "Now: $now Effective: $effective Expires: $expires"
+        New-Finding -type Critical -name 'TenantEncryptionCert not within validity period' -description "Now: $now Effective: $effective Expires: $expires" -mitigation $mitigation
+    }
+}
+else
+{
+    New-Check -name 'TenantEncryptionCert installed' -result 'Failed' -details ''
+    New-Finding -type Critical -name 'TenantEncryptionCert not installed' -description '' -mitigation ''
+}
+
 $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
 #$machineConfigFilePath = "$env:SystemRoot\Microsoft.NET\Framework\v4.0.30319\Config\machine.config"
 [xml]$machineConfigx64 = Get-Content -Path $machineConfigx64FilePath
