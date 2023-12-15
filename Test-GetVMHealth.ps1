@@ -16,6 +16,8 @@ t -unblockimds
 #>
 param(
     [switch]$setprofile,
+    [switch]$setNonDefaultMachineKeysAcl,
+    [switch]$setDefaultMachineKeysAcl,
     [switch]$stopRdagent,
     [switch]$startRdagent,
     [switch]$disableRdagent,
@@ -396,6 +398,31 @@ if ($testCSEWithCommand -or $testCSEWithScript)
     $subStatusesStdErr = ($subStatuses | where Code -match 'StdErr').Message
     Out-Log "STDOUT: $($subStatusesStdOut.Trim())" -raw
     Out-Log "STDERR: $($subStatusesStdErr.Trim())" -raw
+}
+
+if ($setNonDefaultMachineKeysAcl -or $setDefaultMachineKeysAcl)
+{
+    $machineKeysPath = 'C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys'
+    $machineKeysAcl = Get-Acl -Path $machineKeysPath
+
+    if ($setNonDefaultMachineKeysAcl)
+    {
+        $identity = "Everyone"
+        $fileSystemRights = "FullControl"
+        $type = "Deny"
+        $fileSystemAccessRuleArgumentList = $identity, $fileSystemRights, $type
+        $fileSystemAccessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $fileSystemAccessRuleArgumentList
+        $machineKeysAcl.SetAccessRule($fileSystemAccessRule)
+    }
+
+    if ($setDefaultMachineKeysAcl)
+    {
+        $defaultMachineKeysSddl = 'O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)'
+        $machineKeysAcl.SetSecurityDescriptorSddlForm($defaultMachineKeysSddl)
+    }
+
+    Set-Acl -Path $machineKeysPath -AclObject $machineKeysAcl
+    Out-Log ((Get-Acl -Path $machineKeysPath).Access | Format-Table -AutoSize | Out-String) -raw
 }
 
 if ($removeCSE)

@@ -894,19 +894,20 @@ if ($rdAgent)
     $rdAgentServiceStatus = [Win32.Service.Ext]::QueryServiceStatus($rdAgent.ServiceHandle)
     $rdAgentWin32ExitCode = $rdAgentServiceStatus | Select-Object -ExpandProperty Win32ExitCode
     $rdAgentServiceSpecificExitCode = $rdAgentServiceStatus | Select-Object -ExpandProperty ServiceSpecificExitCode
-    Out-Log "RdAgent Win32ExitCode: $rdAgentWin32ExitCode ServiceSpecificExitCode: $rdAgentServiceSpecificExitCode"
+    # Out-Log "RdAgent Win32ExitCode: $rdAgentWin32ExitCode ServiceSpecificExitCode: $rdAgentServiceSpecificExitCode"
 
+    Out-Log 'RdAgent service running:' -startLine
     if ($rdAgentStatus -eq 'Running')
     {
-        New-Check -name 'RdAgent service running' -result 'Passed' -details ''
         $rdAgentStatusRunning = $true
+        Out-Log $rdAgentStatusRunning -color Green -endLine
+        New-Check -name 'RdAgent service running' -result 'Passed' -details ''
     }
     else
     {
-        New-Check -name 'RdAgent service running' -result 'Failed' -details ''
         $rdAgentStatusRunning = $false
         Out-Log $rdAgentStatusRunning -color Red -endLine
-        $description = "RdAgent service is not running"
+        New-Check -name 'RdAgent service running' -result 'Failed' -details "Status: $rdAgentStatus Win32ExitCode: $rdAgentWin32ExitCode ServiceSpecificExitCode: $rdAgentServiceSpecificExitCode"
         $description = "RdAgent service is not running (Status: $rdAgentStatus Win32ExitCode: $rdAgentWin32ExitCode ServiceSpecificExitCode: $rdAgentServiceSpecificExitCode)"
         $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows-azure-guest-agent#step-3-check-whether-the-guest-agent-services-are-running">Check guest agent services</a>'
         New-Finding -type Critical -name RdAgentServiceNotRunning -description $description -mitigation $mitigation
@@ -962,16 +963,18 @@ if ($windowsAzureGuestAgent)
     $windowsAzureGuestAgentServiceStatus = [Win32.Service.Ext]::QueryServiceStatus($windowsAzureGuestAgent.ServiceHandle)
     $windowsAzureGuestAgentWin32ExitCode = $windowsAzureGuestAgentServiceStatus | Select-Object -ExpandProperty Win32ExitCode
     $windowsAzureGuestAgentServiceSpecificExitCode = $windowsAzureGuestAgentServiceStatus | Select-Object -ExpandProperty ServiceSpecificExitCode
-    Out-Log "WindowsAzureGuestAgent Win32ExitCode: $windowsAzureGuestAgentWin32ExitCode ServiceSpecificExitCode: $windowsAzureGuestAgentServiceSpecificExitCode"
+    # Out-Log "WindowsAzureGuestAgent Win32ExitCode: $windowsAzureGuestAgentWin32ExitCode ServiceSpecificExitCode: $windowsAzureGuestAgentServiceSpecificExitCode"
 
+    Out-Log 'WindowsAzureGuestAgent service running:' -startLine
     if ($windowsAzureGuestAgentStatus -eq 'Running')
     {
-        New-Check -name 'WindowsAzureGuestAgent service running' -result 'Passed' -details ''
         $windowsAzureGuestAgentStatusRunning = $true
+        Out-Log $windowsAzureGuestAgentStatusRunning -color Green -endLine
+        New-Check -name 'WindowsAzureGuestAgent service running' -result 'Passed' -details ''
     }
     else
     {
-        New-Check -name 'WindowsAzureGuestAgent service running' -result 'Failed' -details ''
+        New-Check -name 'WindowsAzureGuestAgent service running' -result 'Failed' -details "Status: $windowsAzureGuestAgentStatus Win32ExitCode: $windowsAzureGuestAgentWin32ExitCode ServiceSpecificExitCode: $windowsAzureGuestAgentServiceSpecificExitCode"
         $windowsAzureGuestAgentStatusRunning = $false
         Out-Log $windowsAzureGuestAgentStatusRunning -color Red -endLine
         $description = "WindowsAzureGuestAgent service is not running (Status: $windowsAzureGuestAgentStatus Win32ExitCode: $windowsAzureGuestAgentWin32ExitCode ServiceSpecificExitCode: $windowsAzureGuestAgentServiceSpecificExitCode)"
@@ -1307,13 +1310,13 @@ if ($tenantEncryptionCert)
     if ($tenantEncryptionCert.NotBefore -le [System.DateTime]::Now -and $tenantEncryptionCert.NotAfter -gt [System.DateTime]::Now)
     {
         $tenantEncryptionCertWithinValidityPeriod = $true
-        Out-Log $tenantEncryptionCertWithinValidityPeriod -endLine
+        Out-Log $tenantEncryptionCertWithinValidityPeriod -color Green -endLine
         New-Check -name 'TenantEncryptionCert within validity period' -result 'Passed' -details "Now: $now Effective: $effective Expires: $expires"
     }
     else
     {
         $tenantEncryptionCertWithinValidityPeriod = $false
-        Out-Log $tenantEncryptionCertWithinValidityPeriod -endLine
+        Out-Log $tenantEncryptionCertWithinValidityPeriod -color Red -endLine
         New-Check -name 'TenantEncryptionCert within validity period' -result 'Failed' -details "Now: $now Effective: $effective Expires: $expires"
         New-Finding -type Critical -name 'TenantEncryptionCert not within validity period' -description "Now: $now Effective: $effective Expires: $expires" -mitigation $mitigation
     }
@@ -1565,7 +1568,7 @@ if ($rdAgentStatusRunning)
 }
 else
 {
-    $details = 'RdAgent service not running'
+    $details = 'Skipped (RdAgent service not running)'
     New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Skipped' -details $details
     Out-Log $details -color DarkGray -endLine
 }
@@ -1600,13 +1603,35 @@ if ($windowsAzureGuestAgentStatusRunning)
 }
 else
 {
-    $details = 'WindowsAzureGuestAgent service not running'
+    $details = 'Skipped (WindowsAzureGuestAgent service not running)'
     New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Skipped' -details $details
     Out-Log $details -color DarkGray -endLine
 }
 
-$machineKeysAcl = Get-Acl -Path C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys
-$machineKeysAcl | Select-Object -ExpandProperty Sddl
+Out-Log 'MachineKeys folder has default permissions:' -startLine
+$machineKeysPath = 'C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys'
+$machineKeysAcl = Get-Acl -Path $machineKeysPath
+$machineKeysSddl = $machineKeysAcl | Select-Object -ExpandProperty Sddl
+$machineKeysAccess = $machineKeysAcl | Select-Object -ExpandProperty Access
+$machineKeysAccessString = $machineKeysAccess | ForEach-Object {"$($_.IdentityReference) $($_.AccessControlType) $($_.FileSystemRights)"}
+$machineKeysAccessString = $machineKeysAccessString -join '<br>'
+$defaultSddl = 'O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)'
+
+if ($machineKeysSddl -eq $defaultSddl)
+{
+    $machineKeysHasDefaultPermissions = $true
+    Out-Log $machineKeysHasDefaultPermissions -color Green -endLine
+    $details = "$machineKeysPath folder has default NTFS permissions<br>SDDL: $machineKeysSddl<br>$machineKeysAccessString"
+    New-Check -name 'MachineKeys folder permissions' -result 'Passed' -details $details
+}
+else
+{
+    $machineKeysHasDefaultPermissions = $false
+    Out-Log $machineKeysHasDefaultPermissions -color Cyan -endLine
+    $details = "$machineKeysPath folder does not have default NTFS permissions<br>SDDL: $machineKeysSddl<br>$machineKeysAccessString"
+    New-Check -name 'MachineKeys folder permissions' -result 'Information' -details $details
+    New-Finding -type Information -name 'Non-default MachineKeys permissions' -description $details -mitigation ''
+}
 
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
 $scriptStartTimeUTCString = Get-Date -Date $scriptStartTime -Format o
@@ -2145,7 +2170,5 @@ $todo = $todo.Split("`n").Trim()
 
 if ($env:USERNAME -in ('clandis', 'craig') -or [bool](Get-LocalUser -Name craig | Where-Object {$_.SID.ToString().Endswith('-500')}))
 {
-    $todo | ForEach-Object {
-        Out-Log $_ -raw -color Cyan
-    }
+    # $todo | ForEach-Object {Out-Log $_ -raw -color Cyan}
 }
