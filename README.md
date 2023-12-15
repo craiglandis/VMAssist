@@ -33,15 +33,16 @@ https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1
 
 ## Using Set-AzVMCustomScriptExtension
 ```powershell
-$publisherName = 'Microsoft.Compute'
-$type = 'CustomScriptExtension'
-$location = 'westus2'
+$resourceGroupName = 'myrg'
+$vmName = 'myvm'
+$location = Get-AzVM -resourceGroupName $resourceGroupName -name $vmName | Select-Object -ExpandProperty Location
+$publisher = 'Microsoft.Compute'
+$extensionType = 'CustomScriptExtension'
+$name = "$publisher.$extensionType"
 $versions = Get-AzVMExtensionImage -Location $location -PublisherName $publisherName -Type $type
 [version]$version = $versions | Sort-Object {[version]$_.Version} | Select-Object -ExpandProperty Version -Last 1
 $typeHandlerVersion = "$($version.Major).$($version.Minor)"
 
-$resourceGroupName = 'rg'
-$vmName = 'ws22ae'
 $name = 'CustomScriptExtension'
 $fileUri = 'https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1'
 $run = $fileUri -split '/' | Select-Object -Last 1

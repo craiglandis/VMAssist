@@ -2119,6 +2119,7 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 $todo = @'
+### Last known heartbeat?
 ### Create warning finding for "service running but set to disabled instead of automatic" for Rdagent and WindowsAzureGuestAgent services
 ### Clean up 'VM agent installed' check
 ### Use checkaws to verify external IP, which then confirms internet access as well
