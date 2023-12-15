@@ -1022,6 +1022,7 @@ $scQueryExWindowsAzureGuestAgentExitCode = $LASTEXITCODE
 $scQcWindowsAzureGuestAgentOutput = Invoke-ExpressionWithLogging "& $scExe qc WindowsAzureGuestAgent" -verboseOnly
 $scQcWindowsAzureGuestAgentExitCode = $LASTEXITCODE
 
+<#
 Out-Log 'VM Agent installed:' -startLine
 $messageSuffix = "(windowsAzureFolderExists:$windowsAzureFolderExists rdAgentServiceExists:$rdAgentServiceExists windowsAzureGuestAgentServiceExists:$windowsAzureGuestAgentServiceExists rdAgentKeyExists:$rdAgentKeyExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists waAppAgentExeExists:$waAppAgentExeExists windowsAzureGuestAgentExeExists:$windowsAzureGuestAgentExeExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists)"
 if ($windowsAzureFolderExists -and $rdAgentServiceExists -and $windowsAzureGuestAgentServiceExists -and $rdAgentKeyExists -and $windowsAzureGuestAgentKeyExists -and $waAppAgentExeExists -and $windowsAzureGuestAgentExeExists -and $windowsAzureGuestAgentKeyExists -and $windowsAzureGuestAgentKeyExists)
@@ -1039,26 +1040,6 @@ else
     $description = "VM agent is not installed $messageSuffix"
     Out-Log $message -color Red
     New-Finding -type Critical -Name 'VM agent not installed' -description $description
-}
-
-<#
-Out-Log 'VM agent services running:' -startLine
-$messageSuffix = "(rdAgentStatusRunning:$rdAgentStatusRunning windowsAzureGuestAgentStatusRunning:$windowsAzureGuestAgentStatusRunning)"
-if ($rdAgentStatusRunning -and $windowsAzureGuestAgentStatusRunning)
-{
-    $vmAgentServicesRunning = $true
-    Out-Log "$vmAgentServicesRunning $messageSuffix" -color Green -endLine
-    #$message = "VM agent services are running $messageSuffix"
-    #New-Finding -type Information -name VMAgentServicesRunning -message $message
-}
-else
-{
-    $vmAgentServicesRunning = $false
-    Out-Log "$vmAgentServicesRunning $messageSuffix" -color Red -endLine
-    #$message = "VM agent services are not running $messageSuffix"
-    $description = "VM agent services are not running $messageSuffix"
-    $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows-azure-guest-agent#step-3-check-whether-the-guest-agent-services-are-running">Check guest agent services</a>'
-    New-Finding -type Critical -name VMAgentServicesNotRunning -description $description -mitigation $mitigation
 }
 #>
 
@@ -1330,11 +1311,6 @@ else
 $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
 #$machineConfigFilePath = "$env:SystemRoot\Microsoft.NET\Framework\v4.0.30319\Config\machine.config"
 [xml]$machineConfigx64 = Get-Content -Path $machineConfigx64FilePath
-
-$machineKeysPath = "$env:ALLUSERSPROFILE\Microsoft\Crypto\RSA\MachineKeys"
-$machineKeysAcl = Get-Acl -Path $machineKeysPath
-$machineKeysAclString = $machineKeysAcl.Access | Format-Table -AutoSize -HideTableHeaders IdentityReference, AccessControlType, FileSystemRights | Out-String
-$machineKeysAclSddl = $machineKeysAcl | Select-Object -ExpandProperty Sddl
 
 Out-Log 'DHCP request returns option 245:' -startLine
 $dhcpReturnedOption245 = Confirm-AzureVM
@@ -1630,8 +1606,23 @@ else
     Out-Log $machineKeysHasDefaultPermissions -color Cyan -endLine
     $details = "$machineKeysPath folder does not have default NTFS permissions<br>SDDL: $machineKeysSddl<br>$machineKeysAccessString"
     New-Check -name 'MachineKeys folder permissions' -result 'Information' -details $details
-    New-Finding -type Information -name 'Non-default MachineKeys permissions' -description $details -mitigation ''
+    $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/troubleshoot-extension-certificates-issues-windows-vm#solution-2-fix-the-access-control-list-acl-in-the-machinekeys-or-systemkeys-folders">Troubleshoot extension certificates</a>'
+    New-Finding -type Information -name 'Non-default MachineKeys permissions' -description $details -mitigation $mitigation
 }
+
+# Permissions on C:\WindowsAzure and c:\Packages folder during startup.
+# It first removes all user/groups and then sets the following permission
+# (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders.
+# If GA fails to remove/set the permission, it can't proceed further.
+$windowsAzurePath = 'C:\WindowsAzure'
+Out-Log 'WindowsAzure folder has default permissions:' -startLine
+$windowsAzureAcl = Get-Acl -Path $windowsAzurePath
+$windowsAzureSddl = $windowsAzureAcl | Select-Object -ExpandProperty Sddl
+$windowsAzureAccess = $windowsAzureAcl | Select-Object -ExpandProperty Access
+$windowsAzureAccessString = $windowsAzureAccess | ForEach-Object {"$($_.IdentityReference) $($_.AccessControlType) $($_.FileSystemRights)"}
+$windowsAzureAccessString = $windowsAzureAccessString -join '<br>'
+$defaultSddl = 'O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)'
+
 
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
 $scriptStartTimeUTCString = Get-Date -Date $scriptStartTime -Format o
