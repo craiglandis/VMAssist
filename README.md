@@ -31,6 +31,7 @@ https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1
 
 ### Custom Script Extension (Azure PowerShell)
 
+## Using Set-AzVMCustomScriptExtension
 ```powershell
 $publisherName = 'Microsoft.Compute'
 $type = 'CustomScriptExtension'
@@ -54,6 +55,27 @@ Get-AzVM -resourceGroupName $resourceGroupName -name $vmName | select-object -ex
 
 Remove-AzVMCustomScriptExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Force
 
+## Using Set-AzVMExtension
+```powershell
+$resourceGroupName = 'myrg'
+$vmName = 'myvm'
+$location = Get-AzVM -resourceGroupName $resourceGroupName -name $vmName | Select-Object -ExpandProperty Location
+$publisher = 'Microsoft.Compute'
+$extensionType = 'CustomScriptExtension'
+$name = "$publisher.$extensionType"
+[version]$version = (Get-AzVMExtensionImage -Location $location -PublisherName $publisher -Type $extensionType | Sort-Object {[Version]$_.Version} -Desc | Select-Object Version -First 1).Version
+$typeHandlerVersion = "$($version.Major).$($version.Minor)"
+$scriptUrl = 'https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1'
+$scriptFileName = $scriptUrl -split '/' | Select-Object -Last 1
+$settings = @{
+	'fileUris'         = @($scriptUrl)
+	'commandToExecute' = "powerShell -ExecutionPolicy Bypass -Nologo -NoProfile -File $scriptFileName"
+	'timestamp'        = (Get-Date).Ticks
+}
+Set-AzVMExtension -Location $location -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Publisher $publisher -ExtensionType $extensionType -TypeHandlerVersion $typeHandlerVersion -Settings $settings
+$status = Get-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Status
+$status.Statuses.Message
+Remove-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Force
 ```
 
 ```powershell
@@ -78,6 +100,13 @@ Get-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Status | select
 ```
 
 ### Custom Script Extension (Azure CLI)
+
+```
+'{"fileUris": ["https://raw.githubusercontent.com/craiglandis/Get-VMHealth/main/Get-VMHealth.ps1"],"commandToExecute": "./health.sh"}' > settings.json
+
+az vm extension set --resource-group myrg --vm-name myvm --name customScript --publisher Microsoft.Azure.Extensions --settings ./settings.json
+
+```
 
 ### Managed Run Command (Azure PowerShell)
 
