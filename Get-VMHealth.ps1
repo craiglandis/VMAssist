@@ -2159,8 +2159,3 @@ get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object 
 ### Add mitigations for existing checks (XL)
 '@
 $todo = $todo.Split("`n").Trim()
-
-if ($env:USERNAME -in ('clandis', 'craig') -or [bool](Get-LocalUser -Name craig | Where-Object {$_.SID.ToString().Endswith('-500')}))
-{
-    # $todo | ForEach-Object {Out-Log $_ -raw -color Cyan}
-}
