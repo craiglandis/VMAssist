@@ -1531,7 +1531,7 @@ if ($rdAgentStatusRunning)
         }
         else
         {
-            New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Information' -details 'No 3rd-party modules in WaAppAgent.exe'
+            New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Passed' -details 'No 3rd-party modules in WaAppAgent.exe'
             Out-Log $false -color Green -endLine
         }
     }
@@ -1566,7 +1566,7 @@ if ($windowsAzureGuestAgentStatusRunning)
         }
         else
         {
-            New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Information' -details 'No 3rd-party modules in WindowsAzureGuestAgent.exe'
+            New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Passed' -details 'No 3rd-party modules in WindowsAzureGuestAgent.exe'
             Out-Log $false -color Green -endLine
         }
     }
@@ -1584,6 +1584,7 @@ else
     Out-Log $details -color DarkGray -endLine
 }
 
+$machineKeysDefaultSddl = 'O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)'
 Out-Log 'MachineKeys folder has default permissions:' -startLine
 $machineKeysPath = 'C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys'
 $machineKeysAcl = Get-Acl -Path $machineKeysPath
@@ -1591,9 +1592,8 @@ $machineKeysSddl = $machineKeysAcl | Select-Object -ExpandProperty Sddl
 $machineKeysAccess = $machineKeysAcl | Select-Object -ExpandProperty Access
 $machineKeysAccessString = $machineKeysAccess | ForEach-Object {"$($_.IdentityReference) $($_.AccessControlType) $($_.FileSystemRights)"}
 $machineKeysAccessString = $machineKeysAccessString -join '<br>'
-$defaultSddl = 'O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)'
 
-if ($machineKeysSddl -eq $defaultSddl)
+if ($machineKeysSddl -eq $machineKeysDefaultSddl)
 {
     $machineKeysHasDefaultPermissions = $true
     Out-Log $machineKeysHasDefaultPermissions -color Green -endLine
@@ -1614,15 +1614,55 @@ else
 # It first removes all user/groups and then sets the following permission
 # (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders.
 # If GA fails to remove/set the permission, it can't proceed further.
+$windowsAzureDefaultSddl = 'O:SYG:SYD:PAI(A;OICI;0x1200a9;;;WD)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'
 $windowsAzurePath = 'C:\WindowsAzure'
-Out-Log 'WindowsAzure folder has default permissions:' -startLine
+Out-Log "$windowsAzurePath folder has default permissions:" -startLine
 $windowsAzureAcl = Get-Acl -Path $windowsAzurePath
 $windowsAzureSddl = $windowsAzureAcl | Select-Object -ExpandProperty Sddl
 $windowsAzureAccess = $windowsAzureAcl | Select-Object -ExpandProperty Access
 $windowsAzureAccessString = $windowsAzureAccess | ForEach-Object {"$($_.IdentityReference) $($_.AccessControlType) $($_.FileSystemRights)"}
 $windowsAzureAccessString = $windowsAzureAccessString -join '<br>'
-$defaultSddl = 'O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)'
+if ($windowsAzureSddl -eq $windowsAzureDefaultSddl)
+{
+    $windowsAzureHasDefaultPermissions = $true
+    Out-Log $windowsAzureHasDefaultPermissions -color Green -endLine
+    $details = "$windowsAzurePath folder has default NTFS permissions<br>SDDL: $windowsAzureSddl<br>$windowsAzureAccessString"
+    New-Check -name "$windowsAzurePath permissions" -result 'Passed' -details $details
+}
+else
+{
+    $windowsAzureHasDefaultPermissions = $false
+    Out-Log $windowsAzureHasDefaultPermissions -color Cyan -endLine
+    $details = "$windowsAzurePath does not have default NTFS permissions<br>SDDL: $windowsAzureSddl<br>$windowsAzureAccessString"
+    New-Check -name "$windowsAzurePath permissions" -result 'Information' -details $details
+    $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/troubleshoot-extension-certificates-issues-windows-vm#solution-2-fix-the-access-control-list-acl-in-the-machinekeys-or-systemkeys-folders">Troubleshoot extension certificates</a>'
+    New-Finding -type Information -name "Non-default $windowsAzurePath permissions" -description $details -mitigation $mitigation
+}
 
+$packagesDefaultSddl = 'O:BAG:SYD:PAI(A;OICI;0x1200a9;;;WD)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'
+$packagesPath = 'C:\Packages'
+Out-Log "$packagesPath folder has default permissions:" -startLine
+$packagesAcl = Get-Acl -Path $packagesPath
+$packagesSddl = $packagesAcl | Select-Object -ExpandProperty Sddl
+$packagesAccess = $packagesAcl | Select-Object -ExpandProperty Access
+$packagessAccessString = $packagesAccess | ForEach-Object {"$($_.IdentityReference) $($_.AccessControlType) $($_.FileSystemRights)"}
+$packagesAccessString = $packagessAccessString -join '<br>'
+if ($packagesSddl -eq $packagesDefaultSddl)
+{
+    $packagesHasDefaultPermissions = $true
+    Out-Log $packagesHasDefaultPermissions -color Green -endLine
+    $details = "$packagesPath folder has default NTFS permissions<br>SDDL: $packagesSddl<br>$packagesAccessString"
+    New-Check -name "$packagesPath permissions" -result 'Passed' -details $details
+}
+else
+{
+    $packagesHasDefaultPermissions = $false
+    Out-Log $packagesHasDefaultPermissions -color Cyan -endLine
+    $details = "$packagesPath does not have default NTFS permissions<br>SDDL: $packagesSddl<br>$packagesAccessString"
+    New-Check -name "$packagesPath permissions" -result 'Information' -details $details
+    $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/troubleshoot-extension-certificates-issues-windows-vm#solution-2-fix-the-access-control-list-acl-in-the-machinekeys-or-systemkeys-folders">Troubleshoot extension certificates</a>'
+    New-Finding -type Information -name "Non-default $packagesPath permissions" -description $details -mitigation $mitigation
+}
 
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
 $scriptStartTimeUTCString = Get-Date -Date $scriptStartTime -Format o

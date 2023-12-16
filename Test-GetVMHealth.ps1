@@ -18,6 +18,10 @@ param(
     [switch]$setprofile,
     [switch]$setNonDefaultMachineKeysAcl,
     [switch]$setDefaultMachineKeysAcl,
+    [switch]$setNonDefaultWindowsAzureAcl,
+    [switch]$setDefaultWindowsAzureAcl,
+    [switch]$setNonDefaultPackagesAcl,
+    [switch]$setDefaultPackagesAcl,
     [switch]$stopRdagent,
     [switch]$startRdagent,
     [switch]$disableRdagent,
@@ -417,12 +421,62 @@ if ($setNonDefaultMachineKeysAcl -or $setDefaultMachineKeysAcl)
 
     if ($setDefaultMachineKeysAcl)
     {
-        $defaultMachineKeysSddl = 'O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)'
-        $machineKeysAcl.SetSecurityDescriptorSddlForm($defaultMachineKeysSddl)
+        $machineKeysDefaultSddl = 'O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)'
+        $machineKeysAcl.SetSecurityDescriptorSddlForm($machineKeysDefaultSddl)
     }
 
     Set-Acl -Path $machineKeysPath -AclObject $machineKeysAcl
     Out-Log ((Get-Acl -Path $machineKeysPath).Access | Format-Table -AutoSize | Out-String) -raw
+}
+
+if ($setNonDefaultWindowsAzureAcl -or $setDefaultWindowsAzureAcl)
+{
+    $windowsAzurePath = 'C:\WindowsAzure'
+    $windowsAzureAcl = Get-Acl -Path $windowsAzurePath
+
+    if ($setNonDefaultWindowsAzureAcl)
+    {
+        $identity = "Everyone"
+        $fileSystemRights = "FullControl"
+        $type = "Deny"
+        $fileSystemAccessRuleArgumentList = $identity, $fileSystemRights, $type
+        $fileSystemAccessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $fileSystemAccessRuleArgumentList
+        $windowsAzureAcl.SetAccessRule($fileSystemAccessRule)
+    }
+
+    if ($setDefaultWindowsAzureAcl)
+    {
+        $windowsAzureDefaultSddl = 'O:SYG:SYD:PAI(A;OICI;0x1200a9;;;WD)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'
+        $windowsAzureAcl.SetSecurityDescriptorSddlForm($windowsAzureDefaultSddl)
+    }
+
+    Set-Acl -Path $windowsAzurePath -AclObject $windowsAzureAcl
+    Out-Log ((Get-Acl -Path $windowsAzurePath).Access | Format-Table -AutoSize | Out-String) -raw
+}
+
+if ($setNonDefaultPackagesAcl -or $setDefaultPackagesAcl)
+{
+    $packagesPath = 'C:\Packages'
+    $packagesAcl = Get-Acl -Path $packagesPath
+
+    if ($setNonDefaultPackagesAcl)
+    {
+        $identity = "Everyone"
+        $fileSystemRights = "FullControl"
+        $type = "Deny"
+        $fileSystemAccessRuleArgumentList = $identity, $fileSystemRights, $type
+        $fileSystemAccessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $fileSystemAccessRuleArgumentList
+        $packagesAcl.SetAccessRule($fileSystemAccessRule)
+    }
+
+    if ($setDefaultPackagesAcl)
+    {
+        $packagesDefaultSddl = 'O:BAG:SYD:PAI(A;OICI;0x1200a9;;;WD)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'
+        $packagesAcl.SetSecurityDescriptorSddlForm($packagesDefaultSddl)
+    }
+
+    Set-Acl -Path $packagesPath -AclObject $packagesAcl
+    Out-Log ((Get-Acl -Path $packagesPath).Access | Format-Table -AutoSize | Out-String) -raw
 }
 
 if ($removeCSE)
