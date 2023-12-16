@@ -1,17 +1,26 @@
 <#
+Test-GetAzVMAgentHealth.ps1 -stopRdagent
+Test-GetAzVMAgentHealth.ps1 -stopWindowsAzureGuestAgent
+Test-GetAzVMAgentHealth.ps1 -blockwireserver
+Test-GetAzVMAgentHealth.ps1 -blockimds
+Test-GetAzVMAgentHealth.ps1 -enableProxy
+Test-GetAzVMAgentHealth.ps1 -setNonDefaultMachineKeysAcl
+Test-GetAzVMAgentHealth.ps1 -setNonDefaultWindowsAzureAcl
+Test-GetAzVMAgentHealth.ps1 -setNonDefaultPackagesAcl
+
 t -setprofile
 t -blockwireserver
 t -unblockwireserver
 t -blockimds
 t -unblockimds
 
-\\tsclient\c\src\Get-VMHealth\Test-GetVMHealth.ps1 -setprofile
-\\tsclient\c\src\Get-VMHealth\Test-GetVMHealth.ps1 -blockwireserver
-\\tsclient\c\src\Get-VMHealth\Test-GetVMHealth.ps1 -unblockwireserver
-\\tsclient\c\src\Get-VMHealth\Test-GetVMHealth.ps1 -blockimds
-\\tsclient\c\src\Get-VMHealth\Test-GetVMHealth.ps1 -unblockimds
-\\tsclient\c\src\Get-VMHealth\Test-GetVMHealth.ps1 -enableProxy
-\\tsclient\c\src\Get-VMHealth\Test-GetVMHealth.ps1 -disableProxy
+\\tsclient\c\src\Get-AzVMAgentHealth\Test-GetAzVMAgentHealth.ps1 -setprofile
+\\tsclient\c\src\Get-AzVMAgentHealth\Test-GetAzVMAgentHealth.ps1 -blockwireserver
+\\tsclient\c\src\Get-AzVMAgentHealth\Test-GetAzVMAgentHealth.ps1 -unblockwireserver
+\\tsclient\c\src\Get-AzVMAgentHealth\Test-GetAzVMAgentHealth.ps1 -blockimds
+\\tsclient\c\src\Get-AzVMAgentHealth\Test-GetAzVMAgentHealth.ps1 -unblockimds
+\\tsclient\c\src\Get-AzVMAgentHealth\Test-GetAzVMAgentHealth.ps1 -enableProxy
+\\tsclient\c\src\Get-AzVMAgentHealth\Test-GetAzVMAgentHealth.ps1 -disableProxy
 
 #>
 param(
@@ -493,8 +502,8 @@ if ($setprofile)
 {
     Set-ExecutionPolicy Bypass -Force
     New-Item -Path $profile -ItemType File -Force | Out-Null
-    Add-Content -Path $profile -Value "Set-Alias g '\\tsclient\c\src\get-vmhealth\Get-VMHealth.ps1'" -Force
-    Add-Content -Path $profile -Value "Set-Alias t '\\tsclient\c\src\get-vmhealth\Test-GetVMHealth.ps1'" -Force
+    Add-Content -Path $profile -Value "Set-Alias g '\\tsclient\c\src\Get-AzVMAgentHealth\Get-AzVMAgentHealth.ps1'" -Force
+    Add-Content -Path $profile -Value "Set-Alias t '\\tsclient\c\src\Get-AzVMAgentHealth\Test-GetAzVMAgentHealth.ps1'" -Force
     Add-Content -Path $profile -Value "Set-Alias w '\\tsclient\c\onedrive\my\Set-Wallpaper.ps1'" -Force
     Add-Content -Path $profile -Value "Set-Location -Path C:\" -Force
     Add-Content -Path $profile -Value "Clear-Host" -Force
