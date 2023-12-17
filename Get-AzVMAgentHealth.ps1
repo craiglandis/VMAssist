@@ -1664,6 +1664,33 @@ else
     New-Finding -type Information -name "Non-default $packagesPath permissions" -description $details -mitigation $mitigation
 }
 
+$systemDriveLetter = "$env:SystemDrive" -split ':' | Select-Object -First 1
+$systemDrive = Invoke-ExpressionWithLogging "Get-PSDrive -Name $systemDriveLetter" -verboseOnly
+$systemDriveFreeSpaceBytes = $systemDrive | Select-Object -ExpandProperty Free
+$systemDriveFreeSpaceGB = [Math]::Round($systemDriveFreeSpaceBytes/1GB,1)
+$systemDriveFreeSpaceMB = [Math]::Round($systemDriveFreeSpaceBytes/1MB,1)
+Out-Log "System drive does not have low disk space:" -startLine
+if ($systemDriveFreeSpaceMB -lt 100)
+{
+    $details = "<100MB free ($($systemDriveFreeSpaceMB)MB free) on drive $systemDriveLetter"
+    Out-Log $false -color Red -endLine
+    New-Check -name "Low disk space check" -result 'Failed' -details $details
+    New-Finding -type Critical -name "System drive low disk space" -description $details -mitigation ''
+}
+elseif ($systemDriveFreeSpaceGB -lt 1)
+{
+    $details = "<1GB free ($($systemDriveFreeSpaceGB)GB free) on drive $systemDriveLetter"
+    Out-Log $false -color Yellow -endLine
+    New-Check -name "Low disk space check" -result 'Warning' -details $details
+    New-Finding -type Warning -name "System drive free space" -description $details -mitigation ''
+}
+else
+{
+    $details = "$($systemDriveFreeSpaceGB)GB free on system drive $systemDriveLetter"
+    Out-Log $true -color Green -endLine
+    New-Check -name "Low disk space check" -result 'Passed' -details $details
+}
+
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
 $scriptStartTimeUTCString = Get-Date -Date $scriptStartTime -Format o
 
@@ -2159,6 +2186,8 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 $todo = @'
+### Finding for DHCP being disabled on NIC
+### Finding for low disk space
 ### Last known heartbeat?
 ### Create warning finding for "service running but set to disabled instead of automatic" for Rdagent and WindowsAzureGuestAgent services
 ### Clean up 'VM agent installed' check
