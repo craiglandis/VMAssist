@@ -1,10 +1,10 @@
-# Get-AzVMAgentHealth
+# Get-VMAgentHealth
 
-Get-AzVMAgentHealth is a PowerShell script you run within the guest operating system of an Azure virtual machine to diagnose common health and configuration issues with the Azure VM agent.
+Get-VMAgentHealth is a PowerShell script you run within the guest operating system of an Azure virtual machine to diagnose common health and configuration issues with the Azure VM agent.
 
 Azure VM agent health is critical to the proper functioning of Azure VM agent extensions.
 
-Running Get-AzVMAgentHealth generates a report showing the results of health checks it performed and suggested mitigation steps for issues it finds.
+Running Get-VMAgentHealth generates a report showing the results of health checks it performed and suggested mitigation steps for issues it finds.
 
 ## Table of Contents
 
@@ -21,7 +21,7 @@ Running Get-AzVMAgentHealth generates a report showing the results of health che
   - [Serial Console](#serial-console)
 - [License](#license)
 
-https://raw.githubusercontent.com/craiglandis/Get-AzVMAgentHealth/main/Get-AzVMAgentHealth.ps1
+https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1
 
 ## Prerequisites
 
@@ -44,7 +44,7 @@ $versions = Get-AzVMExtensionImage -Location $location -PublisherName $publisher
 $typeHandlerVersion = "$($version.Major).$($version.Minor)"
 
 $name = 'CustomScriptExtension'
-$fileUri = 'https://raw.githubusercontent.com/craiglandis/Get-AzVMAgentHealth/main/Get-AzVMAgentHealth.ps1'
+$fileUri = 'https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1'
 $run = $fileUri -split '/' | Select-Object -Last 1
 Set-AzVMCustomScriptExtension -Location $location -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -FileUri $fileUri -Run $run -TypeHandlerVersion $typeHandlerVersion -ForceRerun (Get-Date).Ticks
 
@@ -66,7 +66,7 @@ $extensionType = 'CustomScriptExtension'
 $name = "$publisher.$extensionType"
 [version]$version = (Get-AzVMExtensionImage -Location $location -PublisherName $publisher -Type $extensionType | Sort-Object {[Version]$_.Version} -Desc | Select-Object Version -First 1).Version
 $typeHandlerVersion = "$($version.Major).$($version.Minor)"
-$scriptUrl = 'https://raw.githubusercontent.com/craiglandis/Get-AzVMAgentHealth/main/Get-AzVMAgentHealth.ps1'
+$scriptUrl = 'https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1'
 $scriptFileName = $scriptUrl -split '/' | Select-Object -Last 1
 $settings = @{
 	'fileUris'         = @($scriptUrl)
@@ -103,7 +103,7 @@ Get-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Status | select
 ### Custom Script Extension (Azure CLI)
 
 ```
-'{"fileUris": ["https://raw.githubusercontent.com/craiglandis/Get-AzVMAgentHealth/main/Get-AzVMAgentHealth.ps1"],"commandToExecute": "./health.sh"}' > settings.json
+'{"fileUris": ["https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1"],"commandToExecute": "./health.sh"}' > settings.json
 
 az vm extension set --resource-group myrg --vm-name myvm --name customScript --publisher Microsoft.Azure.Extensions --settings ./settings.json
 

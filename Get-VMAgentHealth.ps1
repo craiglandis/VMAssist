@@ -8,13 +8,13 @@
     Supported in Windows PowerShell 4.0+ and PowerShell 6.0+.
     Not supported on Linux.
 .LINK
-    https://github.com/craiglandis/Get-AzVMAgentHealth/blob/main/README.md
+    https://github.com/craiglandis/Get-VMAgentHealth/blob/main/README.md
 .EXAMPLE
     RDP to Azure VM
     Launch an elevated PowerShell prompt
-    Download Get-AzVMAgentHealth.ps1 with the following command
+    Download Get-VMAgentHealth.ps1 with the following command
 
-    Get-AzVMAgentHealth.ps1
+    Get-VMAgentHealth.ps1
 #>
 
 [CmdletBinding(SupportsShouldProcess = $true)]
@@ -2216,7 +2216,7 @@ WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set ac
 ### Check that the service EXE files exist in the path specified in the registry, since we've seen those get confused
 ### Check for app crashes referencing guest agent processes (Application log event ID 1000), surface most recent one as well as crash count last 24 hours
 ### Check for system crashes (bugchecks), surface most recent one as well as crash count last 24 hours
-### Update github repo readme with additional ways to run Get-AzVMAgentHealth.ps1
+### Update github repo readme with additional ways to run Get-VMAgentHealth.ps1
 ### Update Loop for bug bash to include ways to test using both Test-GetVMhealth.ps1 but also the manual commands
 ### Check if WinPA and/or VM agent MSI still use StdRegProv WMI, if so, add basic WMI functionality check
 ### Check for out-dated netvsc.sys
