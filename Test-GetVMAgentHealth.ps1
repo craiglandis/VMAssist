@@ -26,7 +26,7 @@ t -unblockimds
 param(
     [switch]$setprofile,
     [switch]$enableStaticIp,
-    [switch]$disableStaticIp,
+    [switch]$enableDhcp,
     [switch]$setNonDefaultMachineKeysAcl,
     [switch]$setDefaultMachineKeysAcl,
     [switch]$setNonDefaultWindowsAzureAcl,
@@ -415,14 +415,108 @@ if ($testCSEWithCommand -or $testCSEWithScript)
     Out-Log "STDERR: $($subStatusesStdErr.Trim())" -raw
 }
 
-if ($enableStaticIp)
+if ($enableStaticIp -or $enableDhcp)
 {
 
-}
+$enableStaticIpScriptContents = @'
+$scriptStartTime = Get-Date
+$scriptFullName = $MyInvocation.MyCommand.Path
+$scriptFolderPath = Split-Path -Path $scriptFullName
+$scriptName = Split-Path -Path $scriptFullName -Leaf
+$scriptBaseName = $scriptName.Split('.')[0]
+$logFileNameSuffix = Get-Date $scriptStartTime -Format yyyyMMddHHmmssff
+$logFilePath = "$scriptFolderPath\$($scriptBaseName)_$($logFileNameSuffix).log"
+$scriptStartString = "$scriptFullName $(Get-Date $scriptStartTime -Format yyyy-MM-ddTHH:mm:ss.ff)"
+Write-Output $scriptStartString
+$scriptStartString | Out-File -FilePath $logFilePath
 
-if ($disableStaticIp)
-{
+$addressFamily = 'IPv4'
+$ipconfig = Get-NetIPConfiguration
+$interfaceAlias = $ipconfig.InterfaceAlias
+$interfaceIndex = $ipconfig.InterfaceIndex
+$ipV4Address = $ipconfig.IPv4Address.IPAddress
+$ipV4DefaultGateway = $ipconfig.IPv4DefaultGateway.NextHop
+$dnsServer = $ipconfig.DNSServer
+$adapter = Get-NetAdapter -InterfaceIndex $interfaceIndex -Physical
+$netIPAddress = Get-NetIPAddress -InterfaceIndex $interfaceIndex -AddressFamily $addressFamily
+$prefixLength = $netIPAddress.PrefixLength
+$interface = Get-NetIPInterface -InterfaceIndex $interfaceIndex -AddressFamily $addressFamily
+$dnsServerAddresses = Get-DnsClientServerAddress -InterfaceIndex $interfaceIndex -AddressFamily $addressFamily | Select-Object -ExpandProperty ServerAddresses
+$adapter | Remove-NetIPAddress -AddressFamily $addressFamily -Confirm:$false
+$adapter | Remove-NetRoute -AddressFamily $IPType -Confirm:$false
+New-NetIPAddress -InterfaceIndex $interfaceIndex -AddressFamily $addressFamily -IPAddress $ipV4Address -PrefixLength $prefixLength -DefaultGateway $ipV4DefaultGateway
+Set-DnsClientServerAddress -InterfaceIndex $interfaceIndex -ServerAddresses $dnsServerAddresses
+$adapter | Restart-NetAdapter
 
+$scriptTimespan = New-TimeSpan -Start $scriptStartTime -End (Get-Date)
+$scriptSeconds = [Math]::Round($scriptTimespan.TotalSeconds,0)
+$scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f $scriptTimespan
+$scriptEndString = "$scriptName duration $scriptDuration ($scriptSeconds seconds)"
+Write-Output $scriptEndString
+$scriptEndString | Out-File -FilePath $logFilePath -Append
+'@
+
+$enableDhcpScriptContents = @'
+$scriptStartTime = Get-Date
+$scriptFullName = $MyInvocation.MyCommand.Path
+$scriptFolderPath = Split-Path -Path $scriptFullName
+$scriptName = Split-Path -Path $scriptFullName -Leaf
+$scriptBaseName = $scriptName.Split('.')[0]
+$logFileNameSuffix = Get-Date $scriptStartTime -Format yyyyMMddHHmmssff
+$logFilePath = "$scriptFolderPath\$($scriptBaseName)_$($logFileNameSuffix).log"
+$scriptStartString = "$scriptFullName $(Get-Date $scriptStartTime -Format yyyy-MM-ddTHH:mm:ss.ff)"
+Write-Output $scriptStartString
+$scriptStartString | Out-File -FilePath $logFilePath
+
+$addressFamily = 'IPv4'
+$ipconfig = Get-NetIPConfiguration
+$interfaceIndex = $ipconfig.InterfaceIndex
+$adapter = Get-NetAdapter -InterfaceIndex $interfaceIndex -Physical
+$interface = Get-NetIPInterface -InterfaceIndex $interfaceIndex -AddressFamily $addressFamily
+$interface | Remove-NetRoute -Confirm:$false
+$interface | Set-NetIPInterface -DHCP Enabled
+$interface | Set-DnsClientServerAddress -ResetServerAddresses
+$adapter | Restart-NetAdapter
+
+$scriptTimespan = New-TimeSpan -Start $scriptStartTime -End (Get-Date)
+$scriptSeconds = [Math]::Round($scriptTimespan.TotalSeconds,0)
+$scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f $scriptTimespan
+$scriptEndString = "$scriptName duration $scriptDuration ($scriptSeconds seconds)"
+Write-Output $scriptEndString
+$scriptEndString | Out-File -FilePath $logFilePath -Append
+'@
+
+    $myFolderPath = 'c:\my'
+
+    $enableStaticIpScriptFilePath = "$myFolderPath\Enable-StaticIp.ps1"
+    New-Item -Path $enableStaticIpScriptFilePath -ItemType File -Force
+    Set-Content -Path $enableStaticIpScriptFilePath -Value $enableStaticIpScriptContents -Force
+
+    $enableDhcpScriptFilePath = "$myFolderPath\Enable-DHCP.ps1"
+    New-Item -Path $enableDhcpScriptFilePath -ItemType File -Force
+    Set-Content -Path $enableDhcpScriptFilePath -Value $enableDhcpScriptContents -Force
+
+    # Adds a startup task to enable DHCP so regardless the state it's left in,
+    # restarting the VM will enable DHCP again
+    $TASK_TRIGGER_BOOT = 8
+    $taskName = 'EnableDHCP'
+    $execute = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+    $argument = "-NoLogo -NoProfile -File $enableDhcpScriptFilePath"
+    $action = New-ScheduledTaskAction -Execute $execute -Argument $argument
+    $trigger = New-ScheduledTaskTrigger -AtStartup
+    $principal = New-ScheduledTaskPrincipal -UserId 'NT AUTHORITY\SYSTEM' -RunLevel Highest -LogonType ServiceAccount
+    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -Compatibility 'Win8'
+    $task = New-ScheduledTask -Action $action -Principal $principal -Trigger $trigger -Settings $settings
+    Register-ScheduledTask -TaskName $taskName -InputObject $task -Force | Out-Null
+
+    if ($enableStaticIp)
+    {
+        powershell -NoLogo -NoProfile -File $enableStaticIpScriptFilePath
+    }
+    elseif ($enableDhcp)
+    {
+        powershell -NoLogo -NoProfile -File $enableDhcpScriptFilePath
+    }
 }
 
 if ($setNonDefaultMachineKeysAcl -or $setDefaultMachineKeysAcl)
