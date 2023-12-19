@@ -1740,6 +1740,8 @@ $vm.Add([PSCustomObject]@{Property = 'osInstallDate'; Value = $installDateString
 $vm.Add([PSCustomObject]@{Property = 'computerName'; Value = $computerName; Type = 'OS'})
 $vm.Add([PSCustomObject]@{Property = 'licenseType'; Value = $licenseType; Type = 'OS'})
 
+Out-Log "DHCP-assigned IP addresses" -startLine
+
 $nics = New-Object System.Collections.Generic.List[Object]
 
 $ipconfigs = Get-NetIPConfiguration -Detailed
@@ -1801,6 +1803,8 @@ foreach ($ipconfig in $ipconfigs)
     }
     $nics.Add($nic)
 }
+
+$global:dbgnics = $nics
 
 $nicsImds = New-Object System.Collections.Generic.List[Object]
 foreach ($interface in $interfaces)
