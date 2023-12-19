@@ -25,6 +25,8 @@ t -unblockimds
 #>
 param(
     [switch]$setprofile,
+    [switch]$enableStaticIp,
+    [switch]$disableStaticIp,
     [switch]$setNonDefaultMachineKeysAcl,
     [switch]$setDefaultMachineKeysAcl,
     [switch]$setNonDefaultWindowsAzureAcl,
@@ -411,6 +413,16 @@ if ($testCSEWithCommand -or $testCSEWithScript)
     $subStatusesStdErr = ($subStatuses | where Code -match 'StdErr').Message
     Out-Log "STDOUT: $($subStatusesStdOut.Trim())" -raw
     Out-Log "STDERR: $($subStatusesStdErr.Trim())" -raw
+}
+
+if ($enableStaticIp)
+{
+
+}
+
+if ($disableStaticIp)
+{
+
 }
 
 if ($setNonDefaultMachineKeysAcl -or $setDefaultMachineKeysAcl)
