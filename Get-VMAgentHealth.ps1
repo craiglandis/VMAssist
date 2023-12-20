@@ -2209,8 +2209,6 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 $todo = @'
-### Finding for DHCP being disabled on NIC
-### Finding for low disk space
 ### Last known heartbeat?
 ### Create warning finding for "service running but set to disabled instead of automatic" for Rdagent and WindowsAzureGuestAgent services
 ### Clean up 'VM agent installed' check
@@ -2218,12 +2216,11 @@ $todo = @'
 ### Create table with service details
 ### Create table with installed app details
 ### Available memory
-### Disk space
 ### Page file settings
 ### Commit
 ### workgroup vs. domain join vs AAD joined
 ### filter drivers
-### 3rd-party processes
+### 3rd-party processes - get-process | where {$_.Company -and $_.Company -ne 'Microsoft Corporation'} | Select-Object Id,Name,ProcessName,Description,Product,Company,FileVersion,CommandLine
 ### 3rd-party kernel drivers
 ### Mellanox driver version
 ### installed extensions and their statuses (if possible to get this cleanly from inside the guest without calling CRP)
@@ -2234,7 +2231,6 @@ Computer Configuration\Administrative Templates\Windows Components\Internet Expl
 ### permissions on C:\WindowsAzure and c:\Packages folder during startup. It first removes all user/groups and then sets the following permission (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders. If GA fails to remove/set the permission, it can't proceed further.
 WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set access rules for agent directories. Exception: System.Security.Principal.IdentityNotMappedException: {Namepii} or all identity references could not be translated. Symptom reported: Guest agent not ready (Unresponsive status).
 ### Check for presence and validity of CRP cert
-### Check MachineKeys ACL
 ### Check for WCF Profiling being enabled
 ### Check that the service EXE files exist in the path specified in the registry, since we've seen those get confused
 ### Check for app crashes referencing guest agent processes (Application log event ID 1000), surface most recent one as well as crash count last 24 hours
