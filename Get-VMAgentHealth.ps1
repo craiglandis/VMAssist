@@ -1806,6 +1806,27 @@ foreach ($ipconfig in $ipconfigs)
 
 $global:dbgnics = $nics
 
+$dhcpDisabledNics = $nics | Where-Object DHCP -eq 'Disabled'
+if ($dhcpDisabledNics)
+{
+    $dhcpAssignedIpAddresses = $false
+    Out-Log $dhcpAssignedIpAddresses -endLine -color Yellow
+    $dhcpDisabledNicsString = "DHCP-disabled NICs: "
+    foreach ($dhcpDisabledNic in $dhcpDisabledNics)
+    {
+        $dhcpDisabledNicsString += "Description: $($dhcpDisabledNic.Description) Alias: $($dhcpDisabledNic.Alias) Index: $($dhcpDisabledNic.Index) IpAddress: $($dhcpDisabledNic.IpAddress)"
+    }
+    New-Check -name "DHCP-assigned IP addresses" -result 'Information' -details $dhcpDisabledNicsString
+    New-Finding -type Information -name "DHCP-disabled NICs" -description $dhcpDisabledNicsString -mitigation ''
+}
+else
+{
+    $dhcpAssignedIpAddresses = $true
+    Out-Log $dhcpAssignedIpAddresses -endLine -color Green
+    $details = "All NICs have DHCP-assigned IP addresses"
+    New-Check -name "DHCP-assigned IP addresses" -result 'Passed' -details $details
+}
+
 $nicsImds = New-Object System.Collections.Generic.List[Object]
 foreach ($interface in $interfaces)
 {
