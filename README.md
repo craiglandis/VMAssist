@@ -111,11 +111,40 @@ az vm extension set --resource-group myrg --vm-name myvm --name customScript --p
 
 ### Managed Run Command (Azure PowerShell)
 
+```powershell
+$resourceGroupName = 'myrg'
+$vmName = 'myvm'
+$sourceScriptUri = 'https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1'
+Set-AzVMRunCommand -ResourceGroupName $resourceGroupName -VMName $vmName -RunCommandName RunPowerShellScript -SourceScriptUri $sourceScriptUri
+Get-AzVMRunCommand -ResourceGroupName $resourceGroupName -VMName $vmName -RunCommandName RunPowerShellScript -Expand InstanceView | Select-Object -ExpandProperty InstanceView
+```
+
 ### Managed Run Command (Azure CLI)
+
+```
+az vm run-command create --name Get-VMAgentHealth --vm-name ws12r2 --resource-group rg --script-uri 'https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1'
+
+$result = az vm run-command show --name Get-VMAgentHealth --vm-name ws12r2 --resource-group rg --expand instanceView
+$result = $result | ConvertFrom-Json
+$result.instanceView.output
+```
 
 ### Action Run Command (Azure PowerShell)
 
+```powershell
+$resourceGroupName = 'myrg'
+$vmName = 'myvm'
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1 -OutFile Get-VMAgentHealth.ps1
+Invoke-AzVMRunCommand -ResourceGroupName $resourceGroupName -Name $vmName -CommandId RunPowerShellScript -ScriptPath Get-VMAgentHealth.ps1
+```
+
 ### Action Run Command (Azure CLI)
+
+```
+curl https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1 -o Get-VMAgentHealth.ps1
+az vm run-command invoke -g rg -n ws12r2 --command-id RunPowerShellScript --scripts @{Get-VMAgentHealth.ps1}
+
+```
 
 ### Serial Console
 
