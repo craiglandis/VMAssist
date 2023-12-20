@@ -1804,8 +1804,6 @@ foreach ($ipconfig in $ipconfigs)
     $nics.Add($nic)
 }
 
-$global:dbgnics = $nics
-
 $dhcpDisabledNics = $nics | Where-Object DHCP -eq 'Disabled'
 if ($dhcpDisabledNics)
 {
