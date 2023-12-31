@@ -1515,6 +1515,7 @@ if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succ
     $inVMGoalStateMetaData = $extensions.InVMGoalStateMetaData
 }
 
+$microsoftWindowsProductionPCA2011 = 'CN=Microsoft Windows Production PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US'
 Out-Log '3rd-party modules in WaAppAgent.exe:' -startLine
 if ($rdAgentStatusRunning)
 {
@@ -1524,10 +1525,23 @@ if ($rdAgentStatusRunning)
         $waAppAgentThirdPartyModules = $waAppAgent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
         if ($waAppAgentThirdPartyModules)
         {
-            $details = "$($($waAppAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
-            New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Information' -details $details
-            Out-Log $true -color Cyan -endLine
-            New-Finding -type Information -name '3rd-party modules in WaAppAgent.exe' -description $details -mitigation ''
+            foreach ($waAppAgentThirdPartyModule in $waAppAgentThirdPartyModules)
+            {
+                $filePath = $waAppAgentThirdPartyModule.FileName
+                $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath"
+                $issuer = $signature.SignerCertificate.Issuer
+                if ($issuer -eq $microsoftWindowsProductionPCA2011)
+                {
+                    $waAppAgentThirdPartyModules = $waAppAgentThirdPartyModules | Where-Object {$_.FileName -ne $filePath}
+                }
+            }
+            if ($waAppAgentThirdPartyModules)
+            {
+                $details = "$($($waAppAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
+                New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Information' -details $details
+                Out-Log $true -color Cyan -endLine
+                New-Finding -type Information -name '3rd-party modules in WaAppAgent.exe' -description $details -mitigation ''
+            }
         }
         else
         {
@@ -1549,7 +1563,6 @@ else
     Out-Log $details -color DarkGray -endLine
 }
 
-
 Out-Log '3rd-party modules in WindowsAzureGuestAgent.exe:' -startLine
 if ($windowsAzureGuestAgentStatusRunning)
 {
@@ -1559,10 +1572,23 @@ if ($windowsAzureGuestAgentStatusRunning)
         $windowsAzureGuestAgentThirdPartyModules = $windowsAzureGuestAgent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
         if ($windowsAzureGuestAgentThirdPartyModules)
         {
-            $details = "$($($windowsAzureGuestAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
-            New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Information' -details $details
-            Out-Log $true -color Cyan -endLine
-            New-Finding -type Information -name '3rd-party modules in WindowsAzureGuestAgent.exe' -description $details -mitigation ''
+            foreach ($windowsAzureGuestAgentThirdPartyModule in $windowsAzureGuestAgentThirdPartyModules)
+            {
+                $filePath = $windowsAzureGuestAgentThirdPartyModule.FileName
+                $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath"
+                $issuer = $signature.SignerCertificate.Issuer
+                if ($issuer -eq $microsoftWindowsProductionPCA2011)
+                {
+                    $windowsAzureGuestAgentThirdPartyModules = $windowsAzureGuestAgentThirdPartyModule | Where-Object {$_.FileName -ne $filePath}
+                }
+            }
+            if ($windowsAzureGuestAgentThirdPartyModules)
+            {
+                $details = "$($($windowsAzureGuestAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
+                New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Information' -details $details
+                Out-Log $true -color Cyan -endLine
+                New-Finding -type Information -name '3rd-party modules in WindowsAzureGuestAgent.exe' -description $details -mitigation ''
+            }
         }
         else
         {
