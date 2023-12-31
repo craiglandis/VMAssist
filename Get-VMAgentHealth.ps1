@@ -2235,7 +2235,8 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 $todo = @'
-### Last known heartbeat?
+### Include script log contents at bottom of HTML report in code block so the single report .htm file will always include the log file
+### Last known heartbeat
 ### Create warning finding for "service running but set to disabled instead of automatic" for Rdagent and WindowsAzureGuestAgent services
 ### Clean up 'VM agent installed' check
 ### Use checkaws to verify external IP, which then confirms internet access as well
@@ -2246,9 +2247,14 @@ $todo = @'
 ### Commit
 ### workgroup vs. domain join vs AAD joined
 ### filter drivers
-### 3rd-party processes - get-process | where {$_.Company -and $_.Company -ne 'Microsoft Corporation'} | Select-Object Id,Name,ProcessName,Description,Product,Company,FileVersion,CommandLine
 ### 3rd-party kernel drivers
 ### Mellanox driver version
+### Check for out-dated netvsc.sys
+Get-CimInstance -Query "'SELECT Name,Status,ExitCode,Started,StartMode,ErrorControl,PathName FROM Win32_SystemDriver WHERE Name='netvsc'"
+get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
+\SystemRoot\System32\drivers\netvsc63.sys - ws12r2
+\SystemRoot\System32\drivers\netvsc.sys - win11,ws22
+get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
 ### installed extensions and their statuses (if possible to get this cleanly from inside the guest without calling CRP)
 ### Windows activation status, relevant reg settings, most recent software licensing service events
 ### Add relevant checks from Set-Wallpaper.ps1
@@ -2262,14 +2268,7 @@ WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set ac
 ### Check for app crashes referencing guest agent processes (Application log event ID 1000), surface most recent one as well as crash count last 24 hours
 ### Check for system crashes (bugchecks), surface most recent one as well as crash count last 24 hours
 ### Update github repo readme with additional ways to run Get-VMAgentHealth.ps1
-### Update Loop for bug bash to include ways to test using both Test-GetVMhealth.ps1 but also the manual commands
 ### Check if WinPA and/or VM agent MSI still use StdRegProv WMI, if so, add basic WMI functionality check
-### Check for out-dated netvsc.sys
-Get-CimInstance -Query "'SELECT Name,Status,ExitCode,Started,StartMode,ErrorControl,PathName FROM Win32_SystemDriver WHERE Name='netvsc'"
-get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
-\SystemRoot\System32\drivers\netvsc63.sys - ws12r2
-\SystemRoot\System32\drivers\netvsc.sys - win11,ws22
-get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
 ### Add mitigations for existing checks (XL)
 '@
 $todo = $todo.Split("`n").Trim()
