@@ -2235,6 +2235,7 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 $todo = @'
+### Check winmgmt running/automatic since both WinPA install of GA and MSI install of GA rely on StdRegProv WMI class
 ### Include script log contents at bottom of HTML report in code block so the single report .htm file will always include the log file
 ### Last known heartbeat
 ### Create warning finding for "service running but set to disabled instead of automatic" for Rdagent and WindowsAzureGuestAgent services
