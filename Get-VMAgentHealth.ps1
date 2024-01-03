@@ -197,22 +197,26 @@ function Out-Log
 
                 if ($startLine)
                 {
+                    $script:startLineText = $text
                     Write-Host $prefixString -NoNewline -ForegroundColor DarkGray
                     Write-Host "$text " -NoNewline -ForegroundColor $color
                 }
                 elseif ($endLine)
                 {
                     Write-Host $text -ForegroundColor $color
+                    if ($logFilePath)
+                    {
+                        "$prefixString $script:startLineText $text" | Out-File $logFilePath -Append
+                    }
                 }
                 else
                 {
                     Write-Host $prefixString -NoNewline -ForegroundColor DarkGray
                     Write-Host $text -ForegroundColor $color
-                }
-
-                if ($logFilePath)
-                {
-                    "$prefixString $text" | Out-File $logFilePath -Append
+                    if ($logFilePath)
+                    {
+                        "$prefixString $text" | Out-File $logFilePath -Append
+                    }
                 }
             }
         }
@@ -684,7 +688,7 @@ $psVersion = $PSVersionTable.PSVersion
 $psVersionString = $psVersion.ToString()
 if ($psVersion -lt [version]'4.0' -or $psVersion -ge [version]'6.0')
 {
-    Write-Error "You are using PowerShell $psVersionString. This script requires Powershell version 5.1, 5.0, or 4.0."
+    Write-Error "You are using PowerShell $psVersionString. This script requires PowerShell version 5.1, 5.0, or 4.0."
     exit 1
 }
 
@@ -2287,6 +2291,8 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 $todo = @'
+### -verboseonly should always log to log file
+### Create function for service checks since they are similar enough
 ### Check winmgmt running/automatic since both WinPA install of GA and MSI install of GA rely on StdRegProv WMI class
 ### Include script log contents at bottom of HTML report in code block so the single report .htm file will always include the log file
 ### Last known heartbeat
