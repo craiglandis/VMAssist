@@ -724,7 +724,6 @@ if ((Test-Path -Path $logFolderPath -PathType Container) -eq $false)
     Invoke-ExpressionWithLogging "New-Item -Path $logFolderPath -ItemType Directory -Force | Out-Null" -verboseOnly
 }
 $computerName = $env:COMPUTERNAME.ToUpper()
-$invokeWmiMethodResult = Invoke-WmiMethod -Path "Win32_Directory.Name='$logFolderPath'" -Name Compress
 $logFilePath = "$logFolderPath\$($scriptBaseName)_$($computerName)_$($scriptStartTimeString).log"
 if ((Test-Path -Path $logFilePath -PathType Leaf) -eq $false)
 {
@@ -1021,6 +1020,48 @@ $scQueryExWindowsAzureGuestAgentExitCode = $LASTEXITCODE
 
 $scQcWindowsAzureGuestAgentOutput = Invoke-ExpressionWithLogging "& $scExe qc WindowsAzureGuestAgent" -verboseOnly
 $scQcWindowsAzureGuestAgentExitCode = $LASTEXITCODE
+
+Out-Log 'Winmgmt service running:' -startLine
+$winmgmt = Invoke-ExpressionWithLogging "Get-Service -Name 'winmgmt' -ErrorAction SilentlyContinue" -verboseOnly
+if ($winmgmt)
+{
+    $winmgmtStatus = $winmgmt.Status
+    $winmgmtStartType = $winmgmt.StartType
+
+    $winmgmtServiceStatus = [Win32.Service.Ext]::QueryServiceStatus($winmgmt.ServiceHandle)
+    $winmgmtWin32ExitCode = $winmgmtServiceStatus | Select-Object -ExpandProperty Win32ExitCode
+    $winmgmtServiceSpecificExitCode = $winmgmtServiceStatus | Select-Object -ExpandProperty ServiceSpecificExitCode
+
+    $scQueryExWinmgmtOutput = Invoke-ExpressionWithLogging "& $scExe queryex winmgmt" -verboseOnly
+    $scQueryExWinmgmtExitCode = $LASTEXITCODE
+
+    $scQcWinmgmtOutput = Invoke-ExpressionWithLogging "& $scExe qc winmgmt" -verboseOnly
+    $scQcWinmgmtExitCode = $LASTEXITCODE
+
+    if ($winmgmtStatus -eq 'Running')
+    {
+        $winmgmtStatusRunning = $true
+        Out-Log $winmgmtStatusRunning -color Green -endLine
+        New-Check -name 'Winmgmt service running' -result 'Passed' -details ''
+    }
+    else
+    {
+        New-Check -name 'Winmgmt service running' -result 'Failed' -details "Status: $winmgmtStatus Win32ExitCode: $winmgmtWin32ExitCode ServiceSpecificExitCode: $winmgmtServiceSpecificExitCode"
+        $winmgmtStatusRunning = $false
+        Out-Log $winmgmtStatusRunning -color Red -endLine
+        $description = "Winmgmt service is not running (Status: $winmgmtStatus Win32ExitCode: $winmgmtWin32ExitCode ServiceSpecificExitCode: $winmgmtServiceSpecificExitCode)"
+        $mitigation = '<a href="Placeholder">Placeholder</a>'
+        New-Finding -type Critical -name 'WinmgmtServiceNotRunning' -description $description -mitigation $mitigation
+    }
+}
+else
+{
+    New-Check -name 'Winmgmt service running' -result 'Failed' -details 'Failed to query winmgmt service'
+    Out-Log 'Failed' -color Red -endLine
+    $description = "Failed to query winmgmt service (Status: $winmgmtStatus Win32ExitCode: $winmgmtWin32ExitCode ServiceSpecificExitCode: $winmgmtServiceSpecificExitCode)"
+    $mitigation = '<a href="Placeholder">Placeholder</a>'
+    New-Finding -type Critical -name 'Failed to query Winmgmt service' -description $description -mitigation $mitigation
+}
 
 <#
 Out-Log 'VM Agent installed:' -startLine
@@ -1692,29 +1733,40 @@ else
 
 $systemDriveLetter = "$env:SystemDrive" -split ':' | Select-Object -First 1
 $systemDrive = Invoke-ExpressionWithLogging "Get-PSDrive -Name $systemDriveLetter" -verboseOnly
-$systemDriveFreeSpaceBytes = $systemDrive | Select-Object -ExpandProperty Free
-$systemDriveFreeSpaceGB = [Math]::Round($systemDriveFreeSpaceBytes/1GB,1)
-$systemDriveFreeSpaceMB = [Math]::Round($systemDriveFreeSpaceBytes/1MB,1)
-Out-Log "System drive does not have low disk space:" -startLine
-if ($systemDriveFreeSpaceMB -lt 100)
+# "Get-PSDrive" doesn't call WMI but Free and Used properties are of type ScriptProperty,
+# and make WMI calls when you view them.
+$systemDriveFreeSpaceBytes = $systemDrive | Select-Object -ExpandProperty Free -ErrorAction SilentlyContinue
+if ($systemDriveFreeSpaceBytes)
 {
-    $details = "<100MB free ($($systemDriveFreeSpaceMB)MB free) on drive $systemDriveLetter"
-    Out-Log $false -color Red -endLine
-    New-Check -name "Low disk space check" -result 'Failed' -details $details
-    New-Finding -type Critical -name "System drive low disk space" -description $details -mitigation ''
-}
-elseif ($systemDriveFreeSpaceGB -lt 1)
-{
-    $details = "<1GB free ($($systemDriveFreeSpaceGB)GB free) on drive $systemDriveLetter"
-    Out-Log $false -color Yellow -endLine
-    New-Check -name "Low disk space check" -result 'Warning' -details $details
-    New-Finding -type Warning -name "System drive free space" -description $details -mitigation ''
+    $systemDriveFreeSpaceGB = [Math]::Round($systemDriveFreeSpaceBytes/1GB,1)
+    $systemDriveFreeSpaceMB = [Math]::Round($systemDriveFreeSpaceBytes/1MB,1)
+    Out-Log "System drive does not have low disk space:" -startLine
+    if ($systemDriveFreeSpaceMB -lt 100)
+    {
+        $details = "<100MB free ($($systemDriveFreeSpaceMB)MB free) on drive $systemDriveLetter"
+        Out-Log $false -color Red -endLine
+        New-Check -name "Low disk space check" -result 'Failed' -details $details
+        New-Finding -type Critical -name "System drive low disk space" -description $details -mitigation ''
+    }
+    elseif ($systemDriveFreeSpaceGB -lt 1)
+    {
+        $details = "<1GB free ($($systemDriveFreeSpaceGB)GB free) on drive $systemDriveLetter"
+        Out-Log $false -color Yellow -endLine
+        New-Check -name "Low disk space check" -result 'Warning' -details $details
+        New-Finding -type Warning -name "System drive free space" -description $details -mitigation ''
+    }
+    else
+    {
+        $details = "$($systemDriveFreeSpaceGB)GB free on system drive $systemDriveLetter"
+        Out-Log $true -color Green -endLine
+        New-Check -name "Low disk space check" -result 'Passed' -details $details
+    }
 }
 else
 {
-    $details = "$($systemDriveFreeSpaceGB)GB free on system drive $systemDriveLetter"
-    Out-Log $true -color Green -endLine
-    New-Check -name "Low disk space check" -result 'Passed' -details $details
+    Out-Log 'Unknown' -color Cyan -endLine
+    $details = "Unable to determine free space on system drive $systemDriveLetter"
+    New-Check -name "Low disk space check" -result 'Info' -details $details
 }
 
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
