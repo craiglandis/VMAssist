@@ -39,6 +39,43 @@ trap
     Exit
 }
 
+function Get-RegKey
+{
+    param(
+        #$path = 'HKLM:\SOFTWARE\Microsoft\GuestAgent'
+        [string]$path = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest',
+        # $path = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Auto'
+        # 'HKLM:\SOFTWARE\Microsoft\Windows Azure'
+        # 'HKLM:\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState'
+        # 'HKLM:\SOFTWARE\Microsoft\Windows Azure\HandlerState'
+        [switch]$recurse
+    )
+
+    $regKeyValues = New-Object System.Collections.Generic.List[Object]
+    $regKey = Get-Item -Path $path
+    $valueNames = $regKey.GetValueNames()
+    $subKeyNames = $regKey.GetSubKeyNames()
+
+    if ($recurse)
+    {
+        $regKey
+    }
+
+    foreach ($valueName in $valueNames)
+    {
+        $valueData = $regKey.GetValue($valueName)
+        $valueType = $regKey.GetValueKind($valueName)
+        $regKeyValue = [PSCustomObject]@{
+            Name = $valueName
+            Data = $valueData
+            Type = $valueType
+        }
+        $regKeyValues.Add($regKeyValue)
+    }
+    $regKeyValues = $regKeyValues | Sort-Object -Property Name
+    return $regKeyValues
+}
+
 function Out-Log
 {
     param(
@@ -1167,6 +1204,22 @@ if ($guestKey)
     }
 }
 
+<#
+cssdpdbgesc
+eagleeye
+alex yen
+ayush
+g
+Reg Type      PS Type
+--------      -------
+REG_DWORD     System.Int32
+REG_SZ        System.String
+REG_QWORD     System.Int64
+REG_BINARY    System.Byte[]
+REG_MULTI_SZ  System.String[]
+REG_EXPAND_SZ System.String
+#>
+
 $autoKeyPath = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Auto'
 $autoKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$autoKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 if ($autoKey)
@@ -1174,7 +1227,6 @@ if ($autoKey)
 
 }
 
-$guestAgentKeyPath = 'HKLM:\SOFTWARE\Microsoft\GuestAgent'
 $guestAgentKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestAgentKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 if ($guestAgentKey)
 {
@@ -1190,6 +1242,15 @@ if ($guestAgentKey)
     $guestAgentKeyUpdateStartTime = $guestAgentKey.'Update-StartTime'
     $guestAgentKeyVmProvisionedAt = $guestAgentKey.VmProvisionedAt
 }
+
+$vm.Add([PSCustomObject]@{Property = "ContainerId"; Value = $guestAgentKeyContainerId; Type = 'Agent'})
+$vm.Add([PSCustomObject]@{Property = "HeartbeatLastStatusUpdateTime"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
+$vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
+$vm.Add([PSCustomObject]@{Property = "ManifestTimeStamp"; Value = $guestAgentKeyManifestTimeStamp; Type = 'Agent'})
+$vm.Add([PSCustomObject]@{Property = "MetricsSelfSelectionSelected"; Value = $guestAgentKeyMetricsSelfSelectionSelected; Type = 'Agent'})
+$vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
+$vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
+$vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
 
 $windowsAzureKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure'
 $windowsAzureKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$windowsAzureKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
@@ -2253,6 +2314,10 @@ $vmGeneralTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 $vmOsTable = $vm | Where-Object {$_.Type -eq 'OS'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmOsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
+[void]$stringBuilder.Append("<h3 id=`"vmAgent`">OS</h3>`r`n")
+$vmAgentTable = $vm | Where-Object {$_.Type -eq 'AGENT'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
+$vmAgentTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+
 [void]$stringBuilder.Append("<h3 id=`"vmNetwork`">Network</h3>`r`n")
 [void]$stringBuilder.Append("<h4>NIC Details</h4>`r`n")
 $vmNetworkTable = $nics | ConvertTo-Html -Fragment -As Table
@@ -2319,9 +2384,9 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 $todo = @'
+### if possiuble, replace Get-NetIPConfiguration with cmdlets that don't rely on WMI
 ### -verboseonly should always log to log file
 ### Create function for service checks since they are similar enough
-### Check winmgmt running/automatic since both WinPA install of GA and MSI install of GA rely on StdRegProv WMI class
 ### Include script log contents at bottom of HTML report in code block so the single report .htm file will always include the log file
 ### Last known heartbeat
 ### Create warning finding for "service running but set to disabled instead of automatic" for Rdagent and WindowsAzureGuestAgent services
