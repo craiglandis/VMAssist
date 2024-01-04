@@ -1046,16 +1046,18 @@ if ($winmgmt)
     {
         $winmgmtStatusRunning = $true
         Out-Log $winmgmtStatusRunning -color Green -endLine
+        $details = "Status: $winmgmtStatus StartType: $winmgmtStartType"
         New-Check -name 'Winmgmt service running' -result 'Passed' -details ''
     }
     else
     {
-        New-Check -name 'Winmgmt service running' -result 'Failed' -details "Status: $winmgmtStatus Win32ExitCode: $winmgmtWin32ExitCode ServiceSpecificExitCode: $winmgmtServiceSpecificExitCode"
+        $details = "Status: $winmgmtStatus StartType: $winmgmtStartType Win32ExitCode: $winmgmtWin32ExitCode ServiceSpecificExitCode: $winmgmtServiceSpecificExitCode"
+        New-Check -name 'Winmgmt service running' -result 'Failed' -details $details
         $winmgmtStatusRunning = $false
         Out-Log $winmgmtStatusRunning -color Red -endLine
-        $description = "Winmgmt service is not running (Status: $winmgmtStatus Win32ExitCode: $winmgmtWin32ExitCode ServiceSpecificExitCode: $winmgmtServiceSpecificExitCode)"
+        $description = "Winmgmt service is not running (Status: $winmgmtStatus StartType: $winmgmtStartType Win32ExitCode: $winmgmtWin32ExitCode ServiceSpecificExitCode: $winmgmtServiceSpecificExitCode)"
         $mitigation = '<a href="Placeholder">Placeholder</a>'
-        New-Finding -type Critical -name 'WinmgmtServiceNotRunning' -description $description -mitigation $mitigation
+        New-Finding -type Critical -name 'Winmgmt Service Not Running' -description $description -mitigation $mitigation
     }
 }
 else
@@ -1065,6 +1067,34 @@ else
     $description = "Failed to query winmgmt service (Status: $winmgmtStatus Win32ExitCode: $winmgmtWin32ExitCode ServiceSpecificExitCode: $winmgmtServiceSpecificExitCode)"
     $mitigation = '<a href="Placeholder">Placeholder</a>'
     New-Finding -type Critical -name 'Failed to query Winmgmt service' -description $description -mitigation $mitigation
+}
+
+Out-Log 'StdRegProv WMI class queryable:' -startLine
+if ($winmgmtStatusRunning)
+{
+    $stdRegProv = Invoke-ExpressionWithLogging "wmic /namespace:\\root\default Class StdRegProv Call GetDWORDValue hDefKey='&H80000002' sSubKeyName='SYSTEM\CurrentControlSet\Services\Winmgmt' sValueName=Start 2>`$null" -verboseOnly
+
+    $wmicExitCode = $LASTEXITCODE
+    if ($wmicExitCode -eq 0)
+    {
+        $stdRegProvQuerySuccess = $true
+        Out-Log $stdRegProvQuerySuccess -color Green -endLine
+        New-Check -name 'StdRegProv WMI class queryable' -result 'Passed' -details ''
+    }
+    else
+    {
+        $stdRegProvQuerySuccess = $false
+        Out-Log $stdRegProvQuerySuccess -color Red -endLine
+        New-Check -name 'StdRegProv WMI class queryable' -result 'Failed' -details ''
+        $description = "StdRegProv WMI class query failed with error code $wmicExitCode"
+        New-Finding -type Critical -name 'StdRegProv WMI class query failed' -description $description -mitigation ''
+    }
+}
+else
+{
+    $details = 'Skipped (Winmgmt service not running)'
+    New-Check -name 'StdRegProv WMI class' -result 'Skipped' -details $details
+    Out-Log $details -color DarkGray -endLine
 }
 
 <#
@@ -1420,7 +1450,7 @@ else
 
 if ($imdsReachable.Succeeded)
 {
-    Out-Log 'IMDS 169.254.169.254:80 returned expected result:' -startLine
+    Out-Log 'IMDS endpoint 169.254.169.254:80 returned expected result:' -startLine
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072
     # Below three lines have it use a null proxy, bypassing any configured proxy
     # See also https://github.com/microsoft/azureimds/blob/master/IMDSSample.ps1
@@ -1826,6 +1856,7 @@ Out-Log "DHCP-assigned IP addresses" -startLine
 
 $nics = New-Object System.Collections.Generic.List[Object]
 
+# Get-NetIPConfiguration depends on WMI
 $ipconfigs = Get-NetIPConfiguration -Detailed
 foreach ($ipconfig in $ipconfigs)
 {
@@ -2111,9 +2142,6 @@ $output = [PSCustomObject]@{
     scriptDuration                                        = $scriptDuration
 }
 
-$global:dbgOutput = $output
-$global:dbgFindings = $findings
-
 $css = @'
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -2331,3 +2359,6 @@ WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set ac
 ### Add mitigations for existing checks (XL)
 '@
 $todo = $todo.Split("`n").Trim()
+
+$global:dbgOutput = $output
+$global:dbgFindings = $findings
