@@ -43,34 +43,41 @@ function Get-RegKey
 {
     param(
         #$path = 'HKLM:\SOFTWARE\Microsoft\GuestAgent'
-        [string]$path = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest',
+        # [string]$path = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest',
         # $path = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Auto'
-        # 'HKLM:\SOFTWARE\Microsoft\Windows Azure'
+        [string]$path = 'HKLM:\SOFTWARE\Microsoft\Windows Azure',
         # 'HKLM:\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState'
         # 'HKLM:\SOFTWARE\Microsoft\Windows Azure\HandlerState'
         [switch]$recurse
     )
 
     $regKeyValues = New-Object System.Collections.Generic.List[Object]
-    $regKey = Get-Item -Path $path
-    $valueNames = $regKey.GetValueNames()
-    $subKeyNames = $regKey.GetSubKeyNames()
 
     if ($recurse)
     {
-        $regKey
+        $regKeys = Get-ChildItem -Path $path -Recurse
+    }
+    else
+    {
+        $regKeys = Get-Item -Path $path
     }
 
-    foreach ($valueName in $valueNames)
+    Write-Host "Reg key count: $($regKeys.Count)"
+    foreach ($regKey in $regKeys)
     {
-        $valueData = $regKey.GetValue($valueName)
-        $valueType = $regKey.GetValueKind($valueName)
-        $regKeyValue = [PSCustomObject]@{
-            Name = $valueName
-            Data = $valueData
-            Type = $valueType
+        $valueNames = $regKey.GetValueNames()
+        foreach ($valueName in $valueNames)
+        {
+            $valueData = $regKey.GetValue($valueName)
+            $valueType = $regKey.GetValueKind($valueName)
+            $regKeyValue = [PSCustomObject]@{
+                SubkeyName = $regKey.Name
+                ValueName = $valueName
+                ValueData = $valueData
+                ValueType = $valueType
+            }
+            $regKeyValues.Add($regKeyValue)
         }
-        $regKeyValues.Add($regKeyValue)
     }
     $regKeyValues = $regKeyValues | Sort-Object -Property Name
     return $regKeyValues
