@@ -2309,7 +2309,7 @@ $css = @'
 
 $tabs = @'
 <div class="tab">
-  <button class="tablinks" onclick="openTab(event, 'Findings')">Findings</button>
+  <button class="tablinks active" onclick="openTab(event, 'Findings')">Findings</button>
   <button class="tablinks" onclick="openTab(event, 'General')">General</button>
   <button class="tablinks" onclick="openTab(event, 'Extensions')">Extensions</button>
   <button class="tablinks" onclick="openTab(event, 'Network')">Network</button>
@@ -2341,7 +2341,7 @@ $stringBuilder = New-Object Text.StringBuilder
 
 $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 $tabs | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
-[void]$stringBuilder.Append('<div id="Findings" class="tabcontent">')
+[void]$stringBuilder.Append('<div id="Findings" class="tabcontent" style="display:block;">')
 [void]$stringBuilder.Append("<h3>NAME: $vmName VMID: $vmId Report Created: $scriptEndTimeUTCString</h3>")
 [void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
 $findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
@@ -2374,6 +2374,11 @@ $checksTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append("<h3 id=`"vmGeneral`">General</h3>`r`n")
 $vmGeneralTable = $vm | Where-Object {$_.Type -eq 'General'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmGeneralTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+
+[void]$stringBuilder.Append("<h3 id=`"vmServices`">Services</h3>`r`n")
+$services = Get-Service -ErrorAction SilentlyContinue | Select-Object DisplayName,Name,Status,StartType
+$vmServicesTable = $services | ConvertTo-Html -Fragment -As Table
+$vmServicesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("<h3 id=`"vmOS`">OS</h3>`r`n")
 $vmOsTable = $vm | Where-Object {$_.Type -eq 'OS'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
