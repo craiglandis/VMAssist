@@ -1210,15 +1210,7 @@ if ($guestKey)
         Out-Log "$isAtLeastMinSupportedVersion (installed: $guestKeyGuestAgentVersion, minimum supported: $minSupportedGuestAgentVersion)" -color Red -endLine
     }
 }
-
 <#
-cssdpdbgesc
-eagleeye
-alex yen
-ayush
-g
-Reg Type      PS Type
---------      -------
 REG_DWORD     System.Int32
 REG_SZ        System.String
 REG_QWORD     System.Int64
@@ -1234,6 +1226,7 @@ if ($autoKey)
 
 }
 
+$guestAgentKeyPath = 'HKLM:\SOFTWARE\Microsoft\GuestAgent'
 $guestAgentKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestAgentKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
 if ($guestAgentKey)
 {
@@ -1255,8 +1248,6 @@ $vm.Add([PSCustomObject]@{Property = "HeartbeatLastStatusUpdateTime"; Value = $g
 $vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
 $vm.Add([PSCustomObject]@{Property = "ManifestTimeStamp"; Value = $guestAgentKeyManifestTimeStamp; Type = 'Agent'})
 $vm.Add([PSCustomObject]@{Property = "MetricsSelfSelectionSelected"; Value = $guestAgentKeyMetricsSelfSelectionSelected; Type = 'Agent'})
-$vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
-$vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
 $vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
 
 $windowsAzureKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure'
@@ -2275,17 +2266,83 @@ $css = @'
             color: Black;
             text-align: left
         }
+        /* Style the tab */
+        .tab {
+          overflow: hidden;
+          border: 1px solid #ccc;
+          background-color: #f1f1f1;
+        }
+
+        /* Style the buttons inside the tab */
+        .tab button {
+          background-color: inherit;
+          float: left;
+          border: none;
+          outline: none;
+          cursor: pointer;
+          padding: 14px 16px;
+          transition: 0.3s;
+          font-size: 17px;
+        }
+
+        /* Change background color of buttons on hover */
+        .tab button:hover {
+          background-color: #ddd;
+        }
+
+        /* Create an active/current tablink class */
+        .tab button.active {
+          background-color: #ccc;
+        }
+
+        /* Style the tab content */
+        .tabcontent {
+          display: none;
+          padding: 6px 12px;
+          border: 1px solid #ccc;
+          border-top: none;
+        }
     </style>
 </head>
 <body>
 '@
 
+$tabs = @'
+<div class="tab">
+  <button class="tablinks" onclick="openTab(event, 'Findings')">Findings</button>
+  <button class="tablinks" onclick="openTab(event, 'General')">General</button>
+  <button class="tablinks" onclick="openTab(event, 'Extensions')">Extensions</button>
+  <button class="tablinks" onclick="openTab(event, 'Network')">Network</button>
+  <button class="tablinks" onclick="openTab(event, 'Services')">Services</button>
+  <button class="tablinks" onclick="openTab(event, 'Software')">Software</button>
+  <button class="tablinks" onclick="openTab(event, 'Updates')">Updates</button>
+</div>
+'@
+
+$script = @'
+<script>
+function openTab(evt, cityName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(cityName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
+'@
+
 $stringBuilder = New-Object Text.StringBuilder
 
 $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
-[void]$stringBuilder.Append('<h1>VM Agent Health Report</h1>')
+$tabs | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append('<div id="Findings" class="tabcontent">')
 [void]$stringBuilder.Append("<h3>NAME: $vmName VMID: $vmId Report Created: $scriptEndTimeUTCString</h3>")
-
 [void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
 $findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
 if ($findingsCount -ge 1)
@@ -2310,6 +2367,7 @@ $checksTable = $checksTable -replace '<td>Skipped</td>', '<td class="SKIPPED">Sk
 $global:dbgChecksTable = $checksTable
 [void]$stringBuilder.Append("<h2 id=`"checks`">Checks</h2>`r`n")
 $checksTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append('</div>')
 
 [void]$stringBuilder.Append("<h2 id=`"vm`">VM Details</h2>`r`n")
 
@@ -2321,8 +2379,8 @@ $vmGeneralTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 $vmOsTable = $vm | Where-Object {$_.Type -eq 'OS'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmOsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
-[void]$stringBuilder.Append("<h3 id=`"vmAgent`">OS</h3>`r`n")
-$vmAgentTable = $vm | Where-Object {$_.Type -eq 'AGENT'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
+[void]$stringBuilder.Append("<h3 id=`"vmAgent`">Agent</h3>`r`n")
+$vmAgentTable = $vm | Where-Object {$_.Type -eq 'Agent'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmAgentTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("<h3 id=`"vmNetwork`">Network</h3>`r`n")
@@ -2343,6 +2401,8 @@ $vmSecurityTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append("<h3 id=`"vmStorage`">Storage</h3>`r`n")
 $vmStorageTable = $vm | Where-Object {$_.Type -eq 'Storage'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmStorageTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+
+$script | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("</body>`r`n")
 [void]$stringBuilder.Append("</html>`r`n")
