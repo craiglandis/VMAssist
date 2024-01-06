@@ -62,7 +62,6 @@ function Get-RegKey
         $regKeys = Get-Item -Path $path
     }
 
-    Write-Host "Reg key count: $($regKeys.Count)"
     foreach ($regKey in $regKeys)
     {
         $valueNames = $regKey.GetValueNames()
@@ -1662,7 +1661,7 @@ if ($rdAgentStatusRunning)
             foreach ($waAppAgentThirdPartyModule in $waAppAgentThirdPartyModules)
             {
                 $filePath = $waAppAgentThirdPartyModule.FileName
-                $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath"
+                $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath" -verboseOnly
                 $issuer = $signature.SignerCertificate.Issuer
                 if ($issuer -eq $microsoftWindowsProductionPCA2011)
                 {
@@ -1673,14 +1672,19 @@ if ($rdAgentStatusRunning)
             {
                 $details = "$($($waAppAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
                 New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Information' -details $details
-                Out-Log $true -color Cyan -endLine
+                Out-Log $true -endLine -color Cyan
                 New-Finding -type Information -name '3rd-party modules in WaAppAgent.exe' -description $details -mitigation ''
+            }
+            else
+            {
+                New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Passed' -details 'No 3rd-party modules in WaAppAgent.exe'
+                Out-Log $false -endLine -color Green
             }
         }
         else
         {
             New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Passed' -details 'No 3rd-party modules in WaAppAgent.exe'
-            Out-Log $false -color Green -endLine
+            Out-Log $false -endLine -color Green
         }
     }
     else
@@ -1709,7 +1713,7 @@ if ($windowsAzureGuestAgentStatusRunning)
             foreach ($windowsAzureGuestAgentThirdPartyModule in $windowsAzureGuestAgentThirdPartyModules)
             {
                 $filePath = $windowsAzureGuestAgentThirdPartyModule.FileName
-                $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath"
+                $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath" -verboseOnly
                 $issuer = $signature.SignerCertificate.Issuer
                 if ($issuer -eq $microsoftWindowsProductionPCA2011)
                 {
@@ -1722,6 +1726,11 @@ if ($windowsAzureGuestAgentStatusRunning)
                 New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Information' -details $details
                 Out-Log $true -color Cyan -endLine
                 New-Finding -type Information -name '3rd-party modules in WindowsAzureGuestAgent.exe' -description $details -mitigation ''
+            }
+            else
+            {
+                New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Passed' -details 'No 3rd-party modules in WindowsAzureGuestAgent.exe'
+                Out-Log $false -color Green -endLine
             }
         }
         else
