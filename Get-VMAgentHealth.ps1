@@ -2514,8 +2514,6 @@ $todo = @'
 ### Create warning finding for "service running but set to disabled instead of automatic" for Rdagent and WindowsAzureGuestAgent services
 ### Clean up 'VM agent installed' check
 ### Use checkaws to verify external IP, which then confirms internet access as well
-### Create table with service details
-### Create table with installed app details
 ### Available memory
 ### Page file settings
 ### Commit
