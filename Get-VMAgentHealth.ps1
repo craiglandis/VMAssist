@@ -2081,6 +2081,15 @@ foreach ($dataDisk in $dataDisks)
     $vm.Add([PSCustomObject]@{Property = "Data disk LUN $lun writeAcceleratorEnabled"; Value = $writeAcceleratorEnabled; Type = 'Storage'})
 }
 
+$uninstallPaths = ('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+                   'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+                   'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+                   'HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*')
+$software = Get-ItemProperty -Path $uninstallPaths -ErrorAction SilentlyContinue
+$software = $software | Where-Object {$_.DisplayName} | Select-Object DisplayName,DisplayVersion,Publisher | Sort-Object -Property DisplayName
+
+$updates = Get-HotFix | Select-Object -Property HotFixID,Description,InstalledOn | Sort-Object -Property InstalledOn -Descending
+
 $output = [PSCustomObject]@{
 
     wireserverPort80Reachable                             = $wireserverPort80Reachable
@@ -2369,25 +2378,41 @@ $global:dbgChecksTable = $checksTable
 $checksTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('</div>')
 
+[void]$stringBuilder.Append('<div id="General" class="tabcontent">')
 [void]$stringBuilder.Append("<h2 id=`"vm`">VM Details</h2>`r`n")
 
 [void]$stringBuilder.Append("<h3 id=`"vmGeneral`">General</h3>`r`n")
 $vmGeneralTable = $vm | Where-Object {$_.Type -eq 'General'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmGeneralTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
-[void]$stringBuilder.Append("<h3 id=`"vmServices`">Services</h3>`r`n")
-$services = Get-Service -ErrorAction SilentlyContinue | Select-Object DisplayName,Name,Status,StartType
-$vmServicesTable = $services | ConvertTo-Html -Fragment -As Table
-$vmServicesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
-
 [void]$stringBuilder.Append("<h3 id=`"vmOS`">OS</h3>`r`n")
 $vmOsTable = $vm | Where-Object {$_.Type -eq 'OS'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmOsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
+[void]$stringBuilder.Append("<h3 id=`"vmSecurity`">Security</h3>`r`n")
+$vmSecurityTable = $vm | Where-Object {$_.Type -eq 'Security'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
+$vmSecurityTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+
 [void]$stringBuilder.Append("<h3 id=`"vmAgent`">Agent</h3>`r`n")
 $vmAgentTable = $vm | Where-Object {$_.Type -eq 'Agent'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmAgentTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append('</div>')
 
+[void]$stringBuilder.Append('<div id="Extensions" class="tabcontent">')
+$handlerStateKey = Get-RegKey -Path 'HKLM:\SOFTWARE\Microsoft\Windows Azure\HandlerState' -Recurse
+$global:dbgHandlerStateKey = $handlerStateKey
+$handlerKeyNames = $handlerStateKey.SubkeyName | Sort-Object -Unique
+foreach ($handlerKeyName in $handlerKeyNames)
+{
+    $handlerName = Split-Path -Path $handlerKeyName -Leaf
+    [void]$stringBuilder.Append("<h3>$handlerName</h3>`r`n")
+    $handlerValues = $handlerStateKey | Where-Object {$_.SubkeyName -eq $handlerKeyName} | Select-Object ValueName,ValueData | Sort-Object ValueName
+    $vmHandlerValuesTable = $handlerValues | ConvertTo-Html -Fragment -As Table
+    $vmHandlerValuesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+}
+[void]$stringBuilder.Append('</div>')
+
+[void]$stringBuilder.Append('<div id="Network" class="tabcontent">')
 [void]$stringBuilder.Append("<h3 id=`"vmNetwork`">Network</h3>`r`n")
 [void]$stringBuilder.Append("<h4>NIC Details</h4>`r`n")
 $vmNetworkTable = $nics | ConvertTo-Html -Fragment -As Table
@@ -2398,14 +2423,30 @@ $vmNetworkTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append("<h4>NIC Details from IMDS</h4>`r`n")
 $vmNetworkImdsTable = $nicsImds | ConvertTo-Html -Fragment -As Table
 $vmNetworkImdsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append('</div>')
 
-[void]$stringBuilder.Append("<h3 id=`"vmSecurity`">Security</h3>`r`n")
-$vmSecurityTable = $vm | Where-Object {$_.Type -eq 'Security'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
-$vmSecurityTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append('<div id="Services" class="tabcontent">')
+[void]$stringBuilder.Append("<h3 id=`"vmServices`">Services</h3>`r`n")
+$services = Get-Service -ErrorAction SilentlyContinue | Select-Object DisplayName,Name,Status,StartType
+$vmServicesTable = $services | ConvertTo-Html -Fragment -As Table
+$vmServicesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append('</div>')
 
+[void]$stringBuilder.Append('<div id="Disk" class="tabcontent">')
 [void]$stringBuilder.Append("<h3 id=`"vmStorage`">Storage</h3>`r`n")
 $vmStorageTable = $vm | Where-Object {$_.Type -eq 'Storage'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmStorageTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append('</div>')
+
+[void]$stringBuilder.Append('<div id="Software" class="tabcontent">')
+$vmSoftwareTable = $software | ConvertTo-Html -Fragment -As Table
+$vmSoftwareTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append('</div>')
+
+[void]$stringBuilder.Append('<div id="Updates" class="tabcontent">')
+$vmUpdatesTable = $updates | ConvertTo-Html -Fragment -As Table
+$vmUpdatesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append('</div>')
 
 $script | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
