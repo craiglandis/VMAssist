@@ -19,7 +19,8 @@
 
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
-    [string]$outputPath = 'C:\logs'
+    [string]$outputPath = 'C:\logs',
+    [switch]$showReport
 )
 
 trap
@@ -395,6 +396,7 @@ function New-Check
         Details     = $details
     }
     $checks.Add($check)
+
 }
 
 function New-Finding
@@ -406,6 +408,7 @@ function New-Finding
         [string]$description,
         [string]$mitigation
     )
+    Out-Log "Got Here 1a"
 
     $date = Get-Date
     $date = $date.ToUniversalTime()
@@ -418,7 +421,10 @@ function New-Finding
         Description = $description
         Mitigation  = $mitigation
     }
-    $findings.Add($finding)
+    $script:findings.Add($finding)
+    $global:finding = $finding
+    Out-Log $finding -raw
+    Out-Log $script:findings -raw
 }
 
 function Send-Telemetry
@@ -946,7 +952,7 @@ Out-Log "Log file: $logFilePath"
 
 $result = New-Object System.Collections.Generic.List[Object]
 $checks = New-Object System.Collections.Generic.List[Object]
-$findings = New-Object System.Collections.Generic.List[Object]
+$script:findings = New-Object System.Collections.Generic.List[Object]
 $vm = New-Object System.Collections.Generic.List[Object]
 
 $ErrorActionPreference = 'SilentlyContinue'
@@ -1239,6 +1245,7 @@ $winmgmt = Invoke-ExpressionWithLogging "Get-Service -Name 'winmgmt' -ErrorActio
 if ($winmgmt)
 {
     $winmgmtStatus = $winmgmt.Status
+    Out-Log "`$winmgmtStatus: $winmgmtStatus"
     $winmgmtStartType = $winmgmt.StartType
 
     $winmgmtServiceStatus = [Win32.Service.Ext]::QueryServiceStatus($winmgmt.ServiceHandle)
@@ -1256,7 +1263,7 @@ if ($winmgmt)
         $winmgmtStatusRunning = $true
         Out-Log $winmgmtStatusRunning -color Green -endLine
         $details = "Status: $winmgmtStatus StartType: $winmgmtStartType"
-        New-Check -name 'Winmgmt service running' -result 'Passed' -details ''
+        New-Check -name 'Winmgmt service running' -result 'Passed' -details $details
     }
     else
     {
@@ -1999,6 +2006,7 @@ else
     New-Finding -type Information -name "Non-default $packagesPath permissions" -description $details -mitigation $mitigation
 }
 
+Out-Log "System drive does not have low disk space:" -startLine
 $systemDriveLetter = "$env:SystemDrive" -split ':' | Select-Object -First 1
 $systemDrive = Invoke-ExpressionWithLogging "Get-PSDrive -Name $systemDriveLetter" -verboseOnly
 # "Get-PSDrive" doesn't call WMI but Free and Used properties are of type ScriptProperty,
@@ -2008,7 +2016,7 @@ if ($systemDriveFreeSpaceBytes)
 {
     $systemDriveFreeSpaceGB = [Math]::Round($systemDriveFreeSpaceBytes/1GB,1)
     $systemDriveFreeSpaceMB = [Math]::Round($systemDriveFreeSpaceBytes/1MB,1)
-    Out-Log "System drive does not have low disk space:" -startLine
+
     if ($systemDriveFreeSpaceMB -lt 100)
     {
         $details = "<100MB free ($($systemDriveFreeSpaceMB)MB free) on drive $systemDriveLetter"
@@ -2041,7 +2049,10 @@ $joinInfo = Get-JoinInfo
 $joinType = $joinInfo.JoinType
 $productType = $joinInfo.ProductType
 
-$drivers = Get-Drivers
+if ($winmgmtStatusRunning)
+{
+    $drivers = Get-Drivers
+}
 
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
 $scriptStartTimeUTCString = Get-Date -Date $scriptStartTime -Format o
@@ -2098,110 +2109,118 @@ Out-Log "DHCP-assigned IP addresses" -startLine
 
 $nics = New-Object System.Collections.Generic.List[Object]
 
-# Get-NetIPConfiguration depends on WMI
-$ipconfigs = Get-NetIPConfiguration -Detailed
-foreach ($ipconfig in $ipconfigs)
+if ($winmgmtStatusRunning)
 {
-    $interfaceAlias = $ipconfig | Select-Object -ExpandProperty InterfaceAlias
-    $interfaceIndex = $ipconfig | Select-Object -ExpandProperty InterfaceIndex
-    $interfaceDescription = $ipconfig | Select-Object -ExpandProperty InterfaceDescription
-
-    $netAdapter = $ipconfig | Select-Object -ExpandProperty NetAdapter
-    $macAddress = $netAdapter | Select-Object -ExpandProperty MacAddress
-    $macAddress = $macAddress -replace '-', ''
-    $status = $netAdapter | Select-Object -ExpandProperty Status
-
-    $netProfile = $ipconfig | Select-Object -ExpandProperty NetProfile
-    $networkCategory = $netProfile | Select-Object -ExpandProperty NetworkCategory
-    $ipV4Connectivity = $netProfile | Select-Object -ExpandProperty IPv4Connectivity
-    $ipV6Connectivity = $netProfile | Select-Object -ExpandProperty IPv6Connectivity
-
-    $ipV6LinkLocalAddress = $ipconfig | Select-Object -ExpandProperty IPv6LinkLocalAddress
-    $ipV6Address = $ipV6LinkLocalAddress | Select-Object -ExpandProperty IPAddress
-
-    $ipV4Address = $ipconfig | Select-Object -ExpandProperty IPv4Address
-    $ipV4IpAddress = $ipV4Address | Select-Object -ExpandProperty IPAddress
-
-    $ipV6DefaultGateway = $ipconfig | Select-Object -ExpandProperty IPv6DefaultGateway
-    $ipV6DefaultGateway = $ipV6DefaultGateway | Select-Object -ExpandProperty NextHop
-
-    $ipV4DefaultGateway = $ipconfig | Select-Object -ExpandProperty IPv4DefaultGateway
-    $ipV4DefaultGateway = $ipV4DefaultGateway | Select-Object -ExpandProperty NextHop
-
-    $netIPv6Interface = $ipconfig | Select-Object -ExpandProperty NetIPv6Interface
-    $ipV6Dhcp = $netIPv6Interface | Select-Object -ExpandProperty DHCP
-
-    $netIPv4Interface = $ipconfig | Select-Object -ExpandProperty NetIPv4Interface
-    $ipV4Dhcp = $netIPv4Interface | Select-Object -ExpandProperty DHCP
-
-    $dnsServer = $ipconfig | Select-Object -ExpandProperty DNSServer
-    $ipV4DnsServers = $dnsServer | Where-Object {$_.AddressFamily -eq 2} | Select-Object -Expand ServerAddresses
-    $ipV6DnsServers = $dnsServer | Where-Object {$_.AddressFamily -eq 23} | Select-Object -Expand ServerAddresses
-
-    $nic = [PSCustomObject]@{
-        Description        = $interfaceDescription
-        Alias              = $interfaceAlias
-        Index              = $interfaceIndex
-        MacAddress         = $macAddress
-        Status             = $status
-        DHCP               = $ipV4Dhcp
-        IpAddress          = $ipV4IpAddress
-        DnsServers         = $ipV4DnsServers
-        DefaultGateway     = $ipV4DefaultGateway
-        Connectivity       = $ipV4Connectivity
-        Category           = $networkCategory
-        IPv6DHCP           = $ipV6Dhcp
-        IPv6IpAddress      = $ipV6LinkLocalAddress
-        IPv6DnsServers     = $ipV6DnsServers
-        IPv6DefaultGateway = $ipV6DefaultGateway
-        IPv6Connectivity   = $ipV6Connectivity
-    }
-    $nics.Add($nic)
-}
-
-$dhcpDisabledNics = $nics | Where-Object DHCP -eq 'Disabled'
-if ($dhcpDisabledNics)
-{
-    $dhcpAssignedIpAddresses = $false
-    Out-Log $dhcpAssignedIpAddresses -endLine -color Yellow
-    $dhcpDisabledNicsString = "DHCP-disabled NICs: "
-    foreach ($dhcpDisabledNic in $dhcpDisabledNics)
+    # Get-NetIPConfiguration depends on WMI
+    $ipconfigs = Get-NetIPConfiguration -Detailed
+    foreach ($ipconfig in $ipconfigs)
     {
-        $dhcpDisabledNicsString += "Description: $($dhcpDisabledNic.Description) Alias: $($dhcpDisabledNic.Alias) Index: $($dhcpDisabledNic.Index) IpAddress: $($dhcpDisabledNic.IpAddress)"
+        $interfaceAlias = $ipconfig | Select-Object -ExpandProperty InterfaceAlias
+        $interfaceIndex = $ipconfig | Select-Object -ExpandProperty InterfaceIndex
+        $interfaceDescription = $ipconfig | Select-Object -ExpandProperty InterfaceDescription
+
+        $netAdapter = $ipconfig | Select-Object -ExpandProperty NetAdapter
+        $macAddress = $netAdapter | Select-Object -ExpandProperty MacAddress
+        $macAddress = $macAddress -replace '-', ''
+        $status = $netAdapter | Select-Object -ExpandProperty Status
+
+        $netProfile = $ipconfig | Select-Object -ExpandProperty NetProfile
+        $networkCategory = $netProfile | Select-Object -ExpandProperty NetworkCategory
+        $ipV4Connectivity = $netProfile | Select-Object -ExpandProperty IPv4Connectivity
+        $ipV6Connectivity = $netProfile | Select-Object -ExpandProperty IPv6Connectivity
+
+        $ipV6LinkLocalAddress = $ipconfig | Select-Object -ExpandProperty IPv6LinkLocalAddress
+        $ipV6Address = $ipV6LinkLocalAddress | Select-Object -ExpandProperty IPAddress
+
+        $ipV4Address = $ipconfig | Select-Object -ExpandProperty IPv4Address
+        $ipV4IpAddress = $ipV4Address | Select-Object -ExpandProperty IPAddress
+
+        $ipV6DefaultGateway = $ipconfig | Select-Object -ExpandProperty IPv6DefaultGateway
+        $ipV6DefaultGateway = $ipV6DefaultGateway | Select-Object -ExpandProperty NextHop
+
+        $ipV4DefaultGateway = $ipconfig | Select-Object -ExpandProperty IPv4DefaultGateway
+        $ipV4DefaultGateway = $ipV4DefaultGateway | Select-Object -ExpandProperty NextHop
+
+        $netIPv6Interface = $ipconfig | Select-Object -ExpandProperty NetIPv6Interface
+        $ipV6Dhcp = $netIPv6Interface | Select-Object -ExpandProperty DHCP
+
+        $netIPv4Interface = $ipconfig | Select-Object -ExpandProperty NetIPv4Interface
+        $ipV4Dhcp = $netIPv4Interface | Select-Object -ExpandProperty DHCP
+
+        $dnsServer = $ipconfig | Select-Object -ExpandProperty DNSServer
+        $ipV4DnsServers = $dnsServer | Where-Object {$_.AddressFamily -eq 2} | Select-Object -Expand ServerAddresses
+        $ipV6DnsServers = $dnsServer | Where-Object {$_.AddressFamily -eq 23} | Select-Object -Expand ServerAddresses
+
+        $nic = [PSCustomObject]@{
+            Description        = $interfaceDescription
+            Alias              = $interfaceAlias
+            Index              = $interfaceIndex
+            MacAddress         = $macAddress
+            Status             = $status
+            DHCP               = $ipV4Dhcp
+            IpAddress          = $ipV4IpAddress
+            DnsServers         = $ipV4DnsServers
+            DefaultGateway     = $ipV4DefaultGateway
+            Connectivity       = $ipV4Connectivity
+            Category           = $networkCategory
+            IPv6DHCP           = $ipV6Dhcp
+            IPv6IpAddress      = $ipV6LinkLocalAddress
+            IPv6DnsServers     = $ipV6DnsServers
+            IPv6DefaultGateway = $ipV6DefaultGateway
+            IPv6Connectivity   = $ipV6Connectivity
+        }
+        $nics.Add($nic)
     }
-    New-Check -name "DHCP-assigned IP addresses" -result 'Information' -details $dhcpDisabledNicsString
-    New-Finding -type Information -name "DHCP-disabled NICs" -description $dhcpDisabledNicsString -mitigation ''
+
+    $dhcpDisabledNics = $nics | Where-Object DHCP -eq 'Disabled'
+    if ($dhcpDisabledNics)
+    {
+        $dhcpAssignedIpAddresses = $false
+        Out-Log $dhcpAssignedIpAddresses -endLine -color Yellow
+        $dhcpDisabledNicsString = "DHCP-disabled NICs: "
+        foreach ($dhcpDisabledNic in $dhcpDisabledNics)
+        {
+            $dhcpDisabledNicsString += "Description: $($dhcpDisabledNic.Description) Alias: $($dhcpDisabledNic.Alias) Index: $($dhcpDisabledNic.Index) IpAddress: $($dhcpDisabledNic.IpAddress)"
+        }
+        New-Check -name "DHCP-assigned IP addresses" -result 'Information' -details $dhcpDisabledNicsString
+        New-Finding -type Information -name "DHCP-disabled NICs" -description $dhcpDisabledNicsString -mitigation ''
+    }
+    else
+    {
+        $dhcpAssignedIpAddresses = $true
+        Out-Log $dhcpAssignedIpAddresses -endLine -color Green
+        $details = "All NICs have DHCP-assigned IP addresses"
+        New-Check -name "DHCP-assigned IP addresses" -result 'Passed' -details $details
+    }
+
+    $nicsImds = New-Object System.Collections.Generic.List[Object]
+    foreach ($interface in $interfaces)
+    {
+        $ipV4privateIpAddresses = $interface.ipV4.ipAddress.privateIpAddress -join ','
+        $ipV4publicIpAddresses = $interface.ipV4.ipAddress.publicIpAddress -join ','
+        $ipV6privateIpAddresses = $interface.ipV6.ipAddress.privateIpAddress -join ','
+        $ipV6publicIpAddresses = $interface.ipV6.ipAddress.publicIpAddress -join ','
+
+        if ($ipV4privateIpAddresses) {$ipV4privateIpAddresses = $ipV4privateIpAddresses.TrimEnd(',')}
+        if ($ipV4publicIpAddresses) {$ipV4publicIpAddresses = $ipV4publicIpAddresses.TrimEnd(',')}
+        if ($ipV6privateIpAddresses) {$ipV6privateIpAddresses = $ipV6privateIpAddresses.TrimEnd(',')}
+        if ($ipV6publicIpAddresses) {$ipV6publicIpAddresses = $ipV6publicIpAddresses.TrimEnd(',')}
+
+        $nicImds = [PSCustomObject]@{
+            'MAC Address'      = $interface.macAddress
+            'IPv4 Private IPs' = $ipV4privateIpAddresses
+            'IPv4 Public IPs'  = $ipV4publicIpAddresses
+            'IPv6 Private IPs' = $ipV6privateIpAddresses
+            'IPv6 Public IPs'  = $ipV6publicIpAddresses
+        }
+        $nicsImds.Add($nicImds)
+    }
 }
 else
 {
-    $dhcpAssignedIpAddresses = $true
-    Out-Log $dhcpAssignedIpAddresses -endLine -color Green
-    $details = "All NICs have DHCP-assigned IP addresses"
-    New-Check -name "DHCP-assigned IP addresses" -result 'Passed' -details $details
+    Out-Log "Unable to query network adapter details because winmgmt service is not running"
 }
 
-$nicsImds = New-Object System.Collections.Generic.List[Object]
-foreach ($interface in $interfaces)
-{
-    $ipV4privateIpAddresses = $interface.ipV4.ipAddress.privateIpAddress -join ','
-    $ipV4publicIpAddresses = $interface.ipV4.ipAddress.publicIpAddress -join ','
-    $ipV6privateIpAddresses = $interface.ipV6.ipAddress.privateIpAddress -join ','
-    $ipV6publicIpAddresses = $interface.ipV6.ipAddress.publicIpAddress -join ','
-
-    if ($ipV4privateIpAddresses) {$ipV4privateIpAddresses = $ipV4privateIpAddresses.TrimEnd(',')}
-    if ($ipV4publicIpAddresses) {$ipV4publicIpAddresses = $ipV4publicIpAddresses.TrimEnd(',')}
-    if ($ipV6privateIpAddresses) {$ipV6privateIpAddresses = $ipV6privateIpAddresses.TrimEnd(',')}
-    if ($ipV6publicIpAddresses) {$ipV6publicIpAddresses = $ipV6publicIpAddresses.TrimEnd(',')}
-
-    $nicImds = [PSCustomObject]@{
-        'MAC Address'      = $interface.macAddress
-        'IPv4 Private IPs' = $ipV4privateIpAddresses
-        'IPv4 Public IPs'  = $ipV4publicIpAddresses
-        'IPv6 Private IPs' = $ipV6privateIpAddresses
-        'IPv6 Public IPs'  = $ipV6publicIpAddresses
-    }
-    $nicsImds.Add($nicImds)
-}
 
 # Security
 if ($imdsReachable.Succeeded -eq $false)
@@ -2271,7 +2290,14 @@ $uninstallPaths = ('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
 $software = Get-ItemProperty -Path $uninstallPaths -ErrorAction SilentlyContinue
 $software = $software | Where-Object {$_.DisplayName} | Select-Object DisplayName,DisplayVersion,Publisher | Sort-Object -Property DisplayName
 
-$updates = Get-HotFix | Select-Object -Property HotFixID,Description,InstalledOn | Sort-Object -Property InstalledOn -Descending
+if ($winmgmtStatusRunning)
+{
+    $updates = Get-HotFix | Select-Object -Property HotFixID,Description,InstalledOn | Sort-Object -Property InstalledOn -Descending
+}
+else
+{
+    Out-Log "Unable to query Windows update details because the winmgmt service is not running"
+}
 
 $output = [PSCustomObject]@{
 
@@ -2538,10 +2564,11 @@ $tabs | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('<div id="Findings" class="tabcontent" style="display:block;">')
 [void]$stringBuilder.Append("<h3>NAME: $vmName VMID: $vmId Report Created: $scriptEndTimeUTCString</h3>")
 [void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
-$findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
+$findingsCount = $script:findings | Measure-Object | Select-Object -ExpandProperty Count
+Out-Log "`$findingsCount: $findingsCount"
 if ($findingsCount -ge 1)
 {
-    $findingsTable = $findings | Select-Object Type, Name, Description, Mitigation | ConvertTo-Html -Fragment -As Table
+    $findingsTable = $script:findings | Select-Object Type, Name, Description, Mitigation | ConvertTo-Html -Fragment -As Table
     $findingsTable = $findingsTable -replace '<td>Critical</td>', '<td class="CRITICAL">Critical</td>'
     $findingsTable = $findingsTable -replace '<td>Warning</td>', '<td class="WARNING">Warning</td>'
     $findingsTable = $findingsTable -replace '<td>Information</td>', '<td class="INFORMATION">Information</td>'
@@ -2651,7 +2678,7 @@ $script | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 $htm = $stringBuilder.ToString()
 
-$findingsJson = $findings | ConvertTo-Json -Depth 10
+$findingsJson = $script:findings | ConvertTo-Json -Depth 10
 $checksJson = $checks | ConvertTo-Json -Depth 10
 $vmJson = $vm | ConvertTo-Json -Depth 10
 $properties = @{
@@ -2672,7 +2699,7 @@ $htm = $htm.Replace('&lt;', '<').Replace('&gt;', '>').Replace('&quot;', '"')
 
 $htm | Out-File -FilePath $htmFilePath
 Out-Log "HTML report: $htmFilePath"
-if ($installationType -ne 'Server Core')
+if ($showReport -and $installationType -ne 'Server Core')
 {
     Invoke-Item -Path $htmFilePath
 }
@@ -2681,7 +2708,7 @@ Out-Log "Log file: $logFilePath"
 $scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f (New-TimeSpan -Start $scriptStartTime -End (Get-Date))
 Out-Log "$scriptName duration: $scriptDuration"
 
-[int]$findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
+[int]$findingsCount = $script:findings | Measure-Object | Select-Object -ExpandProperty Count
 if ($findingsCount -ge 1)
 {
     $color = 'Cyan'
@@ -2732,4 +2759,5 @@ WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set ac
 $todo = $todo.Split("`n").Trim()
 
 $global:dbgOutput = $output
-$global:dbgFindings = $findings
+$global:dbgFindings = $script:findings
+$global:dbgFindings

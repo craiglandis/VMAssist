@@ -51,6 +51,8 @@ param(
     [switch]$unblockimds,
     [switch]$enableProxy,
     [switch]$disableProxy,
+    [switch]$enableWinmgmt,
+    [switch]$disableWinmgmt,
     [switch]$loadModule, # https://chat.openai.com/share/cc75e85d-da52-455e-a945-a826af4d3866
     [switch]$unloadModule,
     [switch]$testCSEWithCommand,
@@ -367,7 +369,9 @@ if ((Test-Path -Path $logFolderPath -PathType Container) -eq $false)
     Invoke-ExpressionWithLogging "New-Item -Path $logFolderPath -ItemType Directory -Force | Out-Null" -verboseOnly
 }
 $computerName = $env:COMPUTERNAME.ToUpper()
-$invokeWmiMethodResult = Invoke-WmiMethod -Path "Win32_Directory.Name='$logFolderPath'" -Name Compress
+
+if ((Get-Service -Name winmgmt).Status -eq 'Running') {$invokeWmiMethodResult = Invoke-WmiMethod -Path "Win32_Directory.Name='$logFolderPath'" -Name Compress}
+# $invokeWmiMethodResult = Invoke-WmiMethod -Path "Win32_Directory.Name='$logFolderPath'" -Name Compress
 $logFilePath = "$logFolderPath\$($scriptBaseName)_$($computerName)_$($scriptStartTimeString).log"
 if ((Test-Path -Path $logFilePath -PathType Leaf) -eq $false)
 {
@@ -613,6 +617,21 @@ if ($setprofile)
     Add-Content -Path $profile -Value "Set-Alias w '\\tsclient\c\onedrive\my\Set-Wallpaper.ps1'" -Force
     Add-Content -Path $profile -Value "Set-Location -Path C:\" -Force
     Add-Content -Path $profile -Value "Clear-Host" -Force
+}
+
+if ($enableWinmgmt)
+{
+    Invoke-ExpressionWithLogging 'Get-Service -Name winmgmt | Format-Table -Autosize Name,ServiceName,Status,StartType'
+    Invoke-ExpressionWithLogging 'Set-Service -Name winmgmt -StartupType Automatic -Status Running'
+    # Invoke-ExpressionWithLogging 'Start-Service -Name winmgmt'
+    Invoke-ExpressionWithLogging 'Get-Service -Name winmgmt | Format-Table -Autosize Name,ServiceName,Status,StartType'
+}
+
+if ($disableWinmgmt)
+{
+    Invoke-ExpressionWithLogging 'Stop-Service -Name winmgmt -Force'
+    Invoke-ExpressionWithLogging 'Set-Service -Name winmgmt -StartupType Disabled'
+    Invoke-ExpressionWithLogging 'Get-Service -Name winmgmt | Format-Table -Autosize Name,ServiceName,Status,StartType'
 }
 
 if ($stopRdagent -or $startRdagent -or $disableRdagent -or $enableRdagent -or $stopWindowsAzureGuestAgent -or $startWindowsAzureGuestAgent -or $disableWindowsAzureGuestAgent -or $enableWindowsAzureGuestAgent -or $stopGAServices -or $startGAServices -or $disableGAServices -or $enableGAServices)
