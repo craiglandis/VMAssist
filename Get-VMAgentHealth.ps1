@@ -486,6 +486,170 @@ function Send-Telemetry
     }
 }
 
+function Get-Drivers
+{
+    # Both Win32_SystemDriver and Driverquery.exe use WMI, and Win32_SystemDriver is faster
+    # So no benefit to using Driverquery.exe
+$microsoftIssuers = @'
+CN=Microsoft Code Signing PCA 2010, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
+CN=Microsoft Code Signing PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
+CN=Microsoft Code Signing PCA, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
+CN=Microsoft Windows Production PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
+CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
+CN=Microsoft Windows Third Party Component CA 2013, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
+CN=Microsoft Windows Third Party Component CA 2014, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
+CN=Microsoft Windows Verification PCA, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
+'@
+    $microsoftIssuers = $microsoftIssuers.Split("`n").Trim()
+
+    $drivers = Get-CimInstance -Query 'SELECT * FROM Win32_SystemDriver'
+
+    foreach ($driver in $drivers)
+    {
+        $driverPath = $driver.PathName.Replace('\??\', '')
+        $driverFile = Get-Item -Path $driverPath -ErrorAction SilentlyContinue
+        if ($driverFile)
+        {
+            $driver | Add-Member -MemberType NoteProperty -Name Path -Value $driverPath
+            $driver | Add-Member -MemberType NoteProperty -Name FileVersion -Value $driverFile.VersionInfo.FileVersion
+            $driver | Add-Member -MemberType NoteProperty -Name FileVersionRaw -Value $driverFile.VersionInfo.FileVersionRaw
+            $driver | Add-Member -MemberType NoteProperty -Name ProductVersion -Value $driverFile.VersionInfo.ProductVersion
+            $driver | Add-Member -MemberType NoteProperty -Name ProductVersionRaw -Value $driverFile.VersionInfo.ProductVersionRaw
+            $driver | Add-Member -MemberType NoteProperty -Name CompanyName -Value $driverFile.VersionInfo.CompanyName
+            $driver | Add-Member -MemberType NoteProperty -Name LegalCopyright -Value $driverFile.VersionInfo.LegalCopyright
+        }
+
+        $driverFileSignature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $driverPath -ErrorAction SilentlyContinue" -verboseOnly
+        if ($driverFileSignature)
+        {
+            $driver | Add-Member -MemberType NoteProperty -Name Issuer -Value $driverFileSignature.Signercertificate.Issuer
+            $driver | Add-Member -MemberType NoteProperty -Name Subject -Value $driverFileSignature.Signercertificate.Subject
+        }
+    }
+
+    $microsoftRunningDrivers = $drivers | Where-Object {$_.State -eq 'Running' -and $_.Issuer -in $microsoftIssuers}
+    $thirdPartyRunningDrivers = $drivers | Where-Object {$_.State -eq 'Running' -and $_.Issuer -notin $microsoftIssuers}
+
+    $microsoftRunningDrivers = $microsoftRunningDrivers | Select-Object -Property Name,Description,Path,FileVersion,FileVersionRaw,CompanyName,Issuer
+    $thirdPartyRunningDrivers = $thirdPartyRunningDrivers | Select-Object -Property Name,Description,Path,FileVersion,FileVersionRaw,CompanyName,Issuer
+
+    $runningDrivers = [PSCustomObject]@{
+        microsoftRunningDrivers = $microsoftRunningDrivers
+        thirdPartyRunningDrivers = $thirdPartyRunningDrivers
+    }
+
+    return $runningDrivers
+}
+
+function Get-JoinInfo
+{
+$netApi32MemberDefinition = @'
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Runtime.InteropServices;
+public class NetAPI32{
+    public enum DSREG_JOIN_TYPE {
+    DSREG_UNKNOWN_JOIN,
+    DSREG_DEVICE_JOIN,
+    DSREG_WORKPLACE_JOIN
+    }
+    [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
+    public struct DSREG_USER_INFO {
+        [MarshalAs(UnmanagedType.LPWStr)] public string UserEmail;
+        [MarshalAs(UnmanagedType.LPWStr)] public string UserKeyId;
+        [MarshalAs(UnmanagedType.LPWStr)] public string UserKeyName;
+    }
+    [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
+    public struct CERT_CONTEX {
+        public uint   dwCertEncodingType;
+        public byte   pbCertEncoded;
+        public uint   cbCertEncoded;
+        public IntPtr pCertInfo;
+        public IntPtr hCertStore;
+    }
+    [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
+    public struct DSREG_JOIN_INFO
+    {
+        public int joinType;
+        public IntPtr pJoinCertificate;
+        [MarshalAs(UnmanagedType.LPWStr)] public string DeviceId;
+        [MarshalAs(UnmanagedType.LPWStr)] public string IdpDomain;
+        [MarshalAs(UnmanagedType.LPWStr)] public string TenantId;
+        [MarshalAs(UnmanagedType.LPWStr)] public string JoinUserEmail;
+        [MarshalAs(UnmanagedType.LPWStr)] public string TenantDisplayName;
+        [MarshalAs(UnmanagedType.LPWStr)] public string MdmEnrollmentUrl;
+        [MarshalAs(UnmanagedType.LPWStr)] public string MdmTermsOfUseUrl;
+        [MarshalAs(UnmanagedType.LPWStr)] public string MdmComplianceUrl;
+        [MarshalAs(UnmanagedType.LPWStr)] public string UserSettingSyncUrl;
+        public IntPtr pUserInfo;
+    }
+    [DllImport("netapi32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+    public static extern void NetFreeAadJoinInformation(
+            IntPtr pJoinInfo);
+    [DllImport("netapi32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+    public static extern int NetGetAadJoinInformation(
+            string pcszTenantId,
+            out IntPtr ppJoinInfo);
+}
+'@
+
+    if ($buildNumber -ge 10240)
+    {
+        if ([bool]([System.Management.Automation.PSTypeName]'NetAPI32').Type -eq $false)
+        {
+            $netApi32 = Add-Type -TypeDefinition $netApi32MemberDefinition -ErrorAction SilentlyContinue
+        }
+
+        if ([bool]([System.Management.Automation.PSTypeName]'NetAPI32').Type -eq $true)
+        {
+            $netApi32 = Add-Type -TypeDefinition $netApi32MemberDefinition -ErrorAction SilentlyContinue
+            $pcszTenantId = $null
+            $ptrJoinInfo = [IntPtr]::Zero
+
+            # https://docs.microsoft.com/en-us/windows/win32/api/lmjoin/nf-lmjoin-netgetaadjoininformation
+            # [NetAPI32]::NetFreeAadJoinInformation([IntPtr]::Zero);
+            $retValue = [NetAPI32]::NetGetAadJoinInformation($pcszTenantId, [ref]$ptrJoinInfo)
+
+            # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/18d8fbe8-a967-4f1c-ae50-99ca8e491d2d
+            if ($retValue -eq 0)
+            {
+                # https://support.microsoft.com/en-us/help/2909958/exceptions-in-windows-powershell-other-dynamic-languages-and-dynamical
+                $ptrJoinInfoObject = New-Object NetAPI32+DSREG_JOIN_INFO
+                $joinInfo = [System.Runtime.InteropServices.Marshal]::PtrToStructure($ptrJoinInfo, [System.Type] $ptrJoinInfoObject.GetType())
+
+                $ptrUserInfo = $joinInfo.pUserInfo
+                $ptrUserInfoObject = New-Object NetAPI32+DSREG_USER_INFO
+                $userInfo = [System.Runtime.InteropServices.Marshal]::PtrToStructure($ptrUserInfo, [System.Type] $ptrUserInfoObject.GetType())
+
+                switch ($joinInfo.joinType)
+                {
+                    ([NetAPI32+DSREG_JOIN_TYPE]::DSREG_DEVICE_JOIN.value__) {$joinType = 'Joined to Azure AD (DSREG_DEVICE_JOIN)'}
+                    ([NetAPI32+DSREG_JOIN_TYPE]::DSREG_UNKNOWN_JOIN.value__) {$joinType = 'Unknown (DSREG_UNKNOWN_JOIN)'}
+                    ([NetAPI32+DSREG_JOIN_TYPE]::DSREG_WORKPLACE_JOIN.value__) {$joinType = 'Azure AD work account is added on the device (DSREG_WORKPLACE_JOIN)'}
+                }
+            }
+            else
+            {
+                $joinType = 'Not Azure Joined'
+            }
+        }
+    }
+    else
+    {
+        $joinType = 'N/A'
+    }
+
+    $productType = Invoke-ExpressionWithLogging "Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\ProductOptions' | Select-Object -ExpandProperty ProductType" -verboseOnly
+
+    $joinInfo = [PSCustomObject]@{
+        JoinType = $joinType
+        ProductType = $productType
+    }
+
+    return $joinInfo
+}
+
 function Confirm-AzureVM
 {
     $typeDefinition = @'
@@ -1871,6 +2035,12 @@ else
     New-Check -name "Low disk space check" -result 'Info' -details $details
 }
 
+$joinInfo = Get-JoinInfo
+$joinType = $joinInfo.JoinType
+$productType = $joinInfo.ProductType
+
+$drivers = Get-Drivers
+
 $scriptStartTimeLocalString = Get-Date -Date $scriptStartTime -Format o
 $scriptStartTimeUTCString = Get-Date -Date $scriptStartTime -Format o
 
@@ -1919,6 +2089,8 @@ $vm.Add([PSCustomObject]@{Property = 'ubr'; Value = $ubr; Type = 'OS'})
 $vm.Add([PSCustomObject]@{Property = 'osInstallDate'; Value = $installDateString; Type = 'OS'})
 $vm.Add([PSCustomObject]@{Property = 'computerName'; Value = $computerName; Type = 'OS'})
 $vm.Add([PSCustomObject]@{Property = 'licenseType'; Value = $licenseType; Type = 'OS'})
+$vm.Add([PSCustomObject]@{Property = 'joinType'; Value = $joinType; Type = 'OS'})
+$vm.Add([PSCustomObject]@{Property = 'productType'; Value = $productType; Type = 'OS'})
 
 Out-Log "DHCP-assigned IP addresses" -startLine
 
@@ -2328,10 +2500,12 @@ $css = @'
 $tabs = @'
 <div class="tab">
   <button class="tablinks active" onclick="openTab(event, 'Findings')">Findings</button>
-  <button class="tablinks" onclick="openTab(event, 'General')">General</button>
+  <button class="tablinks" onclick="openTab(event, 'OS')">OS</button>
+  <button class="tablinks" onclick="openTab(event, 'Agent')">Agent</button>
   <button class="tablinks" onclick="openTab(event, 'Extensions')">Extensions</button>
   <button class="tablinks" onclick="openTab(event, 'Network')">Network</button>
   <button class="tablinks" onclick="openTab(event, 'Services')">Services</button>
+  <button class="tablinks" onclick="openTab(event, 'Drivers')">Drivers</button>
   <button class="tablinks" onclick="openTab(event, 'Software')">Software</button>
   <button class="tablinks" onclick="openTab(event, 'Updates')">Updates</button>
 </div>
@@ -2387,7 +2561,7 @@ $global:dbgChecksTable = $checksTable
 $checksTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('</div>')
 
-[void]$stringBuilder.Append('<div id="General" class="tabcontent">')
+[void]$stringBuilder.Append('<div id="OS" class="tabcontent">')
 [void]$stringBuilder.Append("<h2 id=`"vm`">VM Details</h2>`r`n")
 
 [void]$stringBuilder.Append("<h3 id=`"vmGeneral`">General</h3>`r`n")
@@ -2401,7 +2575,9 @@ $vmOsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append("<h3 id=`"vmSecurity`">Security</h3>`r`n")
 $vmSecurityTable = $vm | Where-Object {$_.Type -eq 'Security'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmSecurityTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append('</div>')
 
+[void]$stringBuilder.Append('<div id="Agent" class="tabcontent">')
 [void]$stringBuilder.Append("<h3 id=`"vmAgent`">Agent</h3>`r`n")
 $vmAgentTable = $vm | Where-Object {$_.Type -eq 'Agent'} | Select-Object Property, Value | ConvertTo-Html -Fragment -As Table
 $vmAgentTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
@@ -2439,6 +2615,15 @@ $vmNetworkImdsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 $services = Get-Service -ErrorAction SilentlyContinue | Select-Object DisplayName,Name,Status,StartType
 $vmServicesTable = $services | ConvertTo-Html -Fragment -As Table
 $vmServicesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append('</div>')
+
+[void]$stringBuilder.Append('<div id="Drivers" class="tabcontent">')
+[void]$stringBuilder.Append("<h3 id=`"vmThirdpartyRunningDrivers`">Third-party Running Drivers</h3>`r`n")
+$vmthirdPartyRunningDriversTable = $drivers.thirdPartyRunningDrivers | ConvertTo-Html -Fragment -As Table
+$vmthirdPartyRunningDriversTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append("<h3 id=`"vmMicrosoftRunningDrivers`">Microsoft Running Drivers</h3>`r`n")
+$vmMicrosoftRunningDriversTable = $drivers.microsoftRunningDrivers | ConvertTo-Html -Fragment -As Table
+$vmMicrosoftRunningDriversTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('</div>')
 
 [void]$stringBuilder.Append('<div id="Disk" class="tabcontent">')
@@ -2517,7 +2702,6 @@ $todo = @'
 ### Available memory
 ### Page file settings
 ### Commit
-### workgroup vs. domain join vs AAD joined
 ### filter drivers
 ### 3rd-party kernel drivers
 ### Mellanox driver version
