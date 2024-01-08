@@ -519,6 +519,8 @@ CN=Microsoft Windows Verification PCA, O=Microsoft Corporation, L=Redmond, S=Was
             $driver | Add-Member -MemberType NoteProperty -Name LegalCopyright -Value $driverFile.VersionInfo.LegalCopyright
         }
 
+        # TODO: PS4.0 shows OS file as not signed, this was fixed in PS5.1
+        # Need to handle the PS4.0 scenario
         $driverFileSignature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $driverPath -ErrorAction SilentlyContinue" -verboseOnly
         if ($driverFileSignature)
         {
