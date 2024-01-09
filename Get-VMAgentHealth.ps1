@@ -506,6 +506,7 @@ CN=Microsoft Windows Third Party Component CA 2013, O=Microsoft Corporation, L=R
 CN=Microsoft Windows Third Party Component CA 2014, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
 CN=Microsoft Windows Verification PCA, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
 '@
+
     $microsoftIssuers = $microsoftIssuers.Split("`n").Trim()
 
     $drivers = Get-CimInstance -Query 'SELECT * FROM Win32_SystemDriver'
