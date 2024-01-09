@@ -40,6 +40,116 @@ trap
     Exit
 }
 
+function Confirm-Service
+{
+    param(
+        [string]$name,
+        [string]$expectedStatus,
+        [string]$expectedStartType
+    )
+
+    <#
+    $serviceKeyPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$name"
+    $serviceKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$serviceKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
+    if ($serviceKey)
+    {
+        $serviceKeyExists = $true
+
+        $serviceKeyStartValue = $serviceKey.Start
+        $serviceKeyErrorControlValue = $serviceKey.ErrorControl
+        $serviceKeyImagePathValue = $serviceKey.ImagePath
+        $serviceKeyObjectNameValue = $serviceKey.ObjectName
+    }
+    else
+    {
+        $serviceKeyExists = $false
+    }
+
+    $scExe = "$env:SystemRoot\System32\sc.exe"
+
+    $scQueryExOutput = Invoke-ExpressionWithLogging "& $scExe queryex $name" -verboseOnly
+    $scQueryExExitCode = $LASTEXITCODE
+
+    $scQcOutput = Invoke-ExpressionWithLogging "& $scExe qc $name" -verboseOnly
+    $scQcExitCode = $LASTEXITCODE
+    #>
+
+    Out-Log "$name service:" -startLine
+    $service = Invoke-ExpressionWithLogging "Get-Service -Name '$name' -ErrorAction SilentlyContinue" -verboseOnly
+    if ($service)
+    {
+        $isInstalled = $true
+
+        $displayName = $service.DisplayName
+        $binaryPathName = $service.BinaryPathName
+        $userName = $service.UserName
+        $status = $service.Status
+        $startType = $service.StartType
+        $requiredServices = $service.RequiredServices
+        $dependentServices = $service.DependentServices
+        $servicesDependedOn = $service.ServicesDependedOn
+
+        $statusExt = [Win32.Service.Ext]::QueryServiceStatus($service.ServiceHandle)
+        $win32ExitCode = $statusExt | Select-Object -ExpandProperty Win32ExitCode
+        $serviceSpecificExitCode = $statusExt | Select-Object -ExpandProperty ServiceSpecificExitCode
+
+        if ($status -eq $expectedStatus)
+        {
+            $isExpectedStatus = $true
+        }
+        else
+        {
+            $isExpectedStatus = $false
+        }
+        if ($startType -eq $expectedStartType)
+        {
+            $isExpectedStartType = $true
+        }
+        else
+        {
+            $isExpectedStartType = $false
+        }
+
+        $details = "Status: $status StartType: $startType"
+    }
+    else
+    {
+        $isInstalled = $false
+    }
+
+    if ($isInstalled -eq $false)
+    {
+        New-Check -name "$name service" -result 'Failed' -details "$name service is not installed"
+        New-Finding -type 'Critical' -name "$name service is not installed" -description '' -mitigation ''
+        Out-Log 'Not Installed' -color Red -endLine
+    }
+    elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $true -and $isExpectedStartType -eq $true)
+    {
+        New-Check -name "$name service" -result 'Passed' -details $details
+        Out-Log "Status: $status StartType: $startType" -color Green -endLine
+    }
+    elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $true -and $isExpectedStartType -eq $false)
+    {
+        New-Check -name "$name service" -result 'Failed' -details $details
+        New-Finding -type 'Warning' -name "$name service start type $startType (expected: $expectedStartType)" -description '' -mitigation ''
+        Out-Log "Status: $status (expected $expectedStatus) StartType: $startType (expected $expectedStartType)" -color Red -endLine
+    }
+    elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $false -and $isExpectedStartType -eq $true)
+    {
+        New-Check -name "$name service" -result 'Failed' -details $details
+        New-Finding -type 'Critical' -name "$name service status $status (expected: $expectedStatus)" -description '' -mitigation ''
+        Out-Log "Status: $status (expected $expectedStatus) StartType: $startType (expected $expectedStartType)" -color Red -endLine
+    }
+    elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $false -and $isExpectedStartType -eq $false)
+    {
+        New-Check -name "$name service" -result 'Failed' -details $details
+        New-Finding -type 'Critical' -name "$name service status $status (expected: $expectedStatus)" -description '' -mitigation ''
+        Out-Log "Status: $status (expected $expectedStatus) StartType: $startType (expected $expectedStartType)" -color Red -endLine
+    }
+
+    return $service
+}
+
 function Get-RegKey
 {
     param(
@@ -408,7 +518,6 @@ function New-Finding
         [string]$description,
         [string]$mitigation
     )
-    Out-Log "Got Here 1a"
 
     $date = Get-Date
     $date = $date.ToUniversalTime()
@@ -421,10 +530,8 @@ function New-Finding
         Description = $description
         Mitigation  = $mitigation
     }
-    $script:findings.Add($finding)
-    $global:finding = $finding
-    Out-Log $finding -raw
-    Out-Log $script:findings -raw
+    $findings.Add($finding)
+    $global:dbgFinding = $finding
 }
 
 function Send-Telemetry
@@ -953,7 +1060,7 @@ Out-Log "Log file: $logFilePath"
 
 $result = New-Object System.Collections.Generic.List[Object]
 $checks = New-Object System.Collections.Generic.List[Object]
-$script:findings = New-Object System.Collections.Generic.List[Object]
+$findings = New-Object System.Collections.Generic.List[Object]
 $vm = New-Object System.Collections.Generic.List[Object]
 
 $ErrorActionPreference = 'SilentlyContinue'
@@ -1094,6 +1201,13 @@ namespace Win32.Service
 }
 '@
 
+$scExe = "$env:SystemRoot\System32\sc.exe"
+
+$rdagent = Confirm-Service -name 'rdagent' -expectedStatus 'Running' -expectedStartType 'Automatic'
+$windowsAzureGuestAgent = Confirm-Service -name 'WindowsAzureGuestAgent' -expectedStatus 'Running' -expectedStartType 'Automatic'
+$winmgmt = Confirm-Service -name 'winmgmt' -expectedStatus 'Running' -expectedStartType 'Automatic'
+
+<#
 Out-Log 'RdAgent service installed:' -startLine
 $rdAgent = Invoke-ExpressionWithLogging "Get-Service -Name 'RdAgent' -ErrorAction SilentlyContinue" -verboseOnly
 if ($rdAgent)
@@ -1241,6 +1355,7 @@ $scQueryExWindowsAzureGuestAgentExitCode = $LASTEXITCODE
 $scQcWindowsAzureGuestAgentOutput = Invoke-ExpressionWithLogging "& $scExe qc WindowsAzureGuestAgent" -verboseOnly
 $scQcWindowsAzureGuestAgentExitCode = $LASTEXITCODE
 
+
 Out-Log 'Winmgmt service running:' -startLine
 $winmgmt = Invoke-ExpressionWithLogging "Get-Service -Name 'winmgmt' -ErrorAction SilentlyContinue" -verboseOnly
 if ($winmgmt)
@@ -1285,9 +1400,11 @@ else
     $mitigation = '<a href="Placeholder">Placeholder</a>'
     New-Finding -type Critical -name 'Failed to query Winmgmt service' -description $description -mitigation $mitigation
 }
+#>
 
 Out-Log 'StdRegProv WMI class queryable:' -startLine
-if ($winmgmtStatusRunning)
+# if ($winmgmtStatusRunning)
+if ($winmgmt.Status -eq 'Running')
 {
     $stdRegProv = Invoke-ExpressionWithLogging "wmic /namespace:\\root\default Class StdRegProv Call GetDWORDValue hDefKey='&H80000002' sSubKeyName='SYSTEM\CurrentControlSet\Services\Winmgmt' sValueName=Start 2>`$null" -verboseOnly
 
@@ -1824,7 +1941,8 @@ if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succ
 
 $microsoftWindowsProductionPCA2011 = 'CN=Microsoft Windows Production PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US'
 Out-Log '3rd-party modules in WaAppAgent.exe:' -startLine
-if ($rdAgentStatusRunning)
+# if ($rdAgentStatusRunning)
+if ($rdagent.Status -eq 'Running')
 {
     $waAppAgent = Get-Process -Name WaAppAgent -ErrorAction SilentlyContinue
     if ($waAppAgent)
@@ -1876,7 +1994,8 @@ else
 }
 
 Out-Log '3rd-party modules in WindowsAzureGuestAgent.exe:' -startLine
-if ($windowsAzureGuestAgentStatusRunning)
+# if ($windowsAzureGuestAgentStatusRunning)
+if ($windowsAzureGuestAgent.Status -eq 'Running')
 {
     $windowsAzureGuestAgent = Get-Process -Name WindowsAzureGuestAgent -ErrorAction SilentlyContinue
     if ($windowsAzureGuestAgent)
@@ -2565,11 +2684,11 @@ $tabs | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('<div id="Findings" class="tabcontent" style="display:block;">')
 [void]$stringBuilder.Append("<h3>NAME: $vmName VMID: $vmId Report Created: $scriptEndTimeUTCString</h3>")
 [void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
-$findingsCount = $script:findings | Measure-Object | Select-Object -ExpandProperty Count
+$findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
 Out-Log "`$findingsCount: $findingsCount"
 if ($findingsCount -ge 1)
 {
-    $findingsTable = $script:findings | Select-Object Type, Name, Description, Mitigation | ConvertTo-Html -Fragment -As Table
+    $findingsTable = $findings | Select-Object Type, Name, Description, Mitigation | ConvertTo-Html -Fragment -As Table
     $findingsTable = $findingsTable -replace '<td>Critical</td>', '<td class="CRITICAL">Critical</td>'
     $findingsTable = $findingsTable -replace '<td>Warning</td>', '<td class="WARNING">Warning</td>'
     $findingsTable = $findingsTable -replace '<td>Information</td>', '<td class="INFORMATION">Information</td>'
@@ -2679,7 +2798,7 @@ $script | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 $htm = $stringBuilder.ToString()
 
-$findingsJson = $script:findings | ConvertTo-Json -Depth 10
+$findingsJson = $findings | ConvertTo-Json -Depth 10
 $checksJson = $checks | ConvertTo-Json -Depth 10
 $vmJson = $vm | ConvertTo-Json -Depth 10
 $properties = @{
@@ -2709,7 +2828,7 @@ Out-Log "Log file: $logFilePath"
 $scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f (New-TimeSpan -Start $scriptStartTime -End (Get-Date))
 Out-Log "$scriptName duration: $scriptDuration"
 
-[int]$findingsCount = $script:findings | Measure-Object | Select-Object -ExpandProperty Count
+[int]$findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
 if ($findingsCount -ge 1)
 {
     $color = 'Cyan'
@@ -2721,7 +2840,8 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 $todo = @'
-### if possiuble, replace Get-NetIPConfiguration with cmdlets that don't rely on WMI
+### Don't check for DHCP request option 245 if IMDS endpoint responds
+### if possible, replace Get-NetIPConfiguration with cmdlets that don't rely on WMI
 ### -verboseonly should always log to log file
 ### Create function for service checks since they are similar enough
 ### Include script log contents at bottom of HTML report in code block so the single report .htm file will always include the log file
@@ -2760,5 +2880,4 @@ WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set ac
 $todo = $todo.Split("`n").Trim()
 
 $global:dbgOutput = $output
-$global:dbgFindings = $script:findings
-$global:dbgFindings
+$global:dbgFindings = $findings
