@@ -1531,17 +1531,6 @@ $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.3031
 #$machineConfigFilePath = "$env:SystemRoot\Microsoft.NET\Framework\v4.0.30319\Config\machine.config"
 [xml]$machineConfigx64 = Get-Content -Path $machineConfigx64FilePath
 
-Out-Log 'DHCP request returns option 245:' -startLine
-$dhcpReturnedOption245 = Confirm-AzureVM
-if ($dhcpReturnedOption245)
-{
-    Out-Log $dhcpReturnedOption245 -color Green -endLine
-}
-else
-{
-    Out-Log $dhcpReturnedOption245 -color Yellow
-}
-
 # wireserver doesn't listen on 8080 even though it creates a BFE filter for it
 # Test-NetConnection -ComputerName 168.63.129.16 -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue
 # Test-NetConnection -ComputerName 168.63.129.16 -Port 32526 -InformationLevel Quiet -WarningAction SilentlyContinue
@@ -1689,6 +1678,20 @@ if ($imdsReachable.Succeeded)
     }
 }
 
+if ($imdsReachable.Succeeded -eq $false)
+{
+    Out-Log 'DHCP request returns option 245:' -startLine
+    $dhcpReturnedOption245 = Confirm-AzureVM
+    if ($dhcpReturnedOption245)
+    {
+        Out-Log $dhcpReturnedOption245 -color Green -endLine
+    }
+    else
+    {
+        Out-Log $dhcpReturnedOption245 -color Yellow
+    }
+}
+
 if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succeeded)
 {
     Out-Log 'Getting status from aggregatestatus.json' -verboseOnly
@@ -1734,9 +1737,67 @@ if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succ
     $inVMGoalStateMetaData = $extensions.InVMGoalStateMetaData
 }
 
+function Get-FirewallRules
+{
+    Get-NetFirewallRule -Enabled True
+}
+
+function Get-ThirdPartyLoadedModules
+{
+    param(
+        [string]$processName
+    )
+    $microsoftWindowsProductionPCA2011 = 'CN=Microsoft Windows Production PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US'
+    Out-Log "Third-party modules in $($processName):" -startLine
+    $process = Get-Process -Name WaAppAgent -ErrorAction SilentlyContinue
+    if ($process)
+    {
+        $processThirdPartyModules = $process | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
+        if ($processThirdPartyModules)
+        {
+            foreach ($processThirdPartyModule in $processThirdPartyModules)
+            {
+                $filePath = $processThirdPartyModule.FileName
+                $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath" -verboseOnly
+                $issuer = $signature.SignerCertificate.Issuer
+                if ($issuer -eq $microsoftWindowsProductionPCA2011)
+                {
+                    $processThirdPartyModules = $processThirdPartyModules | Where-Object {$_.FileName -ne $filePath}
+                }
+            }
+            if ($processThirdPartyModules)
+            {
+                $details = "$($($processThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
+                New-Check -name "Third-party modules in $processName" -result 'Information' -details $details
+                Out-Log $true -endLine -color Cyan
+                New-Finding -type Information -name "Third-party modules in $processName" -description $details -mitigation ''
+            }
+            else
+            {
+                New-Check -name "Third-party modules in $processName" -result 'Passed' -details "No third-party modules in $processName"
+                Out-Log $false -endLine -color Green
+            }
+        }
+        else
+        {
+            New-Check -name "Third-party modules in $processName" -result 'Passed' -details "No third-party modules in $processName"
+            Out-Log $false -endLine -color Green
+        }
+    }
+    else
+    {
+        $details = "$processName process not running"
+        New-Check -name "Third-party modules in $processName" -result 'Information' -details $details
+        Out-Log $details -color Cyan -endLine
+    }
+}
+
+Get-ThirdPartyLoadedModules -processName 'WaAppAgent'
+Get-ThirdPartyLoadedModules -processName 'WindowsAzureGuestAgent'
+
+<#
 $microsoftWindowsProductionPCA2011 = 'CN=Microsoft Windows Production PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US'
 Out-Log '3rd-party modules in WaAppAgent.exe:' -startLine
-# if ($rdAgentStatusRunning)
 if ($rdagent.Status -eq 'Running')
 {
     $waAppAgent = Get-Process -Name WaAppAgent -ErrorAction SilentlyContinue
@@ -1789,7 +1850,6 @@ else
 }
 
 Out-Log '3rd-party modules in WindowsAzureGuestAgent.exe:' -startLine
-# if ($windowsAzureGuestAgentStatusRunning)
 if ($windowsAzureGuestAgent.Status -eq 'Running')
 {
     $windowsAzureGuestAgent = Get-Process -Name WindowsAzureGuestAgent -ErrorAction SilentlyContinue
@@ -1840,6 +1900,7 @@ else
     New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Skipped' -details $details
     Out-Log $details -color DarkGray -endLine
 }
+#>
 
 $machineKeysDefaultSddl = 'O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)'
 Out-Log 'MachineKeys folder has default permissions:' -startLine
@@ -1921,7 +1982,7 @@ else
     New-Finding -type Information -name "Non-default $packagesPath permissions" -description $details -mitigation $mitigation
 }
 
-Out-Log "System drive does not have low disk space:" -startLine
+Out-Log "System drive has sufficient disk space:" -startLine
 $systemDriveLetter = "$env:SystemDrive" -split ':' | Select-Object -First 1
 $systemDrive = Invoke-ExpressionWithLogging "Get-PSDrive -Name $systemDriveLetter" -verboseOnly
 # "Get-PSDrive" doesn't call WMI but Free and Used properties are of type ScriptProperty,
@@ -1936,35 +1997,36 @@ if ($systemDriveFreeSpaceBytes)
     {
         $details = "<100MB free ($($systemDriveFreeSpaceMB)MB free) on drive $systemDriveLetter"
         Out-Log $false -color Red -endLine
-        New-Check -name "Low disk space check" -result 'Failed' -details $details
+        New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'Failed' -details $details
         New-Finding -type Critical -name "System drive low disk space" -description $details -mitigation ''
     }
     elseif ($systemDriveFreeSpaceGB -lt 1)
     {
         $details = "<1GB free ($($systemDriveFreeSpaceGB)GB free) on drive $systemDriveLetter"
-        Out-Log $false -color Yellow -endLine
-        New-Check -name "Low disk space check" -result 'Warning' -details $details
+        Out-Log $details -color Yellow -endLine
+        New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'Warning' -details $details
         New-Finding -type Warning -name "System drive free space" -description $details -mitigation ''
     }
     else
     {
         $details = "$($systemDriveFreeSpaceGB)GB free on system drive $systemDriveLetter"
-        Out-Log $true -color Green -endLine
-        New-Check -name "Low disk space check" -result 'Passed' -details $details
+        Out-Log $details -color Green -endLine
+        New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'Passed' -details $details
     }
 }
 else
 {
-    Out-Log 'Unknown' -color Cyan -endLine
     $details = "Unable to determine free space on system drive $systemDriveLetter"
-    New-Check -name "Low disk space check" -result 'Info' -details $details
+    Out-Log $details -color Cyan -endLine
+    New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'Info' -details $details
+    New-Finding -type Warning -name "System drive free space" -description $details -mitigation ''
 }
 
 $joinInfo = Get-JoinInfo
 $joinType = $joinInfo.JoinType
 $productType = $joinInfo.ProductType
 
-if ($winmgmtStatusRunning)
+if ($winmgmt.Status -eq 'Running')
 {
     $drivers = Get-Drivers
 }
@@ -2024,7 +2086,7 @@ Out-Log "DHCP-assigned IP addresses" -startLine
 
 $nics = New-Object System.Collections.Generic.List[Object]
 
-if ($winmgmtStatusRunning)
+if ($winmgmt.Status -eq 'Running')
 {
     # Get-NetIPConfiguration depends on WMI
     $ipconfigs = Get-NetIPConfiguration -Detailed
@@ -2205,7 +2267,7 @@ $uninstallPaths = ('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
 $software = Get-ItemProperty -Path $uninstallPaths -ErrorAction SilentlyContinue
 $software = $software | Where-Object {$_.DisplayName} | Select-Object DisplayName,DisplayVersion,Publisher | Sort-Object -Property DisplayName
 
-if ($winmgmtStatusRunning)
+if ($winmgmt.Status -eq 'Running')
 {
     $updates = Get-HotFix | Select-Object -Property HotFixID,Description,InstalledOn | Sort-Object -Property InstalledOn -Descending
 }
