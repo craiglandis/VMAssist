@@ -40,6 +40,127 @@ trap
     Exit
 }
 
+function Get-EnabledFirewallRules
+{
+    $enabledRules = Get-NetFirewallRule -Enabled True | Where-Object {$_.Direction -eq 'Inbound'}
+
+    foreach ($enabledRule in $enabledRules)
+    {
+        $portFilter = $enabledRule | Get-NetFirewallPortFilter
+        $enabledRule | Add-Member -MemberType NoteProperty -Name Protocol -Value $portFilter.Protocol
+        $enabledRule | Add-Member -MemberType NoteProperty -Name LocalPort -Value $portFilter.LocalPort
+        $enabledRule | Add-Member -MemberType NoteProperty -Name RemotePort -Value $portFilter.RemotePort
+        $enabledRule | Add-Member -MemberType NoteProperty -Name IcmpType -Value $portFilter.IcmpType
+        $enabledRule | Add-Member -MemberType NoteProperty -Name DynamicTarget -Value $portFilter.DynamicTarget
+    }
+
+    $enabledInboundFirewallRules = $enabledRules | Where-Object {$_.Direction -eq 'Inbound'} | Select-Object DisplayName,Profile,Action,Protocol,LocalPort,RemotePort,IcmpType,DynamicTarget | Sort-Object DisplayName
+    $enabledOutboundFirewallRules = $enabledRules | Where-Object {$_.Direction -eq 'Outbound'} | Select-Object DisplayName,Profile,Action,Protocol,LocalPort,RemotePort,IcmpType,DynamicTarget | Sort-Object DisplayName
+    $enabledFirewallRules = [PSCustomObject]@{
+        Inbound = $enabledInboundFirewallRules
+        Outbound = $enabledOutboundFirewallRules
+    }
+    return $enabledFirewallRules
+}
+
+function Get-FirewallProfiles
+{
+    $firewallProfiles = Get-NetFirewallProfile
+    return $firewallProfiles
+}
+
+function Get-ThirdPartyLoadedModules
+{
+    param(
+        [string]$processName
+    )
+    $microsoftWindowsProductionPCA2011 = 'CN=Microsoft Windows Production PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US'
+    Out-Log "Third-party modules in $($processName):" -startLine
+    $process = Get-Process -Name WaAppAgent -ErrorAction SilentlyContinue
+    if ($process)
+    {
+        $processThirdPartyModules = $process | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
+        if ($processThirdPartyModules)
+        {
+            foreach ($processThirdPartyModule in $processThirdPartyModules)
+            {
+                $filePath = $processThirdPartyModule.FileName
+                $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath" -verboseOnly
+                $issuer = $signature.SignerCertificate.Issuer
+                if ($issuer -eq $microsoftWindowsProductionPCA2011)
+                {
+                    $processThirdPartyModules = $processThirdPartyModules | Where-Object {$_.FileName -ne $filePath}
+                }
+            }
+            if ($processThirdPartyModules)
+            {
+                $details = "$($($processThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
+                New-Check -name "Third-party modules in $processName" -result 'Information' -details $details
+                Out-Log $true -endLine -color Cyan
+                New-Finding -type Information -name "Third-party modules in $processName" -description $details -mitigation ''
+            }
+            else
+            {
+                New-Check -name "Third-party modules in $processName" -result 'Passed' -details "No third-party modules in $processName"
+                Out-Log $false -endLine -color Green
+            }
+        }
+        else
+        {
+            New-Check -name "Third-party modules in $processName" -result 'Passed' -details "No third-party modules in $processName"
+            Out-Log $false -endLine -color Green
+        }
+    }
+    else
+    {
+        $details = "$processName process not running"
+        New-Check -name "Third-party modules in $processName" -result 'Information' -details $details
+        Out-Log $details -color Cyan -endLine
+    }
+}
+
+function Get-Services
+{
+    $services = Get-CimInstance -Query 'SELECT DisplayName,Description,ErrorControl,ExitCode,Name,PathName,ProcessId,StartMode,StartName,State,ServiceSpecificExitCode,ServiceType FROM Win32_Service' -ErrorAction SilentlyContinue
+    if ($services)
+    {
+        foreach ($service in $services)
+        {
+            [int32]$exitCode = $service.ExitCode
+            $exitCodeMessage = [ComponentModel.Win32Exception]$exitCode | Select-Object -ExpandProperty Message
+            [int32]$serviceSpecificExitCode = $service.ServiceSpecificExitCode
+            $serviceSpecificExitCodeMessage = [ComponentModel.Win32Exception]$serviceSpecificExitCode | Select-Object -ExpandProperty Message
+            $service | Add-Member -MemberType NoteProperty -Name ExitCode -Value "$exitCode ($exitCodeMessage)" -Force
+            $service | Add-Member -MemberType NoteProperty -Name ServiceSpecificExitCode -Value "$serviceSpecificExitCode ($serviceSpecificExitCodeMessage)" -Force
+        }
+        $services = $services | Select-Object DisplayName,Name,State,StartMode,StartName,ErrorControl,ExitCode,ServiceSpecificExitCode,ServiceType,ProcessId,PathName | Sort-Object DisplayName
+    }
+    else
+    {
+        $services = Get-Service -ErrorAction SilentlyContinue
+        foreach ($service in $services)
+        {
+            if ($service.ServiceHandle)
+            {
+                $statusExt = [Win32.Service.Ext]::QueryServiceStatus($service.ServiceHandle)
+                $win32ExitCode = $statusExt | Select-Object -ExpandProperty Win32ExitCode
+                $win32ExitCodeMessage = [ComponentModel.Win32Exception]$win32ExitCode | Select-Object -ExpandProperty Message
+                $serviceSpecificExitCode = $statusExt | Select-Object -ExpandProperty ServiceSpecificExitCode
+                $serviceSpecificExitCodeMessage = [ComponentModel.Win32Exception]$serviceSpecificExitCode | Select-Object -ExpandProperty Message
+                $service | Add-Member -MemberType NoteProperty -Name Win32ExitCode -Value "$win32ExitCode ($win32ExitCodeMessage)"
+                $service | Add-Member -MemberType NoteProperty -Name ServiceSpecificExitCode -Value "$serviceSpecificExitCode ($serviceSpecificExitCodeMessage)"
+            }
+            else
+            {
+                $service | Add-Member -MemberType NoteProperty -Name Win32ExitCode -Value $null
+                $service | Add-Member -MemberType NoteProperty -Name ServiceSpecificExitCode -Value $null
+            }
+        }
+        $services = $services | Select-Object DisplayName,Name,Status,StartType,Win32ExitCode,ServiceSpecificExitCode | Sort-Object DisplayName
+    }
+    return $services
+}
+
 function Confirm-Service
 {
     param(
@@ -603,14 +724,17 @@ function Get-Drivers
 {
     # Both Win32_SystemDriver and Driverquery.exe use WMI, and Win32_SystemDriver is faster
     # So no benefit to using Driverquery.exe
-$microsoftIssuers = @'
+<#
+CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
+CN=Microsoft Windows Third Party Component CA 2013, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
+CN=Microsoft Windows Third Party Component CA 2014, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
+#>
+
+    $microsoftIssuers = @'
 CN=Microsoft Code Signing PCA 2010, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
 CN=Microsoft Code Signing PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
 CN=Microsoft Code Signing PCA, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
 CN=Microsoft Windows Production PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
-CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
-CN=Microsoft Windows Third Party Component CA 2013, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
-CN=Microsoft Windows Third Party Component CA 2014, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
 CN=Microsoft Windows Verification PCA, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
 '@
 
@@ -625,12 +749,8 @@ CN=Microsoft Windows Verification PCA, O=Microsoft Corporation, L=Redmond, S=Was
         if ($driverFile)
         {
             $driver | Add-Member -MemberType NoteProperty -Name Path -Value $driverPath
-            $driver | Add-Member -MemberType NoteProperty -Name FileVersion -Value $driverFile.VersionInfo.FileVersion
-            $driver | Add-Member -MemberType NoteProperty -Name FileVersionRaw -Value $driverFile.VersionInfo.FileVersionRaw
-            $driver | Add-Member -MemberType NoteProperty -Name ProductVersion -Value $driverFile.VersionInfo.ProductVersion
-            $driver | Add-Member -MemberType NoteProperty -Name ProductVersionRaw -Value $driverFile.VersionInfo.ProductVersionRaw
+            $driver | Add-Member -MemberType NoteProperty -Name Version -Value $driverFile.VersionInfo.FileVersionRaw
             $driver | Add-Member -MemberType NoteProperty -Name CompanyName -Value $driverFile.VersionInfo.CompanyName
-            $driver | Add-Member -MemberType NoteProperty -Name LegalCopyright -Value $driverFile.VersionInfo.LegalCopyright
         }
 
         # TODO: PS4.0 shows OS file as not signed, this was fixed in PS5.1
@@ -646,8 +766,8 @@ CN=Microsoft Windows Verification PCA, O=Microsoft Corporation, L=Redmond, S=Was
     $microsoftRunningDrivers = $drivers | Where-Object {$_.State -eq 'Running' -and $_.Issuer -in $microsoftIssuers}
     $thirdPartyRunningDrivers = $drivers | Where-Object {$_.State -eq 'Running' -and $_.Issuer -notin $microsoftIssuers}
 
-    $microsoftRunningDrivers = $microsoftRunningDrivers | Select-Object -Property Name,Description,Path,FileVersion,FileVersionRaw,CompanyName,Issuer
-    $thirdPartyRunningDrivers = $thirdPartyRunningDrivers | Select-Object -Property Name,Description,Path,FileVersion,FileVersionRaw,CompanyName,Issuer
+    $microsoftRunningDrivers = $microsoftRunningDrivers | Select-Object -Property Name,Description,Path,Version,CompanyName,Issuer
+    $thirdPartyRunningDrivers = $thirdPartyRunningDrivers | Select-Object -Property Name,Description,Path,Version,CompanyName,Issuer
 
     $runningDrivers = [PSCustomObject]@{
         microsoftRunningDrivers = $microsoftRunningDrivers
@@ -1737,170 +1857,10 @@ if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succ
     $inVMGoalStateMetaData = $extensions.InVMGoalStateMetaData
 }
 
-function Get-FirewallRules
-{
-    Get-NetFirewallRule -Enabled True
-}
-
-function Get-ThirdPartyLoadedModules
-{
-    param(
-        [string]$processName
-    )
-    $microsoftWindowsProductionPCA2011 = 'CN=Microsoft Windows Production PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US'
-    Out-Log "Third-party modules in $($processName):" -startLine
-    $process = Get-Process -Name WaAppAgent -ErrorAction SilentlyContinue
-    if ($process)
-    {
-        $processThirdPartyModules = $process | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
-        if ($processThirdPartyModules)
-        {
-            foreach ($processThirdPartyModule in $processThirdPartyModules)
-            {
-                $filePath = $processThirdPartyModule.FileName
-                $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath" -verboseOnly
-                $issuer = $signature.SignerCertificate.Issuer
-                if ($issuer -eq $microsoftWindowsProductionPCA2011)
-                {
-                    $processThirdPartyModules = $processThirdPartyModules | Where-Object {$_.FileName -ne $filePath}
-                }
-            }
-            if ($processThirdPartyModules)
-            {
-                $details = "$($($processThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
-                New-Check -name "Third-party modules in $processName" -result 'Information' -details $details
-                Out-Log $true -endLine -color Cyan
-                New-Finding -type Information -name "Third-party modules in $processName" -description $details -mitigation ''
-            }
-            else
-            {
-                New-Check -name "Third-party modules in $processName" -result 'Passed' -details "No third-party modules in $processName"
-                Out-Log $false -endLine -color Green
-            }
-        }
-        else
-        {
-            New-Check -name "Third-party modules in $processName" -result 'Passed' -details "No third-party modules in $processName"
-            Out-Log $false -endLine -color Green
-        }
-    }
-    else
-    {
-        $details = "$processName process not running"
-        New-Check -name "Third-party modules in $processName" -result 'Information' -details $details
-        Out-Log $details -color Cyan -endLine
-    }
-}
-
 Get-ThirdPartyLoadedModules -processName 'WaAppAgent'
 Get-ThirdPartyLoadedModules -processName 'WindowsAzureGuestAgent'
 
-<#
-$microsoftWindowsProductionPCA2011 = 'CN=Microsoft Windows Production PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US'
-Out-Log '3rd-party modules in WaAppAgent.exe:' -startLine
-if ($rdagent.Status -eq 'Running')
-{
-    $waAppAgent = Get-Process -Name WaAppAgent -ErrorAction SilentlyContinue
-    if ($waAppAgent)
-    {
-        $waAppAgentThirdPartyModules = $waAppAgent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
-        if ($waAppAgentThirdPartyModules)
-        {
-            foreach ($waAppAgentThirdPartyModule in $waAppAgentThirdPartyModules)
-            {
-                $filePath = $waAppAgentThirdPartyModule.FileName
-                $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath" -verboseOnly
-                $issuer = $signature.SignerCertificate.Issuer
-                if ($issuer -eq $microsoftWindowsProductionPCA2011)
-                {
-                    $waAppAgentThirdPartyModules = $waAppAgentThirdPartyModules | Where-Object {$_.FileName -ne $filePath}
-                }
-            }
-            if ($waAppAgentThirdPartyModules)
-            {
-                $details = "$($($waAppAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
-                New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Information' -details $details
-                Out-Log $true -endLine -color Cyan
-                New-Finding -type Information -name '3rd-party modules in WaAppAgent.exe' -description $details -mitigation ''
-            }
-            else
-            {
-                New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Passed' -details 'No 3rd-party modules in WaAppAgent.exe'
-                Out-Log $false -endLine -color Green
-            }
-        }
-        else
-        {
-            New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Passed' -details 'No 3rd-party modules in WaAppAgent.exe'
-            Out-Log $false -endLine -color Green
-        }
-    }
-    else
-    {
-        $details = 'WaAppAgent.exe process not running'
-        New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Information' -details $details
-        Out-Log $details -color Cyan -endLine
-    }
-}
-else
-{
-    $details = 'Skipped (RdAgent service not running)'
-    New-Check -name '3rd-party modules in WaAppAgent.exe' -result 'Skipped' -details $details
-    Out-Log $details -color DarkGray -endLine
-}
-
-Out-Log '3rd-party modules in WindowsAzureGuestAgent.exe:' -startLine
-if ($windowsAzureGuestAgent.Status -eq 'Running')
-{
-    $windowsAzureGuestAgent = Get-Process -Name WindowsAzureGuestAgent -ErrorAction SilentlyContinue
-    if ($windowsAzureGuestAgent)
-    {
-        $windowsAzureGuestAgentThirdPartyModules = $windowsAzureGuestAgent | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
-        if ($windowsAzureGuestAgentThirdPartyModules)
-        {
-            foreach ($windowsAzureGuestAgentThirdPartyModule in $windowsAzureGuestAgentThirdPartyModules)
-            {
-                $filePath = $windowsAzureGuestAgentThirdPartyModule.FileName
-                $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath" -verboseOnly
-                $issuer = $signature.SignerCertificate.Issuer
-                if ($issuer -eq $microsoftWindowsProductionPCA2011)
-                {
-                    $windowsAzureGuestAgentThirdPartyModules = $windowsAzureGuestAgentThirdPartyModule | Where-Object {$_.FileName -ne $filePath}
-                }
-            }
-            if ($windowsAzureGuestAgentThirdPartyModules)
-            {
-                $details = "$($($windowsAzureGuestAgentThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
-                New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Information' -details $details
-                Out-Log $true -color Cyan -endLine
-                New-Finding -type Information -name '3rd-party modules in WindowsAzureGuestAgent.exe' -description $details -mitigation ''
-            }
-            else
-            {
-                New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Passed' -details 'No 3rd-party modules in WindowsAzureGuestAgent.exe'
-                Out-Log $false -color Green -endLine
-            }
-        }
-        else
-        {
-            New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Passed' -details 'No 3rd-party modules in WindowsAzureGuestAgent.exe'
-            Out-Log $false -color Green -endLine
-        }
-    }
-    else
-    {
-        $details = 'WindowsAzureGuestAgent.exe process not running'
-        New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Information' -details $details
-        Out-Log $details -color Cyan -endLine
-    }
-}
-else
-{
-    $details = 'Skipped (WindowsAzureGuestAgent service not running)'
-    New-Check -name '3rd-party modules in WindowsAzureGuestAgent.exe' -result 'Skipped' -details $details
-    Out-Log $details -color DarkGray -endLine
-}
-#>
+$enabledFirewallRules = Get-EnabledFirewallRules
 
 $machineKeysDefaultSddl = 'O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)'
 Out-Log 'MachineKeys folder has default permissions:' -startLine
@@ -2089,7 +2049,7 @@ $nics = New-Object System.Collections.Generic.List[Object]
 if ($winmgmt.Status -eq 'Running')
 {
     # Get-NetIPConfiguration depends on WMI
-    $ipconfigs = Get-NetIPConfiguration -Detailed
+    $ipconfigs = Invoke-ExpressionWithLogging "Get-NetIPConfiguration -Detailed"
     foreach ($ipconfig in $ipconfigs)
     {
         $interfaceAlias = $ipconfig | Select-Object -ExpandProperty InterfaceAlias
@@ -2126,7 +2086,9 @@ if ($winmgmt.Status -eq 'Running')
 
         $dnsServer = $ipconfig | Select-Object -ExpandProperty DNSServer
         $ipV4DnsServers = $dnsServer | Where-Object {$_.AddressFamily -eq 2} | Select-Object -Expand ServerAddresses
+        $ipV4DnsServers = $ipV4DnsServers -join ','
         $ipV6DnsServers = $dnsServer | Where-Object {$_.AddressFamily -eq 23} | Select-Object -Expand ServerAddresses
+        $ipV6DnsServers = $ipV6DnsServers -join ','
 
         $nic = [PSCustomObject]@{
             Description        = $interfaceDescription
@@ -2417,7 +2379,7 @@ $css = @'
             color: White;
             font-size: 100%;
             padding: 5px;
-            text-align: left
+            text-align: left;
             vertical-align: middle
         }
         tr:hover {
@@ -2429,7 +2391,8 @@ $css = @'
         td {
             border: 1px solid;
             padding: 5px;
-            text-align: left
+            text-align: left;
+            white-space: nowrap
         }
         td.CRITICAL {
             background: Salmon;
@@ -2509,6 +2472,7 @@ $tabs = @'
   <button class="tablinks" onclick="openTab(event, 'Agent')">Agent</button>
   <button class="tablinks" onclick="openTab(event, 'Extensions')">Extensions</button>
   <button class="tablinks" onclick="openTab(event, 'Network')">Network</button>
+  <button class="tablinks" onclick="openTab(event, 'Firewall')">Firewall</button>
   <button class="tablinks" onclick="openTab(event, 'Services')">Services</button>
   <button class="tablinks" onclick="openTab(event, 'Drivers')">Drivers</button>
   <button class="tablinks" onclick="openTab(event, 'Software')">Software</button>
@@ -2542,7 +2506,6 @@ $tabs | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append("<h3>NAME: $vmName VMID: $vmId Report Created: $scriptEndTimeUTCString</h3>")
 [void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
 $findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
-Out-Log "`$findingsCount: $findingsCount"
 if ($findingsCount -ge 1)
 {
     $findingsTable = $findings | Select-Object Type, Name, Description, Mitigation | ConvertTo-Html -Fragment -As Table
@@ -2604,7 +2567,7 @@ foreach ($handlerKeyName in $handlerKeyNames)
 [void]$stringBuilder.Append('</div>')
 
 [void]$stringBuilder.Append('<div id="Network" class="tabcontent">')
-[void]$stringBuilder.Append("<h3 id=`"vmNetwork`">Network</h3>`r`n")
+# [void]$stringBuilder.Append("<h3 id=`"vmNetwork`">Network</h3>`r`n")
 [void]$stringBuilder.Append("<h4>NIC Details</h4>`r`n")
 $vmNetworkTable = $nics | ConvertTo-Html -Fragment -As Table
 $vmNetworkTable = $vmNetworkTable -replace '<td>Up</td>', '<td class="PASSED">Up</td>'
@@ -2616,9 +2579,34 @@ $vmNetworkImdsTable = $nicsImds | ConvertTo-Html -Fragment -As Table
 $vmNetworkImdsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('</div>')
 
+[void]$stringBuilder.Append('<div id="Firewall" class="tabcontent">')
+# [void]$stringBuilder.Append("<h3 id=`"vmFirewall`">Firewall</h3>`r`n")
+[void]$stringBuilder.Append("<h3>Enabled Inbound Windows Firewall Rules</h3>`r`n")
+if ($enabledFirewallRules.Inbound)
+{
+    $vmEnabledInboundFirewallRulesTable = $enabledFirewallRules.Inbound | ConvertTo-Html -Fragment -As Table
+    $vmEnabledInboundFirewallRulesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+}
+else
+{
+    [void]$stringBuilder.Append("<h5>There are no enabled inbound Windows Firewall rules</h5>`r`n")
+}
+
+[void]$stringBuilder.Append("<h3>Enabled Outbound Windows Firewall Rules</h3>`r`n")
+if ($enabledFirewallRules.Outbound)
+{
+    $vmEnabledOutboundFirewallRulesTable = $enabledFirewallRules.Outbound | ConvertTo-Html -Fragment -As Table
+    $vmEnabledOutboundFirewallRulesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+}
+else
+{
+    [void]$stringBuilder.Append("<h4>There are no enabled outbound Windows Firewall rules</h4>`r`n")
+}
+[void]$stringBuilder.Append('</div>')
+
 [void]$stringBuilder.Append('<div id="Services" class="tabcontent">')
-[void]$stringBuilder.Append("<h3 id=`"vmServices`">Services</h3>`r`n")
-$services = Get-Service -ErrorAction SilentlyContinue | Select-Object DisplayName,Name,Status,StartType
+# [void]$stringBuilder.Append("<h3 id=`"vmServices`">Services</h3>`r`n")
+$services = Get-Services
 $vmServicesTable = $services | ConvertTo-Html -Fragment -As Table
 $vmServicesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('</div>')
