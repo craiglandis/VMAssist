@@ -40,6 +40,28 @@ trap
     Exit
 }
 
+function Get-ServiceCrashes
+{
+    param(
+        [string]$name
+    )
+    Out-Log "No $name service crashes:" -startLine
+    $crashes = Get-WinEvent -FilterHashtable @{ProviderName = 'Service Control Manager'; Id = 7031,7034; StartTime = ((Get-Date).AddDays(-1))} -ErrorAction SilentlyContinue | Where-Object {$_.Message -match $name}
+    if ($crashes)
+    {
+        $latestCrash = $crashes | Sort-Object TimeCreated | Select-Object -Last 1
+        $description = "$(Get-Date $latestCrash.TimeCreated -Format yyyy-MM-ddTHH:mm:ss) $($latestCrash.Id) $($latestCrash.Message)"
+        New-Finding -type 'Critical' -name "$name service terminated unexpectedly" -description $description -mitigation ''
+        New-Check -name "$name service crashes" -result 'Failed' -details ''
+        Out-Log $false -color Red -endLine
+    }
+    else
+    {
+        New-Check -name "$name service crashes" -result 'Passed' -details "No $name service crashes in last 1 day"
+        Out-Log $true -color Green -endLine
+    }
+}
+
 function Get-EnabledFirewallRules
 {
     $enabledRules = Get-NetFirewallRule -Enabled True | Where-Object {$_.Direction -eq 'Inbound'}
@@ -161,7 +183,7 @@ function Get-Services
     return $services
 }
 
-function Confirm-Service
+function Get-ServiceChecks
 {
     param(
         [string]$name,
@@ -196,79 +218,143 @@ function Confirm-Service
     #>
 
     Out-Log "$name service:" -startLine
-    $service = Invoke-ExpressionWithLogging "Get-Service -Name '$name' -ErrorAction SilentlyContinue" -verboseOnly
-    if ($service)
+    $regKeyPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$name"
+    $imagePath = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$regKeyPath' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ImagePath" -verboseOnly
+    if ($imagePath)
     {
-        $isInstalled = $true
-
-        $displayName = $service.DisplayName
-        $binaryPathName = $service.BinaryPathName
-        $userName = $service.UserName
-        $status = $service.Status
-        $startType = $service.StartType
-        $requiredServices = $service.RequiredServices
-        $dependentServices = $service.DependentServices
-        $servicesDependedOn = $service.ServicesDependedOn
-
-        $statusExt = [Win32.Service.Ext]::QueryServiceStatus($service.ServiceHandle)
-        $win32ExitCode = $statusExt | Select-Object -ExpandProperty Win32ExitCode
-        $serviceSpecificExitCode = $statusExt | Select-Object -ExpandProperty ServiceSpecificExitCode
-
-        if ($status -eq $expectedStatus)
+        Out-Log "ImagePath: $imagePath" -verboseOnly
+        $fullName = Get-Item -Path $imagePath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+        if ($fullName -or $imagePath -match 'svchost')
         {
-            $isExpectedStatus = $true
+            if ($fullName)
+            {
+                Out-Log "Service binary location $fullName matches ImagePath value in the registry" -verboseOnly
+            }
+
+            $service = Invoke-ExpressionWithLogging "Get-Service -Name '$name' -ErrorAction SilentlyContinue" -verboseOnly
+            if ($service)
+            {
+                $isInstalled = $true
+
+                $win32Service = Get-CimInstance -Query "SELECT * from Win32_Service WHERE Name='$name'" -ErrorAction SilentlyContinue
+                if ($win32Service)
+                {
+                    $processId = $win32Service.ProcessId
+                    $startName = $win32Service.StartName
+                    $pathName = $win32Service.PathName
+                    $exitCode = $win32Service.ExitCode
+                    $serviceSpecificExitCode = $win32Service.ServiceSpecificExitCode
+                    $errorControl = $win32Service.ErrorControl
+                    $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
+                    if ($process)
+                    {
+                        $startTime = $process.StartTime
+                        $uptime = '{0:dd}:{0:hh}:{0:mm}:{0:ss}' -f (New-Timespan -Start $process.StartTime -End (Get-Date))
+                    }
+                }
+
+                $displayName = $service.DisplayName
+                $binaryPathName = $service.BinaryPathName
+                $userName = $service.UserName
+                $status = $service.Status
+                $startType = $service.StartType
+                $requiredServices = $service.RequiredServices
+                $dependentServices = $service.DependentServices
+                $servicesDependedOn = $service.ServicesDependedOn
+
+                $statusExt = [Win32.Service.Ext]::QueryServiceStatus($service.ServiceHandle)
+                $win32ExitCode = $statusExt | Select-Object -ExpandProperty Win32ExitCode
+                $serviceSpecificExitCode = $statusExt | Select-Object -ExpandProperty ServiceSpecificExitCode
+
+                if ($status -eq $expectedStatus)
+                {
+                    $isExpectedStatus = $true
+                }
+                else
+                {
+                    $isExpectedStatus = $false
+                }
+                if ($startType -eq $expectedStartType)
+                {
+                    $isExpectedStartType = $true
+                }
+                else
+                {
+                    $isExpectedStartType = $false
+                }
+
+                if ($startName -and $uptime)
+                {
+                    $details = "Status: $status StartType: $startType Startname: $startName Uptime: $uptime"
+                }
+                else
+                {
+                    $details = "Status: $status StartType: $startType"
+                }
+            }
+            else
+            {
+                $isInstalled = $false
+            }
+
+            if ($isInstalled -eq $false)
+            {
+                New-Check -name "$name service" -result 'Failed' -details "$name service is not installed"
+                New-Finding -type 'Critical' -name "$name service is not installed" -description '' -mitigation ''
+                Out-Log 'Not Installed' -color Red -endLine
+            }
+            elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $true -and $isExpectedStartType -eq $true)
+            {
+                New-Check -name "$name service" -result 'Passed' -details $details
+                Out-Log "Status: $status StartType: $startType UserName: $userName" -color Green -endLine
+            }
+            elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $true -and $isExpectedStartType -eq $false)
+            {
+                New-Check -name "$name service" -result 'Failed' -details $details
+                New-Finding -type 'Warning' -name "$name service start type $startType (expected: $expectedStartType)" -description '' -mitigation ''
+                Out-Log "Status: $status (expected $expectedStatus) StartType: $startType (expected $expectedStartType)" -color Red -endLine
+            }
+            elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $false -and $isExpectedStartType -eq $true)
+            {
+                New-Check -name "$name service" -result 'Failed' -details $details
+                New-Finding -type 'Critical' -name "$name service status $status (expected: $expectedStatus)" -description '' -mitigation ''
+                Out-Log "Status: $status (expected $expectedStatus) StartType: $startType (expected $expectedStartType)" -color Red -endLine
+            }
+            elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $false -and $isExpectedStartType -eq $false)
+            {
+                New-Check -name "$name service" -result 'Failed' -details $details
+                New-Finding -type 'Critical' -name "$name service status $status (expected: $expectedStatus)" -description '' -mitigation ''
+                Out-Log "Status: $status (expected $expectedStatus) StartType: $startType (expected $expectedStartType)" -color Red -endLine
+            }
+
+            return $service
         }
         else
         {
-            $isExpectedStatus = $false
+            $imageName = Split-Path -Path $imagePath -Leaf
+            $actualImagePath = Get-ChildItem -Path 'C:\WindowsAzure' -Filter $imageName -Recurse -File -ErrorAction SilentlyContinue
+            if ($actualImagePath)
+            {
+                $details = "ImagePath registry value is incorrect"
+                New-Check -name "$name service" -result 'Failed' -details $details
+                $description = "HKLM:\SYSTEM\CurrentControlSet\Services\$name\ImagePath is '$imagePath' but actual location of $imageName is '$actualImagePath'"
+                New-Finding -type 'Critical' -name "$name service ImagePath registry value is incorrect" -description $description -mitigation ''
+                Out-Log 'Not Installed' -color Red -endLine
+            }
+            else
+            {
+                New-Check -name "$name service" -result 'Failed' -details "$name service is not installed"
+                New-Finding -type 'Critical' -name "$name service is not installed" -description '' -mitigation ''
+                Out-Log 'Not Installed' -color Red -endLine
+            }
         }
-        if ($startType -eq $expectedStartType)
-        {
-            $isExpectedStartType = $true
-        }
-        else
-        {
-            $isExpectedStartType = $false
-        }
-
-        $details = "Status: $status StartType: $startType"
     }
     else
-    {
-        $isInstalled = $false
-    }
-
-    if ($isInstalled -eq $false)
     {
         New-Check -name "$name service" -result 'Failed' -details "$name service is not installed"
         New-Finding -type 'Critical' -name "$name service is not installed" -description '' -mitigation ''
         Out-Log 'Not Installed' -color Red -endLine
     }
-    elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $true -and $isExpectedStartType -eq $true)
-    {
-        New-Check -name "$name service" -result 'Passed' -details $details
-        Out-Log "Status: $status StartType: $startType" -color Green -endLine
-    }
-    elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $true -and $isExpectedStartType -eq $false)
-    {
-        New-Check -name "$name service" -result 'Failed' -details $details
-        New-Finding -type 'Warning' -name "$name service start type $startType (expected: $expectedStartType)" -description '' -mitigation ''
-        Out-Log "Status: $status (expected $expectedStatus) StartType: $startType (expected $expectedStartType)" -color Red -endLine
-    }
-    elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $false -and $isExpectedStartType -eq $true)
-    {
-        New-Check -name "$name service" -result 'Failed' -details $details
-        New-Finding -type 'Critical' -name "$name service status $status (expected: $expectedStatus)" -description '' -mitigation ''
-        Out-Log "Status: $status (expected $expectedStatus) StartType: $startType (expected $expectedStartType)" -color Red -endLine
-    }
-    elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $false -and $isExpectedStartType -eq $false)
-    {
-        New-Check -name "$name service" -result 'Failed' -details $details
-        New-Finding -type 'Critical' -name "$name service status $status (expected: $expectedStatus)" -description '' -mitigation ''
-        Out-Log "Status: $status (expected $expectedStatus) StartType: $startType (expected $expectedStartType)" -color Red -endLine
-    }
-
-    return $service
 }
 
 function Get-RegKey
@@ -1321,9 +1407,12 @@ namespace Win32.Service
 }
 '@
 
-$rdagent = Confirm-Service -name 'rdagent' -expectedStatus 'Running' -expectedStartType 'Automatic'
-$windowsAzureGuestAgent = Confirm-Service -name 'WindowsAzureGuestAgent' -expectedStatus 'Running' -expectedStartType 'Automatic'
-$winmgmt = Confirm-Service -name 'winmgmt' -expectedStatus 'Running' -expectedStartType 'Automatic'
+$rdagent = Get-ServiceChecks -name 'rdagent' -expectedStatus 'Running' -expectedStartType 'Automatic'
+$windowsAzureGuestAgent = Get-ServiceChecks -name 'WindowsAzureGuestAgent' -expectedStatus 'Running' -expectedStartType 'Automatic'
+$winmgmt = Get-ServiceChecks -name 'winmgmt' -expectedStatus 'Running' -expectedStartType 'Automatic'
+$keyiso = Get-ServiceChecks -name 'keyiso' -expectedStatus 'Running' -expectedStartType 'Manual'
+Get-ServiceCrashes -Name 'RdAgent'
+Get-ServiceCrashes -Name 'Windows Azure Guest Agent'
 
 Out-Log 'StdRegProv WMI class queryable:' -startLine
 if ($winmgmt.Status -eq 'Running')
@@ -1875,7 +1964,7 @@ if ($machineKeysSddl -eq $machineKeysDefaultSddl)
 {
     $machineKeysHasDefaultPermissions = $true
     Out-Log $machineKeysHasDefaultPermissions -color Green -endLine
-    $details = "$machineKeysPath folder has default NTFS permissions<br>SDDL: $machineKeysSddl<br>$machineKeysAccessString"
+    $details = "$machineKeysPath folder has default NTFS permissions" # <br>SDDL: $machineKeysSddl<br>$machineKeysAccessString"
     New-Check -name 'MachineKeys folder permissions' -result 'Passed' -details $details
 }
 else
@@ -1904,7 +1993,7 @@ if ($windowsAzureSddl -eq $windowsAzureDefaultSddl)
 {
     $windowsAzureHasDefaultPermissions = $true
     Out-Log $windowsAzureHasDefaultPermissions -color Green -endLine
-    $details = "$windowsAzurePath folder has default NTFS permissions<br>SDDL: $windowsAzureSddl<br>$windowsAzureAccessString"
+    $details = "$windowsAzurePath folder has default NTFS permissions" # <br>SDDL: $windowsAzureSddl<br>$windowsAzureAccessString"
     New-Check -name "$windowsAzurePath permissions" -result 'Passed' -details $details
 }
 else
@@ -1929,7 +2018,7 @@ if ($packagesSddl -eq $packagesDefaultSddl)
 {
     $packagesHasDefaultPermissions = $true
     Out-Log $packagesHasDefaultPermissions -color Green -endLine
-    $details = "$packagesPath folder has default NTFS permissions<br>SDDL: $packagesSddl<br>$packagesAccessString"
+    $details = "$packagesPath folder has default NTFS permissions" # <br>SDDL: $packagesSddl<br>$packagesAccessString"
     New-Check -name "$packagesPath permissions" -result 'Passed' -details $details
 }
 else
@@ -2049,7 +2138,7 @@ $nics = New-Object System.Collections.Generic.List[Object]
 if ($winmgmt.Status -eq 'Running')
 {
     # Get-NetIPConfiguration depends on WMI
-    $ipconfigs = Invoke-ExpressionWithLogging "Get-NetIPConfiguration -Detailed"
+    $ipconfigs = Invoke-ExpressionWithLogging "Get-NetIPConfiguration -Detailed" -verboseOnly
     foreach ($ipconfig in $ipconfigs)
     {
         $interfaceAlias = $ipconfig | Select-Object -ExpandProperty InterfaceAlias
@@ -2154,12 +2243,13 @@ if ($winmgmt.Status -eq 'Running')
         }
         $nicsImds.Add($nicImds)
     }
+
+    $routes = Get-NetRoute | Select-Object AddressFamily,State,ifIndex,InterfaceAlias,InstanceID,TypeOfRoute,RouteMetric,InterfaceMetric,DestinationPrefix,NextHop | Sort-Object InterfaceAlias
 }
 else
 {
     Out-Log "Unable to query network adapter details because winmgmt service is not running"
 }
-
 
 # Security
 if ($imdsReachable.Succeeded -eq $false)
@@ -2460,6 +2550,32 @@ $css = @'
           border: 1px solid #ccc;
           border-top: none;
         }
+
+        /* Style the button that is used to open and close the collapsible content */
+        .collapsible {
+          background-color: #eee;
+          color: #444;
+          cursor: pointer;
+          padding: 18px;
+          width: 100%;
+          border: none;
+          text-align: left;
+          outline: none;
+          font-size: 15px;
+        }
+
+        /* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
+        .active, .collapsible:hover {
+          background-color: #ccc;
+        }
+
+        /* Style the collapsible content. Note: hidden by default */
+        .content {
+          padding: 0 18px;
+          display: none;
+          overflow: hidden;
+          background-color: #f1f1f1;
+        }
     </style>
 </head>
 <body>
@@ -2577,6 +2693,10 @@ $vmNetworkTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append("<h4>NIC Details from IMDS</h4>`r`n")
 $vmNetworkImdsTable = $nicsImds | ConvertTo-Html -Fragment -As Table
 $vmNetworkImdsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+
+[void]$stringBuilder.Append("<h4>Route Table</h4>`r`n")
+$vmNetworkRoutesTable = $routes | ConvertTo-Html -Fragment -As Table
+$vmNetworkRoutesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('</div>')
 
 [void]$stringBuilder.Append('<div id="Firewall" class="tabcontent">')
@@ -2594,7 +2714,7 @@ else
 
 [void]$stringBuilder.Append("<h3>Enabled Outbound Windows Firewall Rules</h3>`r`n")
 if ($enabledFirewallRules.Outbound)
-{   
+{
     $vmEnabledOutboundFirewallRulesTable = $enabledFirewallRules.Outbound | ConvertTo-Html -Fragment -As Table
     $vmEnabledOutboundFirewallRulesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 }
