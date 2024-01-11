@@ -2515,6 +2515,10 @@ $css = @'
             text-align: left
         }
         /* Style the tab */
+        .gray {
+            color: dimgray;
+            font-weight: bold;
+        }
         .tab {
           overflow: hidden;
           border: 1px solid #ccc;
@@ -2611,15 +2615,54 @@ function openTab(evt, cityName) {
   document.getElementById(cityName).style.display = "block";
   evt.currentTarget.className += " active";
 }
+
+var coll = document.getElementsByClassName("collapsible");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+  coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.display === "block") {
+      content.style.display = "none";
+    } else {
+      content.style.display = "block";
+    }
+  });
+}
 </script>
 '@
 
 $stringBuilder = New-Object Text.StringBuilder
 
+<# https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_collapsible
+https://www.w3schools.com/howto/howto_js_accordion.asp
+<button type="button" class="collapsible">Open Collapsible</button>
+<div class="content">
+  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+</div>
+
+<table>
+<colgroup><col/><col/><col/><col/></colgroup>
+<tr><th>Type</th><th>Name</th><th>Description</th><th>Mitigation</th></tr>
+<tr><td class="INFORMATION">Information</td><td>IMDS endpoint 169.254.169.254:80 not reachable</td><td>IMDS endpoint 169.254.169.254:80 reachable: False An attempt was made to access a socket in a way forbidden by its access permissions 169.254.169.254:80</td><td></td></tr>
+</table>
+
+#>
+
 $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append("Name: <span style='font-weight:bold'>$vmName</span> VMID: <span style='font-weight:bold'>$vmId</span> Report Created: <span style='font-weight:bold'>$scriptEndTimeUTCString</span> Duration: <span style='font-weight:bold'>$scriptDuration</span>")
+if ($resourceId)
+{
+    [void]$stringBuilder.Append("<br>ResourceId: <span style='font-weight:bold'>$resourceId</span>")
+}
+if ($guestAgentKeyContainerId)
+{
+    [void]$stringBuilder.Append("<br>ContainerId: <span style='font-weight:bold'>$guestAgentKeyContainerId</span>")
+}
+[void]$stringBuilder.Append("<p>")
 $tabs | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('<div id="Findings" class="tabcontent" style="display:block;">')
-[void]$stringBuilder.Append("<h3>NAME: $vmName VMID: $vmId Report Created: $scriptEndTimeUTCString</h3>")
 [void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
 $findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
 if ($findingsCount -ge 1)
@@ -2791,7 +2834,8 @@ if ($showReport -and $installationType -ne 'Server Core')
 
 Out-Log "Log file: $logFilePath"
 $scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f (New-TimeSpan -Start $scriptStartTime -End (Get-Date))
-Out-Log "$scriptName duration: $scriptDuration"
+Out-Log "$scriptName duration:" -startLine
+Out-Log $scriptDuration -endLine -color Cyan
 
 [int]$findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
 if ($findingsCount -ge 1)
