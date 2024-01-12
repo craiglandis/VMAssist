@@ -40,17 +40,48 @@ trap
     Exit
 }
 
+function Get-ApplicationErrors
+{
+    param(
+        [string]$name
+    )
+    Out-Log "$name process errors:" -startLine
+    $applicationErrors = Get-WinEvent -FilterHashtable @{ProviderName = 'Application Error';Id = 1000; StartTime = ((Get-Date).AddDays(-7))} -ErrorAction SilentlyContinue | Where-Object {$_.Message -match $name}
+    if ($applicationErrors)
+    {
+        $applicationErrorsCount = $applicationErrors | Measure-Object | Select-Object -ExpandProperty Count
+        $latestApplicationError = $applicationErrors | Sort-Object TimeCreated | Select-Object -Last 1
+        $timeCreated = Get-Date $latestApplicationError.TimeCreated -Format yyyy-MM-ddTHH:mm:ss
+        $id = $latestApplicationError.Id
+        $message = $latestApplicationError.Message
+        $description = "$applicationErrorsCount $name process errors in the last 1 day. Most recent: $timeCreated $id $message"
+        New-Finding -type 'Critical' -name "$name application error" -description $description -mitigation ''
+        New-Check -name "$name process errors" -result 'Failed' -details ''
+        Out-Log $false -color Red -endLine
+    }
+    else
+    {
+        New-Check -name "$name process errors" -result 'Passed' -details "No $name process errors in last 1 day"
+        Out-Log $true -color Green -endLine
+    }
+}
+
 function Get-ServiceCrashes
 {
     param(
         [string]$name
     )
-    Out-Log "No $name service crashes:" -startLine
-    $crashes = Get-WinEvent -FilterHashtable @{ProviderName = 'Service Control Manager'; Id = 7031,7034; StartTime = ((Get-Date).AddDays(-1))} -ErrorAction SilentlyContinue | Where-Object {$_.Message -match $name}
-    if ($crashes)
+    Out-Log "$name service crashes:" -startLine
+    $serviceCrashes = Get-WinEvent -FilterHashtable @{ProviderName = 'Service Control Manager'; Id = 7031,7034; StartTime = ((Get-Date).AddDays(-1))} -ErrorAction SilentlyContinue | Where-Object {$_.Message -match $name}
+    $applicationErrors = Get-WinEvent -FilterHashtable @{ProviderName = 'Application Error';Id = 1000; StartTime = ((Get-Date).AddDays(-7))} -ErrorAction SilentlyContinue | Where-Object {$_.Message -match $name}
+    if ($serviceCrashes)
     {
-        $latestCrash = $crashes | Sort-Object TimeCreated | Select-Object -Last 1
-        $description = "$(Get-Date $latestCrash.TimeCreated -Format yyyy-MM-ddTHH:mm:ss) $($latestCrash.Id) $($latestCrash.Message)"
+        $serviceCrashesCount = $serviceCrashes | Measure-Object | Select-Object -ExpandProperty Count
+        $latestCrash = $serviceCrashes | Sort-Object TimeCreated | Select-Object -Last 1
+        $timeCreated = Get-Date $latestApplicationError.TimeCreated -Format yyyy-MM-ddTHH:mm:ss
+        $id = $latestApplicationError.Id
+        $message = $latestApplicationError.Message
+        $description = "$serviceCrashesCount $name service crashes in the last 1 day. Most recent: $timeCreated $id $message"
         New-Finding -type 'Critical' -name "$name service terminated unexpectedly" -description $description -mitigation ''
         New-Check -name "$name service crashes" -result 'Failed' -details ''
         Out-Log $false -color Red -endLine
@@ -1413,6 +1444,8 @@ $winmgmt = Get-ServiceChecks -name 'winmgmt' -expectedStatus 'Running' -expected
 $keyiso = Get-ServiceChecks -name 'keyiso' -expectedStatus 'Running' -expectedStartType 'Manual'
 Get-ServiceCrashes -Name 'RdAgent'
 Get-ServiceCrashes -Name 'Windows Azure Guest Agent'
+Get-ApplicationErrors -Name 'WaAppagent'
+Get-ApplicationErrors -Name 'WindowsAzureGuestAgent'
 
 Out-Log 'StdRegProv WMI class queryable:' -startLine
 if ($winmgmt.Status -eq 'Running')
@@ -2650,15 +2683,15 @@ https://www.w3schools.com/howto/howto_js_accordion.asp
 $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 [void]$stringBuilder.Append("VM Name: <span style='font-weight:bold'>$vmName</span> VMID: <span style='font-weight:bold'>$vmId</span>")
-if ($resourceId)
-{
-    [void]$stringBuilder.Append(" ResourceId: <span style='font-weight:bold'>$resourceId</span>")
-}
 if ($guestAgentKeyContainerId)
 {
     [void]$stringBuilder.Append(" ContainerId: <span style='font-weight:bold'>$guestAgentKeyContainerId</span>")
 }
-[void]$stringBuilder.Append(" Report Created: <span style='font-weight:bold'>$scriptEndTimeUTCString</span> Duration: <span style='font-weight:bold'>$scriptDuration</span><p>")
+if ($resourceId)
+{
+    [void]$stringBuilder.Append("<br>ResourceId: <span style='font-weight:bold'>$resourceId</span>")
+}
+[void]$stringBuilder.Append("<br>Report Created: <span style='font-weight:bold'>$scriptEndTimeUTCString</span> Duration: <span style='font-weight:bold'>$scriptDuration</span><p>")
 
 $tabs | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('<div id="Findings" class="tabcontent" style="display:block;">')
@@ -2845,13 +2878,13 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 $todo = @'
-### Don't check for DHCP request option 245 if IMDS endpoint responds
+### Make sure to add test cases for each check
+### Disk space check should also check drive with page file if different than system drive
+### Fix issues experienced when running on non-Azure device
 ### if possible, replace Get-NetIPConfiguration with cmdlets that don't rely on WMI
 ### -verboseonly should always log to log file
-### Create function for service checks since they are similar enough
 ### Include script log contents at bottom of HTML report in code block so the single report .htm file will always include the log file
 ### Last known heartbeat
-### Create warning finding for "service running but set to disabled instead of automatic" for Rdagent and WindowsAzureGuestAgent services
 ### Clean up 'VM agent installed' check
 ### Use checkaws to verify external IP, which then confirms internet access as well
 ### Available memory
@@ -2873,10 +2906,7 @@ get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object 
 Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
 ### permissions on C:\WindowsAzure and c:\Packages folder during startup. It first removes all user/groups and then sets the following permission (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders. If GA fails to remove/set the permission, it can't proceed further.
 WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set access rules for agent directories. Exception: System.Security.Principal.IdentityNotMappedException: {Namepii} or all identity references could not be translated. Symptom reported: Guest agent not ready (Unresponsive status).
-### Check for presence and validity of CRP cert
 ### Check for WCF Profiling being enabled
-### Check that the service EXE files exist in the path specified in the registry, since we've seen those get confused
-### Check for app crashes referencing guest agent processes (Application log event ID 1000), surface most recent one as well as crash count last 24 hours
 ### Check for system crashes (bugchecks), surface most recent one as well as crash count last 24 hours
 ### Update github repo readme with additional ways to run Get-VMAgentHealth.ps1
 ### Check if WinPA and/or VM agent MSI still use StdRegProv WMI, if so, add basic WMI functionality check
