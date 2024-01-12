@@ -2725,7 +2725,6 @@ foreach ($handlerKeyName in $handlerKeyNames)
 [void]$stringBuilder.Append('</div>')
 
 [void]$stringBuilder.Append('<div id="Network" class="tabcontent">')
-# [void]$stringBuilder.Append("<h3 id=`"vmNetwork`">Network</h3>`r`n")
 [void]$stringBuilder.Append("<h4>NIC Details</h4>`r`n")
 $vmNetworkTable = $nics | ConvertTo-Html -Fragment -As Table
 $vmNetworkTable = $vmNetworkTable -replace '<td>Up</td>', '<td class="PASSED">Up</td>'
@@ -2742,7 +2741,6 @@ $vmNetworkRoutesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('</div>')
 
 [void]$stringBuilder.Append('<div id="Firewall" class="tabcontent">')
-# [void]$stringBuilder.Append("<h3 id=`"vmFirewall`">Firewall</h3>`r`n")
 [void]$stringBuilder.Append("<h3>Enabled Inbound Windows Firewall Rules</h3>`r`n")
 if ($enabledFirewallRules.Inbound)
 {
@@ -2767,7 +2765,6 @@ else
 [void]$stringBuilder.Append('</div>')
 
 [void]$stringBuilder.Append('<div id="Services" class="tabcontent">')
-# [void]$stringBuilder.Append("<h3 id=`"vmServices`">Services</h3>`r`n")
 $services = Get-Services
 $vmServicesTable = $services | ConvertTo-Html -Fragment -As Table
 $vmServicesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
