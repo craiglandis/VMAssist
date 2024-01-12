@@ -363,7 +363,7 @@ function Get-ServiceChecks
         else
         {
             $imageName = Split-Path -Path $imagePath -Leaf
-            $actualImagePath = Get-ChildItem -Path 'C:\WindowsAzure' -Filter $imageName -Recurse -File -ErrorAction SilentlyContinue
+            $actualImagePath = Get-ChildItem -Path "$env:SystemDrive\WindowsAzure" -Filter $imageName -Recurse -File -ErrorAction SilentlyContinue
             if ($actualImagePath)
             {
                 $details = "ImagePath registry value is incorrect"
@@ -390,13 +390,24 @@ function Get-ServiceChecks
 
 function Get-RegKey
 {
+    <#
+    'HKLM:\SOFTWARE\Microsoft\GuestAgent'
+    'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest'
+    'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Auto'
+    'HKLM:\SOFTWARE\Microsoft\Windows Azure'
+    'HKLM:\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState'
+    'HKLM:\SOFTWARE\Microsoft\Windows Azure\HandlerState'
+
+    REG_DWORD     System.Int32
+    REG_SZ        System.String
+    REG_QWORD     System.Int64
+    REG_BINARY    System.Byte[]
+    REG_MULTI_SZ  System.String[]
+    REG_EXPAND_SZ System.String
+    #>
+
     param(
-        #$path = 'HKLM:\SOFTWARE\Microsoft\GuestAgent'
-        # [string]$path = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest',
-        # $path = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Auto'
-        [string]$path = 'HKLM:\SOFTWARE\Microsoft\Windows Azure',
-        # 'HKLM:\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState'
-        # 'HKLM:\SOFTWARE\Microsoft\Windows Azure\HandlerState'
+        [string]$path,
         [switch]$recurse
     )
 
@@ -1392,9 +1403,9 @@ if (Test-Path -Path $windowsAzureFolderPath -PathType Container)
 }
 else
 {
+    $windowsAzureFolderExists = $false
     New-Check -name "$windowsAzureFolderPath folder exists" -result 'Failed' -details ''
     Out-Log $windowsAzureFolderExists -color Red -endLine
-    $windowsAzureFolderExists = $false
 }
 
 Add-Type -TypeDefinition @'
@@ -1475,7 +1486,6 @@ else
     Out-Log $details -color DarkGray -endLine
 }
 
-<#
 Out-Log 'VM Agent installed:' -startLine
 $messageSuffix = "(windowsAzureFolderExists:$windowsAzureFolderExists rdAgentServiceExists:$rdAgentServiceExists windowsAzureGuestAgentServiceExists:$windowsAzureGuestAgentServiceExists rdAgentKeyExists:$rdAgentKeyExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists waAppAgentExeExists:$waAppAgentExeExists windowsAzureGuestAgentExeExists:$windowsAzureGuestAgentExeExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists)"
 if ($windowsAzureFolderExists -and $rdAgentServiceExists -and $windowsAzureGuestAgentServiceExists -and $rdAgentKeyExists -and $windowsAzureGuestAgentKeyExists -and $waAppAgentExeExists -and $windowsAzureGuestAgentExeExists -and $windowsAzureGuestAgentKeyExists -and $windowsAzureGuestAgentKeyExists)
@@ -1491,132 +1501,138 @@ else
     $vmAgentInstalled = $false
     Out-Log $vmAgentInstalled -color Red -endLine
     $description = "VM agent is not installed $messageSuffix"
-    Out-Log $message -color Red
     New-Finding -type Critical -Name 'VM agent not installed' -description $description
 }
-#>
 
-Out-Log 'VM agent installed by provisioning agent or Windows Installer package (MSI):' -startLine
-$uninstallKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'
-$uninstallKey = Invoke-ExpressionWithLogging "Get-Item -Path '$uninstallKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
-$agentUninstallKey = $uninstallkey.GetSubKeyNames() | ForEach-Object {Get-ItemProperty -Path $uninstallKeyPath\$_ | Where-Object {$_.Publisher -eq 'Microsoft Corporation' -and $_.DisplayName -match 'Windows Azure VM Agent'}}
-$agentUninstallKeyDisplayName = $agentUninstallKey.DisplayName
-$agentUninstallKeyDisplayVersion = $agentUninstallKey.DisplayVersion
-$agentUninstallKeyInstallDate = $agentUninstallKey.InstallDate
-
-if ($agentUninstallKey)
+if ($vmAgentInstalled)
 {
-    New-Check -name 'VM agent installed by provisioning agent' -result 'Passed' -details ''
-    Out-Log 'MSI: MSI' -color Green -endLine
-}
-else
-{
-    New-Check -name 'VM agent installed by provisioning agent' -result 'Passed' -details ''
-    Out-Log 'Provisioning agent' -color Green -endLine
-}
+    Out-Log 'VM agent installed by provisioning agent or Windows Installer package (MSI):' -startLine
+    $uninstallKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'
+    $uninstallKey = Invoke-ExpressionWithLogging "Get-Item -Path '$uninstallKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
+    $agentUninstallKey = $uninstallkey.GetSubKeyNames() | ForEach-Object {Get-ItemProperty -Path $uninstallKeyPath\$_ | Where-Object {$_.Publisher -eq 'Microsoft Corporation' -and $_.DisplayName -match 'Windows Azure VM Agent'}}
+    $agentUninstallKeyDisplayName = $agentUninstallKey.DisplayName
+    $agentUninstallKeyDisplayVersion = $agentUninstallKey.DisplayVersion
+    $agentUninstallKeyInstallDate = $agentUninstallKey.InstallDate
 
-Out-Log 'VM agent is supported version:' -startLine
-$guestKeyPath = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest'
-$guestKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
-if ($guestKey)
-{
-    $guestKeyDHCPStatus = $guestKey.DHCPStatus
-    $guestKeyDhcpWithFabricAddressTime = $guestKey.DhcpWithFabricAddressTime
-    $guestKeyGuestAgentStartTime = $guestKey.GuestAgentStartTime
-    $guestKeyGuestAgentStatus = $guestKey.GuestAgentStatus
-    $guestKeyGuestAgentVersion = $guestKey.GuestAgentVersion
-    $guestKeyOsVersion = $guestKey.OsVersion
-    $guestKeyRequiredDotNetVersionPresent = $guestKey.RequiredDotNetVersionPresent
-    $guestKeyTransparentInstallerStartTime = $guestKey.TransparentInstallerStartTime
-    $guestKeyTransparentInstallerStatus = $guestKey.TransparentInstallerStatus
-    $guestKeyWireServerStatus = $guestKey.WireServerStatus
-
-    $minSupportedGuestAgentVersion = '2.7.41491.1010'
-    if ($guestKeyGuestAgentVersion -and [version]$guestKeyGuestAgentVersion -ge [version]$minSupportedGuestAgentVersion)
+    if ($agentUninstallKey)
     {
-        New-Check -name 'VM agent is supported version' -result 'Passed' -details "Installed version: $guestKeyGuestAgentVersion, minimum supported version: $minSupportedGuestAgentVersion"
-        $isAtLeastMinSupportedVersion = $true
-        Out-Log "$isAtLeastMinSupportedVersion (installed: $guestKeyGuestAgentVersion, minimum supported: $minSupportedGuestAgentVersion)" -color Green -endLine
+        New-Check -name 'VM agent installed by provisioning agent' -result 'Passed' -details ''
+        Out-Log 'MSI: MSI' -color Green -endLine
     }
     else
     {
-        New-Check -name 'VM agent is supported version' -result 'Failed' -details "Installed version: $guestKeyGuestAgentVersion, minimum supported version: $minSupportedGuestAgentVersion"
-        Out-Log "$isAtLeastMinSupportedVersion (installed: $guestKeyGuestAgentVersion, minimum supported: $minSupportedGuestAgentVersion)" -color Red -endLine
-    }
-}
-<#
-REG_DWORD     System.Int32
-REG_SZ        System.String
-REG_QWORD     System.Int64
-REG_BINARY    System.Byte[]
-REG_MULTI_SZ  System.String[]
-REG_EXPAND_SZ System.String
-#>
-
-$guestAgentKeyPath = 'HKLM:\SOFTWARE\Microsoft\GuestAgent'
-$guestAgentKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestAgentKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
-if ($guestAgentKey)
-{
-    $guestAgentKeyContainerId = $guestAgentKey.ContainerId
-    $guestAgentKeyDirectoryToDelete = $guestAgentKey.DirectoryToDelete
-    $guestAgentKeyHeartbeatLastStatusUpdateTime = $guestAgentKey.HeartbeatLastStatusUpdateTime
-    $guestAgentKeyIncarnation = $guestAgentKey.Incarnation
-    $guestAgentKeyInstallerRestart = $guestAgentKey.InstallerRestart
-    $guestAgentKeyManifestTimeStamp = $guestAgentKey.ManifestTimeStamp
-    $guestAgentKeyMetricsSelfSelectionSelected = $guestAgentKey.MetricsSelfSelectionSelected
-    $guestAgentKeyUpdateNewGAVersion = $guestAgentKey.'Update-NewGAVersion'
-    $guestAgentKeyUpdatePreviousGAVersion = $guestAgentKey.'Update-PreviousGAVersion'
-    $guestAgentKeyUpdateStartTime = $guestAgentKey.'Update-StartTime'
-    $guestAgentKeyVmProvisionedAt = $guestAgentKey.VmProvisionedAt
-}
-
-$vm.Add([PSCustomObject]@{Property = "ContainerId"; Value = $guestAgentKeyContainerId; Type = 'Agent'})
-$vm.Add([PSCustomObject]@{Property = "HeartbeatLastStatusUpdateTime"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
-$vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
-$vm.Add([PSCustomObject]@{Property = "ManifestTimeStamp"; Value = $guestAgentKeyManifestTimeStamp; Type = 'Agent'})
-$vm.Add([PSCustomObject]@{Property = "MetricsSelfSelectionSelected"; Value = $guestAgentKeyMetricsSelfSelectionSelected; Type = 'Agent'})
-$vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
-
-$windowsAzureKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure'
-$windowsAzureKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$windowsAzureKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
-if ($windowsAzureKey)
-{
-    $vmId = $windowsAzureKey.vmId
-    if ($vmId)
-    {
-        $vmId = $vmId.ToLower()
+        New-Check -name 'VM agent installed by provisioning agent' -result 'Passed' -details ''
+        Out-Log 'Provisioning agent' -color Green -endLine
     }
 }
 
-$guestAgentUpdateStateKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState'
-$guestAgentUpdateStateKey = Invoke-ExpressionWithLogging "Get-Item -Path '$guestAgentUpdateStateKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
-if ($guestAgentUpdateStateKey)
+Out-Log 'VM agent is supported version:' -startLine
+if ($vmAgentInstalled)
 {
-    $guestAgentUpdateStateSubKeyName = $guestAgentUpdateStateKey.GetSubKeyNames() | Sort-Object {[Version]$_} | Select-Object -Last 1
-    $guestAgentUpdateStateSubKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestAgentUpdateStateKeyPath\$guestAgentUpdateStateSubKeyName' -ErrorAction SilentlyContinue" -verboseOnly
-    if ($guestAgentUpdateStateSubKey)
+    $guestKeyPath = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest'
+    $guestKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
+    if ($guestKey)
     {
-        $guestAgentUpdateStateCode = $guestAgentUpdateStateSubKey.Code
-        $guestAgentUpdateStateMessage = $guestAgentUpdateStateSubKey.Message
-        $guestAgentUpdateStateState = $guestAgentUpdateStateSubKey.State
-    }
-}
+        $guestKeyDHCPStatus = $guestKey.DHCPStatus
+        $guestKeyDhcpWithFabricAddressTime = $guestKey.DhcpWithFabricAddressTime
+        $guestKeyGuestAgentStartTime = $guestKey.GuestAgentStartTime
+        $guestKeyGuestAgentStatus = $guestKey.GuestAgentStatus
+        $guestKeyGuestAgentVersion = $guestKey.GuestAgentVersion
+        $guestKeyOsVersion = $guestKey.OsVersion
+        $guestKeyRequiredDotNetVersionPresent = $guestKey.RequiredDotNetVersionPresent
+        $guestKeyTransparentInstallerStartTime = $guestKey.TransparentInstallerStartTime
+        $guestKeyTransparentInstallerStatus = $guestKey.TransparentInstallerStatus
+        $guestKeyWireServerStatus = $guestKey.WireServerStatus
 
-$handlerStateKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure\HandlerState'
-$handlerStateKey = Invoke-ExpressionWithLogging "Get-Item -Path '$handlerStateKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
-if ($handlerStateKey)
-{
-    $handlerNames = $handlerStateKey.GetSubKeyNames()
-    if ($handlerNames)
-    {
-        $handlerStates = New-Object System.Collections.Generic.List[Object]
-        foreach ($handlerName in $handlerNames)
+        $minSupportedGuestAgentVersion = '2.7.41491.1010'
+        if ($guestKeyGuestAgentVersion -and [version]$guestKeyGuestAgentVersion -ge [version]$minSupportedGuestAgentVersion)
         {
-            $handlerState = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$handlerStateKeyPath\$handlerName' -ErrorAction SilentlyContinue" -verboseOnly
-            if ($handlerState)
+            New-Check -name 'VM agent is supported version' -result 'Passed' -details "Installed version: $guestKeyGuestAgentVersion, minimum supported version: $minSupportedGuestAgentVersion"
+            $isAtLeastMinSupportedVersion = $true
+            Out-Log "$isAtLeastMinSupportedVersion (installed: $guestKeyGuestAgentVersion, minimum supported: $minSupportedGuestAgentVersion)" -color Green -endLine
+        }
+        else
+        {
+            New-Check -name 'VM agent is supported version' -result 'Failed' -details "Installed version: $guestKeyGuestAgentVersion, minimum supported version: $minSupportedGuestAgentVersion"
+            Out-Log "$isAtLeastMinSupportedVersion (installed: $guestKeyGuestAgentVersion, minimum supported: $minSupportedGuestAgentVersion)" -color Red -endLine
+        }
+    }
+}
+else
+{
+    $details = "Skipped because VM agent is not installed"
+    New-Check -name 'VM agent is supported version' -result 'Skipped' -details $details
+    $isAtLeastMinSupportedVersion = $false
+    Out-Log $details -color DarkGray -endLine
+}
+
+if ($vmAgentInstalled)
+{
+    $guestAgentKeyPath = 'HKLM:\SOFTWARE\Microsoft\GuestAgent'
+    $guestAgentKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestAgentKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
+    if ($guestAgentKey)
+    {
+        $guestAgentKeyContainerId = $guestAgentKey.ContainerId
+        $guestAgentKeyDirectoryToDelete = $guestAgentKey.DirectoryToDelete
+        $guestAgentKeyHeartbeatLastStatusUpdateTime = $guestAgentKey.HeartbeatLastStatusUpdateTime
+        $guestAgentKeyIncarnation = $guestAgentKey.Incarnation
+        $guestAgentKeyInstallerRestart = $guestAgentKey.InstallerRestart
+        $guestAgentKeyManifestTimeStamp = $guestAgentKey.ManifestTimeStamp
+        $guestAgentKeyMetricsSelfSelectionSelected = $guestAgentKey.MetricsSelfSelectionSelected
+        $guestAgentKeyUpdateNewGAVersion = $guestAgentKey.'Update-NewGAVersion'
+        $guestAgentKeyUpdatePreviousGAVersion = $guestAgentKey.'Update-PreviousGAVersion'
+        $guestAgentKeyUpdateStartTime = $guestAgentKey.'Update-StartTime'
+        $guestAgentKeyVmProvisionedAt = $guestAgentKey.VmProvisionedAt
+    }
+
+    $vm.Add([PSCustomObject]@{Property = "ContainerId"; Value = $guestAgentKeyContainerId; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = "HeartbeatLastStatusUpdateTime"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = "ManifestTimeStamp"; Value = $guestAgentKeyManifestTimeStamp; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = "MetricsSelfSelectionSelected"; Value = $guestAgentKeyMetricsSelfSelectionSelected; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
+
+    $windowsAzureKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure'
+    $windowsAzureKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$windowsAzureKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
+    if ($windowsAzureKey)
+    {
+        $vmId = $windowsAzureKey.vmId
+        if ($vmId)
+        {
+            $vmId = $vmId.ToLower()
+        }
+    }
+
+    $guestAgentUpdateStateKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState'
+    $guestAgentUpdateStateKey = Invoke-ExpressionWithLogging "Get-Item -Path '$guestAgentUpdateStateKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
+    if ($guestAgentUpdateStateKey)
+    {
+        $guestAgentUpdateStateSubKeyName = $guestAgentUpdateStateKey.GetSubKeyNames() | Sort-Object {[Version]$_} | Select-Object -Last 1
+        $guestAgentUpdateStateSubKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestAgentUpdateStateKeyPath\$guestAgentUpdateStateSubKeyName' -ErrorAction SilentlyContinue" -verboseOnly
+        if ($guestAgentUpdateStateSubKey)
+        {
+            $guestAgentUpdateStateCode = $guestAgentUpdateStateSubKey.Code
+            $guestAgentUpdateStateMessage = $guestAgentUpdateStateSubKey.Message
+            $guestAgentUpdateStateState = $guestAgentUpdateStateSubKey.State
+        }
+    }
+
+    $handlerStateKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure\HandlerState'
+    $handlerStateKey = Invoke-ExpressionWithLogging "Get-Item -Path '$handlerStateKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
+    if ($handlerStateKey)
+    {
+        $handlerNames = $handlerStateKey.GetSubKeyNames()
+        if ($handlerNames)
+        {
+            $handlerStates = New-Object System.Collections.Generic.List[Object]
+            foreach ($handlerName in $handlerNames)
             {
-                $handlerStates.Add($handlerState)
-                $handlerState = $null
+                $handlerState = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$handlerStateKeyPath\$handlerName' -ErrorAction SilentlyContinue" -verboseOnly
+                if ($handlerState)
+                {
+                    $handlerStates.Add($handlerState)
+                    $handlerState = $null
+                }
             }
         }
     }
@@ -1736,37 +1752,48 @@ else
 }
 
 Out-Log 'TenantEncryptionCert installed:' -startLine
-$tenantEncryptionCert = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object {$_.FriendlyName -eq 'TenantEncryptionCert' -and $_.Issuer -eq 'DC=Windows Azure CRP Certificate Generator' -and $_.Subject -eq 'DC=Windows Azure CRP Certificate Generator'}
-if ($tenantEncryptionCert)
+if ($vmAgentInstalled)
 {
-    $tenantEncryptionCertInstalled = $true
-    Out-Log $tenantEncryptionCertInstalled -color Green -endLine
-    $subject = $tenantEncryptionCert.Subject
-    $issuer =  $tenantEncryptionCert.Issuer
-    $effective = Get-Date -Date $tenantEncryptionCert.NotBefore.ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
-    $expires = Get-Date -Date $tenantEncryptionCert.NotAfter.ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
-    $now = Get-Date -Date (Get-Date).ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
-    New-Check -name 'TenantEncryptionCert installed' -result 'Passed' -details "Subject: $subject Issuer: $issuer"
-
-    Out-Log 'TenantEncryptionCert within validity period:' -startLine
-    if ($tenantEncryptionCert.NotBefore -le [System.DateTime]::Now -and $tenantEncryptionCert.NotAfter -gt [System.DateTime]::Now)
+    $tenantEncryptionCert = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object {$_.FriendlyName -eq 'TenantEncryptionCert' -and $_.Issuer -eq 'DC=Windows Azure CRP Certificate Generator' -and $_.Subject -eq 'DC=Windows Azure CRP Certificate Generator'}
+    if ($tenantEncryptionCert)
     {
-        $tenantEncryptionCertWithinValidityPeriod = $true
-        Out-Log $tenantEncryptionCertWithinValidityPeriod -color Green -endLine
-        New-Check -name 'TenantEncryptionCert within validity period' -result 'Passed' -details "Now: $now Effective: $effective Expires: $expires"
+        $tenantEncryptionCertInstalled = $true
+        Out-Log $tenantEncryptionCertInstalled -color Green -endLine
+        $subject = $tenantEncryptionCert.Subject
+        $issuer =  $tenantEncryptionCert.Issuer
+        $effective = Get-Date -Date $tenantEncryptionCert.NotBefore.ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
+        $expires = Get-Date -Date $tenantEncryptionCert.NotAfter.ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
+        $now = Get-Date -Date (Get-Date).ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
+        New-Check -name 'TenantEncryptionCert installed' -result 'Passed' -details "Subject: $subject Issuer: $issuer"
+
+        Out-Log 'TenantEncryptionCert within validity period:' -startLine
+        if ($tenantEncryptionCert.NotBefore -le [System.DateTime]::Now -and $tenantEncryptionCert.NotAfter -gt [System.DateTime]::Now)
+        {
+            $tenantEncryptionCertWithinValidityPeriod = $true
+            Out-Log $tenantEncryptionCertWithinValidityPeriod -color Green -endLine
+            New-Check -name 'TenantEncryptionCert within validity period' -result 'Passed' -details "Now: $now Effective: $effective Expires: $expires"
+        }
+        else
+        {
+            $tenantEncryptionCertWithinValidityPeriod = $false
+            Out-Log $tenantEncryptionCertWithinValidityPeriod -color Red -endLine
+            New-Check -name 'TenantEncryptionCert within validity period' -result 'Failed' -details "Now: $now Effective: $effective Expires: $expires"
+            New-Finding -type Critical -name 'TenantEncryptionCert not within validity period' -description "Now: $now Effective: $effective Expires: $expires" -mitigation $mitigation
+        }
     }
     else
     {
-        $tenantEncryptionCertWithinValidityPeriod = $false
-        Out-Log $tenantEncryptionCertWithinValidityPeriod -color Red -endLine
-        New-Check -name 'TenantEncryptionCert within validity period' -result 'Failed' -details "Now: $now Effective: $effective Expires: $expires"
-        New-Finding -type Critical -name 'TenantEncryptionCert not within validity period' -description "Now: $now Effective: $effective Expires: $expires" -mitigation $mitigation
+        New-Check -name 'TenantEncryptionCert installed' -result 'Failed' -details ''
+        New-Finding -type Critical -name 'TenantEncryptionCert not installed' -description '' -mitigation ''
+        Out-Log $false -color Red -endLine
     }
 }
 else
 {
-    New-Check -name 'TenantEncryptionCert installed' -result 'Failed' -details ''
+    $details = "Skipped because VM agent is not installed"
+    New-Check -name 'TenantEncryptionCert installed' -result 'Skipped' -details $details
     New-Finding -type Critical -name 'TenantEncryptionCert not installed' -description '' -mitigation ''
+    Out-Log $details -color DarkGray -endLine
 }
 
 $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
@@ -1930,7 +1957,7 @@ if ($imdsReachable.Succeeded -eq $false)
     }
     else
     {
-        Out-Log $dhcpReturnedOption245 -color Yellow
+        Out-Log $dhcpReturnedOption245 -color Yellow -endLine
     }
 }
 
@@ -1979,8 +2006,11 @@ if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succ
     $inVMGoalStateMetaData = $extensions.InVMGoalStateMetaData
 }
 
-Get-ThirdPartyLoadedModules -processName 'WaAppAgent'
-Get-ThirdPartyLoadedModules -processName 'WindowsAzureGuestAgent'
+if ($vmAgentInstalled)
+{
+    Get-ThirdPartyLoadedModules -processName 'WaAppAgent'
+    Get-ThirdPartyLoadedModules -processName 'WindowsAzureGuestAgent'
+}
 
 $enabledFirewallRules = Get-EnabledFirewallRules
 
@@ -2010,58 +2040,75 @@ else
     New-Finding -type Information -name 'Non-default MachineKeys permissions' -description $details -mitigation $mitigation
 }
 
-# Permissions on C:\WindowsAzure and c:\Packages folder during startup.
+# Permissions on $env:SystemDrive\WindowsAzure and $env:SystemDrive\Packages folder during startup.
 # It first removes all user/groups and then sets the following permission
 # (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders.
 # If GA fails to remove/set the permission, it can't proceed further.
-$windowsAzureDefaultSddl = 'O:SYG:SYD:PAI(A;OICI;0x1200a9;;;WD)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'
-$windowsAzurePath = 'C:\WindowsAzure'
-Out-Log "$windowsAzurePath folder has default permissions:" -startLine
-$windowsAzureAcl = Get-Acl -Path $windowsAzurePath
-$windowsAzureSddl = $windowsAzureAcl | Select-Object -ExpandProperty Sddl
-$windowsAzureAccess = $windowsAzureAcl | Select-Object -ExpandProperty Access
-$windowsAzureAccessString = $windowsAzureAccess | ForEach-Object {"$($_.IdentityReference) $($_.AccessControlType) $($_.FileSystemRights)"}
-$windowsAzureAccessString = $windowsAzureAccessString -join '<br>'
-if ($windowsAzureSddl -eq $windowsAzureDefaultSddl)
+Out-Log "$windowsAzureFolderPath folder has default permissions:" -startLine
+if ($vmAgentInstalled)
 {
-    $windowsAzureHasDefaultPermissions = $true
-    Out-Log $windowsAzureHasDefaultPermissions -color Green -endLine
-    $details = "$windowsAzurePath folder has default NTFS permissions" # <br>SDDL: $windowsAzureSddl<br>$windowsAzureAccessString"
-    New-Check -name "$windowsAzurePath permissions" -result 'Passed' -details $details
+    $windowsAzureDefaultSddl = 'O:SYG:SYD:PAI(A;OICI;0x1200a9;;;WD)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'
+    $windowsAzureAcl = Get-Acl -Path $windowsAzureFolderPath
+    $windowsAzureSddl = $windowsAzureAcl | Select-Object -ExpandProperty Sddl
+    $windowsAzureAccess = $windowsAzureAcl | Select-Object -ExpandProperty Access
+    $windowsAzureAccessString = $windowsAzureAccess | ForEach-Object {"$($_.IdentityReference) $($_.AccessControlType) $($_.FileSystemRights)"}
+    $windowsAzureAccessString = $windowsAzureAccessString -join '<br>'
+    if ($windowsAzureSddl -eq $windowsAzureDefaultSddl)
+    {
+        $windowsAzureHasDefaultPermissions = $true
+        Out-Log $windowsAzureHasDefaultPermissions -color Green -endLine
+        $details = "$windowsAzureFolderPath folder has default NTFS permissions" # <br>SDDL: $windowsAzureSddl<br>$windowsAzureAccessString"
+        New-Check -name "$windowsAzureFolderPath permissions" -result 'Passed' -details $details
+    }
+    else
+    {
+        $windowsAzureHasDefaultPermissions = $false
+        Out-Log $windowsAzureHasDefaultPermissions -color Cyan -endLine
+        $details = "$windowsAzureFolderPath does not have default NTFS permissions<br>SDDL: $windowsAzureSddl<br>$windowsAzureAccessString"
+        New-Check -name "$windowsAzureFolderPath permissions" -result 'Information' -details $details
+        $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/troubleshoot-extension-certificates-issues-windows-vm#solution-2-fix-the-access-control-list-acl-in-the-machinekeys-or-systemkeys-folders">Troubleshoot extension certificates</a>'
+        New-Finding -type Information -name "Non-default $windowsAzureFolderPath permissions" -description $details -mitigation $mitigation
+    }
 }
 else
 {
-    $windowsAzureHasDefaultPermissions = $false
-    Out-Log $windowsAzureHasDefaultPermissions -color Cyan -endLine
-    $details = "$windowsAzurePath does not have default NTFS permissions<br>SDDL: $windowsAzureSddl<br>$windowsAzureAccessString"
-    New-Check -name "$windowsAzurePath permissions" -result 'Information' -details $details
-    $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/troubleshoot-extension-certificates-issues-windows-vm#solution-2-fix-the-access-control-list-acl-in-the-machinekeys-or-systemkeys-folders">Troubleshoot extension certificates</a>'
-    New-Finding -type Information -name "Non-default $windowsAzurePath permissions" -description $details -mitigation $mitigation
+    $details = "Skipped because VM agent is not installed"
+    New-Check -name "$windowsAzureFolderPath permissions" -result 'Skipped' -details $details
+    Out-Log $details -color DarkGray -endLine
 }
 
-$packagesDefaultSddl = 'O:BAG:SYD:PAI(A;OICI;0x1200a9;;;WD)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'
-$packagesPath = 'C:\Packages'
-Out-Log "$packagesPath folder has default permissions:" -startLine
-$packagesAcl = Get-Acl -Path $packagesPath
-$packagesSddl = $packagesAcl | Select-Object -ExpandProperty Sddl
-$packagesAccess = $packagesAcl | Select-Object -ExpandProperty Access
-$packagessAccessString = $packagesAccess | ForEach-Object {"$($_.IdentityReference) $($_.AccessControlType) $($_.FileSystemRights)"}
-$packagesAccessString = $packagessAccessString -join '<br>'
-if ($packagesSddl -eq $packagesDefaultSddl)
+$packagesFolderPath = "$env:SystemDrive\Packages"
+Out-Log "$packagesFolderPath folder has default permissions:" -startLine
+if ($vmAgentInstalled)
 {
-    $packagesHasDefaultPermissions = $true
-    Out-Log $packagesHasDefaultPermissions -color Green -endLine
-    $details = "$packagesPath folder has default NTFS permissions" # <br>SDDL: $packagesSddl<br>$packagesAccessString"
-    New-Check -name "$packagesPath permissions" -result 'Passed' -details $details
+    $packagesDefaultSddl = 'O:BAG:SYD:PAI(A;OICI;0x1200a9;;;WD)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'
+    $packagesAcl = Get-Acl -Path $packagesFolderPath
+    $packagesSddl = $packagesAcl | Select-Object -ExpandProperty Sddl
+    $packagesAccess = $packagesAcl | Select-Object -ExpandProperty Access
+    $packagessAccessString = $packagesAccess | ForEach-Object {"$($_.IdentityReference) $($_.AccessControlType) $($_.FileSystemRights)"}
+    $packagesAccessString = $packagessAccessString -join '<br>'
+    if ($packagesSddl -eq $packagesDefaultSddl)
+    {
+        $packagesHasDefaultPermissions = $true
+        Out-Log $packagesHasDefaultPermissions -color Green -endLine
+        $details = "$packagesFolderPath folder has default NTFS permissions" # <br>SDDL: $packagesSddl<br>$packagesAccessString"
+        New-Check -name "$packagesFolderPath permissions" -result 'Passed' -details $details
+    }
+    else
+    {
+        $packagesHasDefaultPermissions = $false
+        Out-Log $packagesHasDefaultPermissions -color Cyan -endLine
+        $details = "$packagesFolderPath does not have default NTFS permissions<br>SDDL: $packagesSddl<br>$packagesAccessString"
+        New-Check -name "$packagesFolderPath permissions" -result 'Information' -details $details
+        $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/troubleshoot-extension-certificates-issues-windows-vm#solution-2-fix-the-access-control-list-acl-in-the-machinekeys-or-systemkeys-folders">Troubleshoot extension certificates</a>'
+        New-Finding -type Information -name "Non-default $packagesFolderPath permissions" -description $details -mitigation $mitigation
+    }
 }
 else
 {
-    $packagesHasDefaultPermissions = $false
-    Out-Log $packagesHasDefaultPermissions -color Cyan -endLine
-    $details = "$packagesPath does not have default NTFS permissions<br>SDDL: $packagesSddl<br>$packagesAccessString"
-    New-Check -name "$packagesPath permissions" -result 'Information' -details $details
-    $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/troubleshoot-extension-certificates-issues-windows-vm#solution-2-fix-the-access-control-list-acl-in-the-machinekeys-or-systemkeys-folders">Troubleshoot extension certificates</a>'
-    New-Finding -type Information -name "Non-default $packagesPath permissions" -description $details -mitigation $mitigation
+    $details = "Skipped because VM agent is not installed"
+    New-Check -name "$packagesFolderPath permissions" -result 'Skipped' -details $details
+    Out-Log $details -color DarkGray -endLine
 }
 
 Out-Log "System drive has sufficient disk space:" -startLine
@@ -2164,7 +2211,7 @@ $vm.Add([PSCustomObject]@{Property = 'licenseType'; Value = $licenseType; Type =
 $vm.Add([PSCustomObject]@{Property = 'joinType'; Value = $joinType; Type = 'OS'})
 $vm.Add([PSCustomObject]@{Property = 'productType'; Value = $productType; Type = 'OS'})
 
-Out-Log "DHCP-assigned IP addresses" -startLine
+Out-Log "DHCP-assigned IP addresses:" -startLine
 
 $nics = New-Object System.Collections.Generic.List[Object]
 
@@ -2744,9 +2791,6 @@ $vmAgentTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('</div>')
 
 [void]$stringBuilder.Append('<div id="Extensions" class="tabcontent">')
-$handlerStateKey = Get-RegKey -Path 'HKLM:\SOFTWARE\Microsoft\Windows Azure\HandlerState' -Recurse
-$global:dbgHandlerStateKey = $handlerStateKey
-$handlerKeyNames = $handlerStateKey.SubkeyName | Sort-Object -Unique
 foreach ($handlerKeyName in $handlerKeyNames)
 {
     $handlerName = Split-Path -Path $handlerKeyName -Leaf
@@ -2878,6 +2922,9 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 <# TODO
+### Fix "03:54:32 01:14 [ERROR] Cannot convert value "2147680517" to type "System.Int32". Error: "Value was either too large or too small for an Int32." Line 182 [int32]$exitCode = $service.ExitCode"
+### Check for WCF Profiling being enabled
+### Check for system crashes (bugchecks), surface most recent one as well as crash count last 24 hour
 ### Make sure to add test cases for each check
 ### Disk space check should also check drive with page file if different than system drive
 ### Fix issues experienced when running on non-Azure device
@@ -2906,10 +2953,7 @@ get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object 
 Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
 ### permissions on C:\WindowsAzure and c:\Packages folder during startup. It first removes all user/groups and then sets the following permission (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders. If GA fails to remove/set the permission, it can't proceed further.
 WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set access rules for agent directories. Exception: System.Security.Principal.IdentityNotMappedException: {Namepii} or all identity references could not be translated. Symptom reported: Guest agent not ready (Unresponsive status).
-### Check for WCF Profiling being enabled
-### Check for system crashes (bugchecks), surface most recent one as well as crash count last 24 hours
 ### Update github repo readme with additional ways to run Get-VMAgentHealth.ps1
-### Check if WinPA and/or VM agent MSI still use StdRegProv WMI, if so, add basic WMI functionality check
 ### Add mitigations for existing checks (XL)
 #>
 
