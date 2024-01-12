@@ -2877,7 +2877,7 @@ else
 }
 Out-Log "$findingsCount issue(s) found." -color $color
 
-$todo = @'
+<# TODO
 ### Make sure to add test cases for each check
 ### Disk space check should also check drive with page file if different than system drive
 ### Fix issues experienced when running on non-Azure device
@@ -2911,8 +2911,7 @@ WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set ac
 ### Update github repo readme with additional ways to run Get-VMAgentHealth.ps1
 ### Check if WinPA and/or VM agent MSI still use StdRegProv WMI, if so, add basic WMI functionality check
 ### Add mitigations for existing checks (XL)
-'@
-$todo = $todo.Split("`n").Trim()
+#>
 
 $global:dbgOutput = $output
 $global:dbgFindings = $findings
