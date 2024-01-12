@@ -2457,6 +2457,11 @@ $css = @'
             font-family: sans-serif;
             text-align: left
         }
+        table.table2 {
+            border: 0px solid;
+            border-collapse: collapse;
+            text-align: left
+        }
         table {
             background-color: #DDEBF7;
             border: 1px solid;
@@ -2641,26 +2646,20 @@ https://www.w3schools.com/howto/howto_js_accordion.asp
 <div class="content">
   <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
 </div>
-
-<table>
-<colgroup><col/><col/><col/><col/></colgroup>
-<tr><th>Type</th><th>Name</th><th>Description</th><th>Mitigation</th></tr>
-<tr><td class="INFORMATION">Information</td><td>IMDS endpoint 169.254.169.254:80 not reachable</td><td>IMDS endpoint 169.254.169.254:80 reachable: False An attempt was made to access a socket in a way forbidden by its access permissions 169.254.169.254:80</td><td></td></tr>
-</table>
-
 #>
-
 $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
-[void]$stringBuilder.Append("Name: <span style='font-weight:bold'>$vmName</span> VMID: <span style='font-weight:bold'>$vmId</span> Report Created: <span style='font-weight:bold'>$scriptEndTimeUTCString</span> Duration: <span style='font-weight:bold'>$scriptDuration</span>")
+
+[void]$stringBuilder.Append("VM Name: <span style='font-weight:bold'>$vmName</span> VMID: <span style='font-weight:bold'>$vmId</span>")
 if ($resourceId)
 {
-    [void]$stringBuilder.Append("<br>ResourceId: <span style='font-weight:bold'>$resourceId</span>")
+    [void]$stringBuilder.Append(" ResourceId: <span style='font-weight:bold'>$resourceId</span>")
 }
 if ($guestAgentKeyContainerId)
 {
-    [void]$stringBuilder.Append("<br>ContainerId: <span style='font-weight:bold'>$guestAgentKeyContainerId</span>")
+    [void]$stringBuilder.Append(" ContainerId: <span style='font-weight:bold'>$guestAgentKeyContainerId</span>")
 }
-[void]$stringBuilder.Append("<p>")
+[void]$stringBuilder.Append(" Report Created: <span style='font-weight:bold'>$scriptEndTimeUTCString</span> Duration: <span style='font-weight:bold'>$scriptDuration</span><p>")
+
 $tabs | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('<div id="Findings" class="tabcontent" style="display:block;">')
 [void]$stringBuilder.Append("<h2 id=`"findings`">Findings</h2>`r`n")
