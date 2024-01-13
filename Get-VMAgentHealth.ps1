@@ -2932,6 +2932,10 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 <# TODO
+md c:\bin -ea si;iwr https://www.nirsoft.net/utils/regscanner-x64.zip -outfile z;expand-archive z .\ -f
+regscanner /cfg regscanner.cfg /sxml regscanner.xml
+$b = [xml](gc regscanner.xml)
+$b.registry_report.item | fl registry_key,name,data
 reg query "HKLM\HARDWARE\DESCRIPTION\System\BIOS"
 $systemManufacturer = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" | Select-Object -ExpandProperty SystemManufacturer
 $systemProductName = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" | Select-Object -ExpandProperty SystemProductName
