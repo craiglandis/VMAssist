@@ -1450,7 +1450,15 @@ namespace Win32.Service
 '@
 
 $rdagent = Get-ServiceChecks -name 'rdagent' -expectedStatus 'Running' -expectedStartType 'Automatic'
+if ($rdagent)
+{
+    $rdAgentServiceExists = $true
+}
 $windowsAzureGuestAgent = Get-ServiceChecks -name 'WindowsAzureGuestAgent' -expectedStatus 'Running' -expectedStartType 'Automatic'
+if ($windowsAzureGuestAgent)
+{
+    $windowsAzureGuestAgentServiceExists = $true
+}
 $winmgmt = Get-ServiceChecks -name 'winmgmt' -expectedStatus 'Running' -expectedStartType 'Automatic'
 $keyiso = Get-ServiceChecks -name 'keyiso' -expectedStatus 'Running' -expectedStartType 'Manual'
 Get-ServiceCrashes -Name 'RdAgent'
@@ -1487,21 +1495,23 @@ else
 }
 
 Out-Log 'VM Agent installed:' -startLine
-$messageSuffix = "(windowsAzureFolderExists:$windowsAzureFolderExists rdAgentServiceExists:$rdAgentServiceExists windowsAzureGuestAgentServiceExists:$windowsAzureGuestAgentServiceExists rdAgentKeyExists:$rdAgentKeyExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists waAppAgentExeExists:$waAppAgentExeExists windowsAzureGuestAgentExeExists:$windowsAzureGuestAgentExeExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists)"
-if ($windowsAzureFolderExists -and $rdAgentServiceExists -and $windowsAzureGuestAgentServiceExists -and $rdAgentKeyExists -and $windowsAzureGuestAgentKeyExists -and $waAppAgentExeExists -and $windowsAzureGuestAgentExeExists -and $windowsAzureGuestAgentKeyExists -and $windowsAzureGuestAgentKeyExists)
+# $detailsSuffix = "(windowsAzureFolderExists:$windowsAzureFolderExists rdAgentServiceExists:$rdAgentServiceExists windowsAzureGuestAgentServiceExists:$windowsAzureGuestAgentServiceExists rdAgentKeyExists:$rdAgentKeyExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists waAppAgentExeExists:$waAppAgentExeExists windowsAzureGuestAgentExeExists:$windowsAzureGuestAgentExeExists)"
+# if ($windowsAzureFolderExists -and $rdAgentServiceExists -and $windowsAzureGuestAgentServiceExists -and $rdAgentKeyExists -and $windowsAzureGuestAgentKeyExists -and $waAppAgentExeExists -and $windowsAzureGuestAgentExeExists -and $windowsAzureGuestAgentKeyExists -and $windowsAzureGuestAgentKeyExists)
+$detailsSuffix = "$windowsAzureFolderPath exists: $([bool]$windowsAzureFolder), WaAppAgent.exe in $($windowsAzureFolderPath): $([bool]$waAppAgentExe), WindowsAzureGuestAgent.exe in $($windowsAzureFolderPath): $([bool]$windowsAzureGuestAgentExe), RdAgent service installed: $([bool]$rdagent), WindowsAzureGuestAgent service installed: $([bool]$windowsAzureGuestAgent)"
+if ([bool]$windowsAzureFolder -and [bool]$rdagent -and [bool]$windowsAzureGuestAgent -and [bool]$waAppAgentExe -and [bool]$windowsAzureGuestAgentExe)
 {
-    New-Check -name 'VM agent installed' -result 'Passed' -details ''
     $vmAgentInstalled = $true
-    Out-Log "$vmAgentInstalled $messageSuffix" -color Green -endLine
-    $message = "VM agent is installed $messageSuffix"
+    $details = "VM agent is installed ($detailsSuffix)"
+    New-Check -name 'VM agent installed' -result 'Passed' -details $details
+    Out-Log $vmAgentInstalled -color Green -endLine
 }
 else
 {
-    New-Check -name 'VM agent installed' -result 'Failed' -details ''
     $vmAgentInstalled = $false
+    $details = "VM agent is not installed ($detailsSuffix)"
+    New-Check -name 'VM agent installed' -result 'Failed' -details $details
     Out-Log $vmAgentInstalled -color Red -endLine
-    $description = "VM agent is not installed $messageSuffix"
-    New-Finding -type Critical -Name 'VM agent not installed' -description $description
+    New-Finding -type Critical -Name 'VM agent not installed' -description $details -mitigation ''
 }
 
 if ($vmAgentInstalled)
@@ -2922,6 +2932,13 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 <# TODO
+reg query "HKLM\HARDWARE\DESCRIPTION\System\BIOS"
+$systemManufacturer = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" | Select-Object -ExpandProperty SystemManufacturer
+$systemProductName = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" | Select-Object -ExpandProperty SystemProductName
+$uuid = Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID
+Local Hyper-V example: 6840B682-F537-464C-A5A9-874061E91914
+Azure VM example: C42C97BC-DBFD-4FEE-8F07-E4C8937116A4
+### Confirm if Azure VM earlier so later Azure-specific checks can be skipped
 ### Fix "03:54:32 01:14 [ERROR] Cannot convert value "2147680517" to type "System.Int32". Error: "Value was either too large or too small for an Int32." Line 182 [int32]$exitCode = $service.ExitCode"
 ### Check for WCF Profiling being enabled
 ### Check for system crashes (bugchecks), surface most recent one as well as crash count last 24 hour
