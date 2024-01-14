@@ -1384,62 +1384,83 @@ else
 }
 
 Out-Log "$osVersion installed $installDateString" -color Cyan
-
 $isHyperVGuest = Confirm-HyperVGuest
-# Figure out if it's quicker to test for IMDS connectivity or DHCP option 245 as the way to confirm it's in Azure
-# If the IMDS check is faster, can do that first, but it could fail even if it's in Azure, so then check DHCP option 245 last
-$lastConfig = Get-ItemProperty -Path 'HKLM:\SYSTEM\HardwareConfig' | Select-Object -Expandproperty LastConfig
-$uuid = $lastConfig.Replace('{','').Replace('}','')
-$vmId = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows Azure' | Select-Object -Expandproperty VmId
-# VMID and UUID are the same
-# @('ws22','ws12r2','ws12r2ps51','ws19','ws16') | %{run -rg rg -vm $_ -command "Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID;(gp HKLM:\SYSTEM\HardwareConfig).LastConfig.Replace('{','').Replace('}','');(gp 'HKLM:\SOFTWARE\Microsoft\Windows Azure').VmId"}
-# $uuid = Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID
+Out-Log "isHyperVGuest: $isHyperVGuest" -verboseOnly
+$isAzureVM = Confirm-AzureVM
+Out-Log "isAzureVM: $isAzureVM" -verboseOnly
 
-$windowsAzureFolderPath = "$env:SystemDrive\WindowsAzure"
-Out-Log "$windowsAzureFolderPath folder exists:" -startLine
-if (Test-Path -Path $windowsAzureFolderPath -PathType Container)
+$lastConfig = Get-ItemProperty -Path 'HKLM:\SYSTEM\HardwareConfig' -ErrorAction SilentlyContinue | Select-Object -Expandproperty LastConfig
+if ($lastConfig)
 {
-    $windowsAzureFolderExists = $true
-    Out-Log $windowsAzureFolderExists -color Green -endLine
-    New-Check -name "$windowsAzureFolderPath folder exists" -result 'Passed' -details ''
-    $windowsAzureFolder = Invoke-ExpressionWithLogging "Get-ChildItem -Path $windowsAzureFolderPath -Recurse -ErrorAction SilentlyContinue" -verboseOnly
-    Out-Log 'WindowsAzureGuestAgent.exe exists:' -startLine
-    $windowsAzureGuestAgentExe = $windowsAzureFolder | Where-Object {$_.Name -eq 'WindowsAzureGuestAgent.exe'}
-    if ($windowsAzureGuestAgentExe)
-    {
-        New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'Passed' -details ''
-        $windowsAzureGuestAgentExeExists = $true
-        $windowsAzureGuestAgentExeFileVersion = $windowsAzureGuestAgentExe | Select-Object -ExpandProperty VersionInfo | Select-Object -ExpandProperty FileVersion
-        Out-Log "$windowsAzureGuestAgentExeExists (version $windowsAzureGuestAgentExeFileVersion)" -color Green -endLine
-    }
-    else
-    {
-        New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'Failed' -details ''
-        $windowsAzureGuestAgentExe = $false
-        Out-Log $windowsAzureGuestAgentExeExists -color Red -endLine
-    }
+    $uuid = $lastConfig.ToLower().Replace('{','').Replace('}','')
+}
+if ($isAzureVM)
+{
+    $vmId = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows Azure' -ErrorAction SilentlyContinue | Select-Object -Expandproperty VmId
+}
 
-    Out-Log 'WaAppAgent.exe exists:' -startLine
-    $waAppAgentExe = $windowsAzureFolder | Where-Object {$_.Name -eq 'WaAppAgent.exe'}
-    if ($waAppAgentExe)
+if ($isAzureVM)
+{
+    $windowsAzureFolderPath = "$env:SystemDrive\WindowsAzure"
+    Out-Log "$windowsAzureFolderPath folder exists:" -startLine
+    if (Test-Path -Path $windowsAzureFolderPath -PathType Container)
     {
-        New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'Passed' -details ''
-        $waAppAgentExeExists = $true
-        $waAppAgentExeFileVersion = $waAppAgentExe | Select-Object -ExpandProperty VersionInfo | Select-Object -ExpandProperty FileVersion
-        Out-Log "$waAppAgentExeExists (version $waAppAgentExeFileVersion)" -color Green -endLine
+        $windowsAzureFolderExists = $true
+        Out-Log $windowsAzureFolderExists -color Green -endLine
+        New-Check -name "$windowsAzureFolderPath folder exists" -result 'Passed' -details ''
+        $windowsAzureFolder = Invoke-ExpressionWithLogging "Get-ChildItem -Path $windowsAzureFolderPath -Recurse -ErrorAction SilentlyContinue" -verboseOnly
+        Out-Log 'WindowsAzureGuestAgent.exe exists:' -startLine
+        $windowsAzureGuestAgentExe = $windowsAzureFolder | Where-Object {$_.Name -eq 'WindowsAzureGuestAgent.exe'}
+        if ($windowsAzureGuestAgentExe)
+        {
+            New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'Passed' -details ''
+            $windowsAzureGuestAgentExeExists = $true
+            $windowsAzureGuestAgentExeFileVersion = $windowsAzureGuestAgentExe | Select-Object -ExpandProperty VersionInfo | Select-Object -ExpandProperty FileVersion
+            Out-Log "$windowsAzureGuestAgentExeExists (version $windowsAzureGuestAgentExeFileVersion)" -color Green -endLine
+        }
+        else
+        {
+            New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'Failed' -details ''
+            $windowsAzureGuestAgentExe = $false
+            Out-Log $windowsAzureGuestAgentExeExists -color Red -endLine
+        }
+
+        Out-Log 'WaAppAgent.exe exists:' -startLine
+        $waAppAgentExe = $windowsAzureFolder | Where-Object {$_.Name -eq 'WaAppAgent.exe'}
+        if ($waAppAgentExe)
+        {
+            New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'Passed' -details ''
+            $waAppAgentExeExists = $true
+            $waAppAgentExeFileVersion = $waAppAgentExe | Select-Object -ExpandProperty VersionInfo | Select-Object -ExpandProperty FileVersion
+            Out-Log "$waAppAgentExeExists (version $waAppAgentExeFileVersion)" -color Green -endLine
+        }
+        else
+        {
+            New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'Failed' -details ''
+            $waAppAgentExeExists = $false
+            Out-Log $waAppAgentExeExists -color Red -endLine
+        }
     }
     else
     {
-        New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'Failed' -details ''
-        $waAppAgentExeExists = $false
-        Out-Log $waAppAgentExeExists -color Red -endLine
+        $windowsAzureFolderExists = $false
+        New-Check -name "$windowsAzureFolderPath folder exists" -result 'Failed' -details ''
+        Out-Log $windowsAzureFolderExists -color Red -endLine
     }
 }
 else
 {
     $windowsAzureFolderExists = $false
-    New-Check -name "$windowsAzureFolderPath folder exists" -result 'Failed' -details ''
-    Out-Log $windowsAzureFolderExists -color Red -endLine
+    New-Check -name "$windowsAzureFolderPath folder exists" -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log $windowsAzureFolderExists -color DarkGray -endLine
+
+    $windowsAzureGuestAgentExe = $false
+    New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log $windowsAzureGuestAgentExeExists -color DarkGray -endLine
+
+    $waAppAgentExeExists = $false
+    New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log $waAppAgentExeExists -color DarkGray -endLine
 }
 
 Add-Type -TypeDefinition @'
@@ -1483,22 +1504,54 @@ namespace Win32.Service
 }
 '@
 
-$rdagent = Get-ServiceChecks -name 'rdagent' -expectedStatus 'Running' -expectedStartType 'Automatic'
-if ($rdagent)
+if ($isAzureVM)
 {
-    $rdAgentServiceExists = $true
+    $rdagent = Get-ServiceChecks -name 'rdagent' -expectedStatus 'Running' -expectedStartType 'Automatic'
+    if ($rdagent)
+    {
+        $rdAgentServiceExists = $true
+    }
+    $windowsAzureGuestAgent = Get-ServiceChecks -name 'WindowsAzureGuestAgent' -expectedStatus 'Running' -expectedStartType 'Automatic'
+    if ($windowsAzureGuestAgent)
+    {
+        $windowsAzureGuestAgentServiceExists = $true
+    }
 }
-$windowsAzureGuestAgent = Get-ServiceChecks -name 'WindowsAzureGuestAgent' -expectedStatus 'Running' -expectedStartType 'Automatic'
-if ($windowsAzureGuestAgent)
+else
 {
-    $windowsAzureGuestAgentServiceExists = $true
+    Out-Log 'RdAgent service: ' -startLine
+    New-Check -name "RdAgent service" -result 'Skipped' -details "Not an Azure VM"
+    Out-Log 'Skipped' -color DarkGray -endLine
+
+    Out-Log 'WindowsAzureGuestAgent service: ' -startLine
+    New-Check -name "WindowsAzureGuestAgent service" -result 'Skipped' -details "Not an Azure VM"
+    Out-Log 'Skipped' -color DarkGray -endLine
 }
 $winmgmt = Get-ServiceChecks -name 'winmgmt' -expectedStatus 'Running' -expectedStartType 'Automatic'
 $keyiso = Get-ServiceChecks -name 'keyiso' -expectedStatus 'Running' -expectedStartType 'Manual'
-Get-ServiceCrashes -Name 'RdAgent'
-Get-ServiceCrashes -Name 'Windows Azure Guest Agent'
-Get-ApplicationErrors -Name 'WaAppagent'
-Get-ApplicationErrors -Name 'WindowsAzureGuestAgent'
+
+if ($isAzureVM)
+{
+    Get-ServiceCrashes -Name 'RdAgent'
+    Get-ServiceCrashes -Name 'Windows Azure Guest Agent'
+    Get-ApplicationErrors -Name 'WaAppagent'
+    Get-ApplicationErrors -Name 'WindowsAzureGuestAgent'
+}
+else
+{
+    Out-Log 'RdAgent service crashes:' -startLine
+    New-Check -name 'RdAgent service crashes' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log 'Skipped' -color DarkGray -endLine
+    Out-Log 'Windows Azure Guest Agent service crashes:' -startLine
+    New-Check -name 'Windows Azure Guest Agent service crashes' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log 'Skipped' -color DarkGray -endLine
+    Out-Log 'WaAppAgent application errors:' -startLine
+    New-Check -name 'WaAppAgent application errors' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log 'Skipped' -color DarkGray -endLine
+    Out-Log 'WindowsAzureGuestAgent application errors:' -startLine
+    New-Check -name 'WindowsAzureGuestAgent application errors' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log 'Skipped' -color DarkGray -endLine
+}
 
 Out-Log 'StdRegProv WMI class queryable:' -startLine
 if ($winmgmt.Status -eq 'Running')
@@ -1528,46 +1581,59 @@ else
     Out-Log $details -color DarkGray -endLine
 }
 
-Out-Log 'VM Agent installed:' -startLine
-# $detailsSuffix = "(windowsAzureFolderExists:$windowsAzureFolderExists rdAgentServiceExists:$rdAgentServiceExists windowsAzureGuestAgentServiceExists:$windowsAzureGuestAgentServiceExists rdAgentKeyExists:$rdAgentKeyExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists waAppAgentExeExists:$waAppAgentExeExists windowsAzureGuestAgentExeExists:$windowsAzureGuestAgentExeExists)"
-# if ($windowsAzureFolderExists -and $rdAgentServiceExists -and $windowsAzureGuestAgentServiceExists -and $rdAgentKeyExists -and $windowsAzureGuestAgentKeyExists -and $waAppAgentExeExists -and $windowsAzureGuestAgentExeExists -and $windowsAzureGuestAgentKeyExists -and $windowsAzureGuestAgentKeyExists)
-$detailsSuffix = "$windowsAzureFolderPath exists: $([bool]$windowsAzureFolder), WaAppAgent.exe in $($windowsAzureFolderPath): $([bool]$waAppAgentExe), WindowsAzureGuestAgent.exe in $($windowsAzureFolderPath): $([bool]$windowsAzureGuestAgentExe), RdAgent service installed: $([bool]$rdagent), WindowsAzureGuestAgent service installed: $([bool]$windowsAzureGuestAgent)"
-if ([bool]$windowsAzureFolder -and [bool]$rdagent -and [bool]$windowsAzureGuestAgent -and [bool]$waAppAgentExe -and [bool]$windowsAzureGuestAgentExe)
+if ($isAzureVM)
 {
-    $vmAgentInstalled = $true
-    $details = "VM agent is installed ($detailsSuffix)"
-    New-Check -name 'VM agent installed' -result 'Passed' -details $details
-    Out-Log $vmAgentInstalled -color Green -endLine
+    Out-Log 'VM Agent installed:' -startLine
+    # $detailsSuffix = "(windowsAzureFolderExists:$windowsAzureFolderExists rdAgentServiceExists:$rdAgentServiceExists windowsAzureGuestAgentServiceExists:$windowsAzureGuestAgentServiceExists rdAgentKeyExists:$rdAgentKeyExists windowsAzureGuestAgentKeyExists:$windowsAzureGuestAgentKeyExists waAppAgentExeExists:$waAppAgentExeExists windowsAzureGuestAgentExeExists:$windowsAzureGuestAgentExeExists)"
+    # if ($windowsAzureFolderExists -and $rdAgentServiceExists -and $windowsAzureGuestAgentServiceExists -and $rdAgentKeyExists -and $windowsAzureGuestAgentKeyExists -and $waAppAgentExeExists -and $windowsAzureGuestAgentExeExists -and $windowsAzureGuestAgentKeyExists -and $windowsAzureGuestAgentKeyExists)
+    $detailsSuffix = "$windowsAzureFolderPath exists: $([bool]$windowsAzureFolder), WaAppAgent.exe in $($windowsAzureFolderPath): $([bool]$waAppAgentExe), WindowsAzureGuestAgent.exe in $($windowsAzureFolderPath): $([bool]$windowsAzureGuestAgentExe), RdAgent service installed: $([bool]$rdagent), WindowsAzureGuestAgent service installed: $([bool]$windowsAzureGuestAgent)"
+    if ([bool]$windowsAzureFolder -and [bool]$rdagent -and [bool]$windowsAzureGuestAgent -and [bool]$waAppAgentExe -and [bool]$windowsAzureGuestAgentExe)
+    {
+        $vmAgentInstalled = $true
+        $details = "VM agent is installed ($detailsSuffix)"
+        New-Check -name 'VM agent installed' -result 'Passed' -details $details
+        Out-Log $vmAgentInstalled -color Green -endLine
+    }
+    else
+    {
+        $vmAgentInstalled = $false
+        $details = "VM agent is not installed ($detailsSuffix)"
+        New-Check -name 'VM agent installed' -result 'Failed' -details $details
+        Out-Log $vmAgentInstalled -color Red -endLine
+        New-Finding -type Critical -Name 'VM agent not installed' -description $details -mitigation ''
+    }
+
+    if ($vmAgentInstalled)
+    {
+        Out-Log 'VM agent installed by provisioning agent or Windows Installer package (MSI):' -startLine
+        $uninstallKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'
+        $uninstallKey = Invoke-ExpressionWithLogging "Get-Item -Path '$uninstallKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
+        $agentUninstallKey = $uninstallkey.GetSubKeyNames() | ForEach-Object {Get-ItemProperty -Path $uninstallKeyPath\$_ | Where-Object {$_.Publisher -eq 'Microsoft Corporation' -and $_.DisplayName -match 'Windows Azure VM Agent'}}
+        $agentUninstallKeyDisplayName = $agentUninstallKey.DisplayName
+        $agentUninstallKeyDisplayVersion = $agentUninstallKey.DisplayVersion
+        $agentUninstallKeyInstallDate = $agentUninstallKey.InstallDate
+
+        if ($agentUninstallKey)
+        {
+            New-Check -name 'VM agent installed by provisioning agent' -result 'Passed' -details ''
+            Out-Log 'MSI: MSI' -color Green -endLine
+        }
+        else
+        {
+            New-Check -name 'VM agent installed by provisioning agent' -result 'Passed' -details ''
+            Out-Log 'Provisioning agent' -color Green -endLine
+        }
+    }
 }
 else
 {
     $vmAgentInstalled = $false
-    $details = "VM agent is not installed ($detailsSuffix)"
-    New-Check -name 'VM agent installed' -result 'Failed' -details $details
-    Out-Log $vmAgentInstalled -color Red -endLine
-    New-Finding -type Critical -Name 'VM agent not installed' -description $details -mitigation ''
-}
+    New-Check -name 'VM agent installed' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log 'Skipped' -color DarkGray -endLine
 
-if ($vmAgentInstalled)
-{
     Out-Log 'VM agent installed by provisioning agent or Windows Installer package (MSI):' -startLine
-    $uninstallKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'
-    $uninstallKey = Invoke-ExpressionWithLogging "Get-Item -Path '$uninstallKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
-    $agentUninstallKey = $uninstallkey.GetSubKeyNames() | ForEach-Object {Get-ItemProperty -Path $uninstallKeyPath\$_ | Where-Object {$_.Publisher -eq 'Microsoft Corporation' -and $_.DisplayName -match 'Windows Azure VM Agent'}}
-    $agentUninstallKeyDisplayName = $agentUninstallKey.DisplayName
-    $agentUninstallKeyDisplayVersion = $agentUninstallKey.DisplayVersion
-    $agentUninstallKeyInstallDate = $agentUninstallKey.InstallDate
-
-    if ($agentUninstallKey)
-    {
-        New-Check -name 'VM agent installed by provisioning agent' -result 'Passed' -details ''
-        Out-Log 'MSI: MSI' -color Green -endLine
-    }
-    else
-    {
-        New-Check -name 'VM agent installed by provisioning agent' -result 'Passed' -details ''
-        Out-Log 'Provisioning agent' -color Green -endLine
-    }
+    New-Check -name 'VM agent installed by provisioning agent' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log 'Skipped' -color DarkGray -endLine
 }
 
 Out-Log 'VM agent is supported version:' -startLine
@@ -1893,6 +1959,9 @@ else
     Out-Log "$($imdsReachable.Succeeded) $($imdsReachable.Error)" -color Red -endLine
     New-Finding -type Information -name 'IMDS endpoint 169.254.169.254:80 not reachable' -description $description
 }
+
+
+$proxy = New-Object System.Net.WebProxy; $webSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession;$webSession.Proxy = $proxy;Measure-Command {Invoke-RestMethod -Headers @{'Metadata' = 'true'} -Method GET -Uri 'http://169.254.169.254/metadata/versions' -WebSession $webSession -ErrorAction SilentlyContinue}
 
 if ($imdsReachable.Succeeded)
 {
