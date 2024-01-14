@@ -40,6 +40,30 @@ trap
     Exit
 }
 
+function Confirm-HyperVGuest
+{
+    # SystemManufacturer/SystemProductName valus are in different locations depending if Gen1 vs Gen2
+    $systemManufacturer = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemManufacturer
+    $systemProductName = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemProductName
+    if ([string]::IsNullOrEmpty($systemManufacturer) -and [string]::IsNullOrEmpty($systemProductName))
+    {
+        $systemManufacturer = Get-ItemProperty "HKLM:\HARDWARE\DESCRIPTION\System\BIOS" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemManufacturer
+        $systemProductName = Get-ItemProperty "HKLM:\HARDWARE\DESCRIPTION\System\BIOS" -ErrorAction SilentlyContinue| Select-Object -ExpandProperty SystemProductName
+        if ([string]::IsNullOrEmpty($systemManufacturer) -and [string]::IsNullOrEmpty($systemProductName))
+        {
+            $systemManufacturer = Get-ItemProperty "HKLM:\SYSTEM\HardwareConfig\Current" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemManufacturer
+            $systemProductName = Get-ItemProperty "HKLM:\SYSTEM\HardwareConfig\Current" -ErrorAction SilentlyContinue| Select-Object -ExpandProperty SystemProductName
+        }
+    }
+
+    if ($systemManufacturer -eq 'Microsoft Corporation' -and $systemProductName -eq 'Virtual Machine')
+    {
+        # Deterministic for being a Hyper-V guest, but not for if it's in Azure or local
+        $isHyperVGuest = $true
+        return $isHyperVGuest
+    }
+}
+
 function Get-ApplicationErrors
 {
     param(
@@ -1360,6 +1384,16 @@ else
 }
 
 Out-Log "$osVersion installed $installDateString" -color Cyan
+
+$isHyperVGuest = Confirm-HyperVGuest
+# Figure out if it's quicker to test for IMDS connectivity or DHCP option 245 as the way to confirm it's in Azure
+# If the IMDS check is faster, can do that first, but it could fail even if it's in Azure, so then check DHCP option 245 last
+$lastConfig = Get-ItemProperty -Path 'HKLM:\SYSTEM\HardwareConfig' | Select-Object -Expandproperty LastConfig
+$uuid = $lastConfig.Replace('{','').Replace('}','')
+$vmId = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows Azure' | Select-Object -Expandproperty VmId
+# VMID and UUID are the same
+# @('ws22','ws12r2','ws12r2ps51','ws19','ws16') | %{run -rg rg -vm $_ -command "Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID;(gp HKLM:\SYSTEM\HardwareConfig).LastConfig.Replace('{','').Replace('}','');(gp 'HKLM:\SOFTWARE\Microsoft\Windows Azure').VmId"}
+# $uuid = Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID
 
 $windowsAzureFolderPath = "$env:SystemDrive\WindowsAzure"
 Out-Log "$windowsAzureFolderPath folder exists:" -startLine
@@ -2932,13 +2966,8 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 <# TODO
-md c:\bin -ea si;iwr https://www.nirsoft.net/utils/regscanner-x64.zip -outfile z;expand-archive z .\ -f
-regscanner /cfg regscanner.cfg /sxml regscanner.xml
-$b = [xml](gc regscanner.xml)
-$b.registry_report.item | fl registry_key,name,data
-reg query "HKLM\HARDWARE\DESCRIPTION\System\BIOS"
-$systemManufacturer = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" | Select-Object -ExpandProperty SystemManufacturer
-$systemProductName = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" | Select-Object -ExpandProperty SystemProductName
+# Figure out if it's quicker to test for IMDS connectivity or DHCP option 245 as the way to confirm it's in Azure
+# If the IMDS check is faster, can do that first, but it could fail even if it's in Azure, so then check DHCP option 245 last
 $uuid = Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID
 Local Hyper-V example: 6840B682-F537-464C-A5A9-874061E91914
 Azure VM example: C42C97BC-DBFD-4FEE-8F07-E4C8937116A4
