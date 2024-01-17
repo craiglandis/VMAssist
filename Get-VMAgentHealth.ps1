@@ -1392,6 +1392,10 @@ if ($isHyperVGuest)
     $isAzureVM = Confirm-AzureVM
     Out-Log "isAzureVM: $isAzureVM"
 }
+else
+{
+    $isAzureVM = $false
+}
 
 $lastConfig = Get-ItemProperty -Path 'HKLM:\SYSTEM\HardwareConfig' -ErrorAction SilentlyContinue | Select-Object -Expandproperty LastConfig
 if ($lastConfig)
@@ -1914,219 +1918,239 @@ $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.3031
 #$machineConfigFilePath = "$env:SystemRoot\Microsoft.NET\Framework\v4.0.30319\Config\machine.config"
 [xml]$machineConfigx64 = Get-Content -Path $machineConfigx64FilePath
 
-# wireserver doesn't listen on 8080 even though it creates a BFE filter for it
-# Test-NetConnection -ComputerName 168.63.129.16 -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue
-# Test-NetConnection -ComputerName 168.63.129.16 -Port 32526 -InformationLevel Quiet -WarningAction SilentlyContinue
-# Test-NetConnection -ComputerName 169.254.169.254 -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue
-Out-Log 'Wireserver endpoint 168.63.129.16:80 reachable:' -startLine
-$wireserverPort80Reachable = Test-Port -ipAddress '168.63.129.16' -port 80 -timeout 1000
-$description = "Wireserver endpoint 168.63.129.16:80 reachable: $($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
-$mitigation = '<a href="https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16">What is IP address 168.63.129.16?</a>'
-if ($wireserverPort80Reachable.Succeeded)
+if ($isAzureVM)
 {
-    New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'Passed' -details ''
-    Out-Log "$($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)" -color Green -endline
-}
-else
-{
-    New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'Failed' -details ''
-    Out-Log $wireserverPort80Reachable.Succeeded -color Red -endLine
-    New-Finding -type Critical -name 'Wireserver endpoint 168.63.129.16:80 not reachable' -description $description -mitigation $mitigation
-}
-
-Out-Log 'Wireserver endpoint 168.63.129.16:32526 reachable:' -startLine
-$wireserverPort32526Reachable = Test-Port -ipAddress '168.63.129.16' -port 32526 -timeout 1000
-$description = "Wireserver endpoint 168.63.129.16:32526 reachable: $($wireserverPort32526Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
-if ($wireserverPort32526Reachable.Succeeded)
-{
-    New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'Passed' -details ''
-    Out-Log $wireserverPort32526Reachable.Succeeded -color Green -endLine
-}
-else
-{
-    New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'Failed' -details ''
-    Out-Log "$($wireserverPort32526Reachable.Succeeded) $($wireserverPort80Reachable.Error)" -color Red -endLine
-    New-Finding -type Critical -name 'Wireserver endpoint 168.63.129.16:32526 not reachable' -description $description -mitigation $mitigation
-}
-
-Out-Log 'IMDS endpoint 169.254.169.254:80 reachable:' -startLine
-$imdsReachable = Test-Port -ipAddress '169.254.169.254' -port 80 -timeout 1000
-$description = "IMDS endpoint 169.254.169.254:80 reachable: $($imdsReachable.Succeeded) $($imdsReachable.Error)"
-if ($imdsReachable.Succeeded)
-{
-    New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'Passed' -details ''
-    Out-Log $imdsReachable.Succeeded -color Green -endLine
-}
-else
-{
-    New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'Failed' -details ''
-    Out-Log "$($imdsReachable.Succeeded) $($imdsReachable.Error)" -color Red -endLine
-    New-Finding -type Information -name 'IMDS endpoint 169.254.169.254:80 not reachable' -description $description
-}
-
-
-$proxy = New-Object System.Net.WebProxy; $webSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession;$webSession.Proxy = $proxy;Measure-Command {Invoke-RestMethod -Headers @{'Metadata' = 'true'} -Method GET -Uri 'http://169.254.169.254/metadata/versions' -WebSession $webSession -ErrorAction SilentlyContinue}
-
-if ($imdsReachable.Succeeded)
-{
-    Out-Log 'IMDS endpoint 169.254.169.254:80 returned expected result:' -startLine
-    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072
-    # Below three lines have it use a null proxy, bypassing any configured proxy
-    # See also https://github.com/microsoft/azureimds/blob/master/IMDSSample.ps1
-    $proxy = New-Object System.Net.WebProxy
-    $webSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
-    $webSession.Proxy = $proxy
-    $apiVersions = Invoke-RestMethod -Headers @{'Metadata' = 'true'} -Method GET -Uri 'http://169.254.169.254/metadata/versions' -WebSession $webSession | Select-Object -ExpandProperty apiVersions
-    $apiVersion = $apiVersions | Select-Object -Last 1
-    $metadata = Invoke-RestMethod -Headers @{'Metadata' = 'true'} -Method GET -Uri "http://169.254.169.254/metadata/instance?api-version=$apiVersion" -WebSession $webSession
-    $compute = $metadata | Select-Object -ExpandProperty compute -ErrorAction SilentlyContinue
-
-    if ($compute)
+    # wireserver doesn't listen on 8080 even though it creates a BFE filter for it
+    # Test-NetConnection -ComputerName 168.63.129.16 -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue
+    # Test-NetConnection -ComputerName 168.63.129.16 -Port 32526 -InformationLevel Quiet -WarningAction SilentlyContinue
+    # Test-NetConnection -ComputerName 169.254.169.254 -Port 80 -InformationLevel Quiet -WarningAction SilentlyContinue
+    Out-Log 'Wireserver endpoint 168.63.129.16:80 reachable:' -startLine
+    $wireserverPort80Reachable = Test-Port -ipAddress '168.63.129.16' -port 80 -timeout 1000
+    $description = "Wireserver endpoint 168.63.129.16:80 reachable: $($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
+    $mitigation = '<a href="https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16">What is IP address 168.63.129.16?</a>'
+    if ($wireserverPort80Reachable.Succeeded)
     {
-        Out-Log $true -color Green -endLine
+        New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'Passed' -details ''
+        Out-Log "$($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)" -color Green -endline
+    }
+    else
+    {
+        New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'Failed' -details ''
+        Out-Log $wireserverPort80Reachable.Succeeded -color Red -endLine
+        New-Finding -type Critical -name 'Wireserver endpoint 168.63.129.16:80 not reachable' -description $description -mitigation $mitigation
+    }
 
-        $global:dbgMetadata = $metadata
+    Out-Log 'Wireserver endpoint 168.63.129.16:32526 reachable:' -startLine
+    $wireserverPort32526Reachable = Test-Port -ipAddress '168.63.129.16' -port 32526 -timeout 1000
+    $description = "Wireserver endpoint 168.63.129.16:32526 reachable: $($wireserverPort32526Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
+    if ($wireserverPort32526Reachable.Succeeded)
+    {
+        New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'Passed' -details ''
+        Out-Log $wireserverPort32526Reachable.Succeeded -color Green -endLine
+    }
+    else
+    {
+        New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'Failed' -details ''
+        Out-Log "$($wireserverPort32526Reachable.Succeeded) $($wireserverPort80Reachable.Error)" -color Red -endLine
+        New-Finding -type Critical -name 'Wireserver endpoint 168.63.129.16:32526 not reachable' -description $description -mitigation $mitigation
+    }
 
-        $azEnvironment = $metadata.compute.azEnvironment
-        $vmName = $metadata.compute.name
-        $vmId = $metadata.compute.vmId
-        $resourceId = $metadata.compute.resourceId
-        $licenseType = $metadata.compute.licenseType
-        $planPublisher = $metadata.compute.plan.publisher
-        $planProduct = $metadata.compute.plan.product
-        $planName = $metadata.compute.plan.name
-        $osDiskDiskSizeGB = $metadata.compute.storageProfile.osDisk.diskSizeGB
-        $osDiskManagedDiskId = $metadata.compute.storageProfile.osDisk.managedDisk.id
-        $osDiskManagedDiskStorageAccountType = $metadata.compute.storageProfile.osDisk.managedDisk.storageAccountType
-        $osDiskCreateOption = $metadata.compute.storageProfile.osDisk.createOption
-        $osDiskCaching = $metadata.compute.storageProfile.osDisk.caching
-        $osDiskDiffDiskSettingsOption = $metadata.compute.storageProfile.osDisk.diffDiskSettings.option
-        $osDiskEncryptionSettingsEnabled = $metadata.compute.storageProfile.osDisk.encryptionSettings.enabled
-        $osDiskImageUri = $metadata.compute.storageProfile.osDisk.image.uri
-        $osDiskName = $metadata.compute.storageProfile.osDisk.name
-        $osDiskOsType = $metadata.compute.storageProfile.osDisk.osType
-        $osDiskVhdUri = $metadata.compute.storageProfile.osDisk.vhd.uri
-        $osDiskWriteAcceleratorEnabled = $metadata.compute.storageProfile.osDisk.writeAcceleratorEnabled
-        $encryptionAtHost = $metadata.compute.securityProfile.encryptionAtHost
-        $secureBootEnabled = $metadata.compute.securityProfile.secureBootEnabled
-        $securityType = $metadata.compute.securityProfile.securityType
-        $virtualTpmEnabled = $metadata.compute.securityProfile.virtualTpmEnabled
-        $virtualMachineScaleSetId = $metadata.compute.virtualMachineScaleSet.id
-        $vmScaleSetName = $metadata.compute.vmScaleSetName
-        $zone = $metadata.compute.zone
-        $dataDisks = $metadata.compute.storageProfile.dataDisks
-        $priority = $metadata.compute.priority
-        $platformFaultDomain = $metadata.compute.platformFaultDomain
-        $platformSubFaultDomain = $metadata.compute.platformSubFaultDomain
-        $platformUpdateDomain = $metadata.compute.platformUpdateDomain
-        $placementGroupId = $metadata.compute.placementGroupId
-        $extendedLocationName = $metadata.compute.extendedLocationName
-        $extendedLocationType = $metadata.compute.extendedLocationType
-        $evictionPolicy = $metadata.compute.evictionPolicy
-        $hostId = $metadata.compute.hostId
-        $hostGroupId = $metadata.compute.hostGroupId
-        $isHostCompatibilityLayerVm = $metadata.compute.isHostCompatibilityLayerVm
-        $hibernationEnabled = $metadata.compute.additionalCapabilities.hibernationEnabled
-        $subscriptionId = $metadata.compute.subscriptionId
-        $resourceGroupName = $metadata.compute.resourceGroupName
-        $location = $metadata.compute.location
-        $vmSize = $metadata.compute.vmSize
-        $vmIdFromImds = $metadata.compute.vmId
-        $publisher = $metadata.compute.publisher
-        $offer = $metadata.compute.offer
-        $sku = $metadata.compute.sku
-        $version = $metadata.compute.version
-        $imageReferenceId = $metadata.compute.storageProfile.imageReference.id
-        if ($publisher)
+    Out-Log 'IMDS endpoint 169.254.169.254:80 reachable:' -startLine
+    $imdsReachable = Test-Port -ipAddress '169.254.169.254' -port 80 -timeout 1000
+    $description = "IMDS endpoint 169.254.169.254:80 reachable: $($imdsReachable.Succeeded) $($imdsReachable.Error)"
+    if ($imdsReachable.Succeeded)
+    {
+        New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'Passed' -details ''
+        Out-Log $imdsReachable.Succeeded -color Green -endLine
+    }
+    else
+    {
+        New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'Failed' -details ''
+        Out-Log "$($imdsReachable.Succeeded) $($imdsReachable.Error)" -color Red -endLine
+        New-Finding -type Information -name 'IMDS endpoint 169.254.169.254:80 not reachable' -description $description
+    }
+
+    if ($imdsReachable.Succeeded)
+    {
+        Out-Log 'IMDS endpoint 169.254.169.254:80 returned expected result:' -startLine
+        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072
+        # Below three lines have it use a null proxy, bypassing any configured proxy
+        # See also https://github.com/microsoft/azureimds/blob/master/IMDSSample.ps1
+        $proxy = New-Object System.Net.WebProxy
+        $webSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+        $webSession.Proxy = $proxy
+        $apiVersions = Invoke-RestMethod -Headers @{'Metadata' = 'true'} -Method GET -Uri 'http://169.254.169.254/metadata/versions' -WebSession $webSession | Select-Object -ExpandProperty apiVersions
+        $apiVersion = $apiVersions | Select-Object -Last 1
+        $metadata = Invoke-RestMethod -Headers @{'Metadata' = 'true'} -Method GET -Uri "http://169.254.169.254/metadata/instance?api-version=$apiVersion" -WebSession $webSession
+        $compute = $metadata | Select-Object -ExpandProperty compute -ErrorAction SilentlyContinue
+
+        if ($compute)
         {
-            $imageReference = "$publisher|$offer|$sku|$version"
+            $imdReturnedExpectedResult = $true
+            Out-Log $imdReturnedExpectedResult -color Green -endLine
+            New-Check -name 'IMDS endpoint 169.254.169.254:80 returned expected result' -result 'Passed' -details ''
+
+            $global:dbgMetadata = $metadata
+
+            $azEnvironment = $metadata.compute.azEnvironment
+            $vmName = $metadata.compute.name
+            $vmId = $metadata.compute.vmId
+            $resourceId = $metadata.compute.resourceId
+            $licenseType = $metadata.compute.licenseType
+            $planPublisher = $metadata.compute.plan.publisher
+            $planProduct = $metadata.compute.plan.product
+            $planName = $metadata.compute.plan.name
+            $osDiskDiskSizeGB = $metadata.compute.storageProfile.osDisk.diskSizeGB
+            $osDiskManagedDiskId = $metadata.compute.storageProfile.osDisk.managedDisk.id
+            $osDiskManagedDiskStorageAccountType = $metadata.compute.storageProfile.osDisk.managedDisk.storageAccountType
+            $osDiskCreateOption = $metadata.compute.storageProfile.osDisk.createOption
+            $osDiskCaching = $metadata.compute.storageProfile.osDisk.caching
+            $osDiskDiffDiskSettingsOption = $metadata.compute.storageProfile.osDisk.diffDiskSettings.option
+            $osDiskEncryptionSettingsEnabled = $metadata.compute.storageProfile.osDisk.encryptionSettings.enabled
+            $osDiskImageUri = $metadata.compute.storageProfile.osDisk.image.uri
+            $osDiskName = $metadata.compute.storageProfile.osDisk.name
+            $osDiskOsType = $metadata.compute.storageProfile.osDisk.osType
+            $osDiskVhdUri = $metadata.compute.storageProfile.osDisk.vhd.uri
+            $osDiskWriteAcceleratorEnabled = $metadata.compute.storageProfile.osDisk.writeAcceleratorEnabled
+            $encryptionAtHost = $metadata.compute.securityProfile.encryptionAtHost
+            $secureBootEnabled = $metadata.compute.securityProfile.secureBootEnabled
+            $securityType = $metadata.compute.securityProfile.securityType
+            $virtualTpmEnabled = $metadata.compute.securityProfile.virtualTpmEnabled
+            $virtualMachineScaleSetId = $metadata.compute.virtualMachineScaleSet.id
+            $vmScaleSetName = $metadata.compute.vmScaleSetName
+            $zone = $metadata.compute.zone
+            $dataDisks = $metadata.compute.storageProfile.dataDisks
+            $priority = $metadata.compute.priority
+            $platformFaultDomain = $metadata.compute.platformFaultDomain
+            $platformSubFaultDomain = $metadata.compute.platformSubFaultDomain
+            $platformUpdateDomain = $metadata.compute.platformUpdateDomain
+            $placementGroupId = $metadata.compute.placementGroupId
+            $extendedLocationName = $metadata.compute.extendedLocationName
+            $extendedLocationType = $metadata.compute.extendedLocationType
+            $evictionPolicy = $metadata.compute.evictionPolicy
+            $hostId = $metadata.compute.hostId
+            $hostGroupId = $metadata.compute.hostGroupId
+            $isHostCompatibilityLayerVm = $metadata.compute.isHostCompatibilityLayerVm
+            $hibernationEnabled = $metadata.compute.additionalCapabilities.hibernationEnabled
+            $subscriptionId = $metadata.compute.subscriptionId
+            $resourceGroupName = $metadata.compute.resourceGroupName
+            $location = $metadata.compute.location
+            $vmSize = $metadata.compute.vmSize
+            $vmIdFromImds = $metadata.compute.vmId
+            $publisher = $metadata.compute.publisher
+            $offer = $metadata.compute.offer
+            $sku = $metadata.compute.sku
+            $version = $metadata.compute.version
+            $imageReferenceId = $metadata.compute.storageProfile.imageReference.id
+            if ($publisher)
+            {
+                $imageReference = "$publisher|$offer|$sku|$version"
+            }
+            else
+            {
+                if ($imageReferenceId)
+                {
+                    $imageReference = "$($imageReferenceId.Split('/')[-1]) (custom image)"
+                }
+            }
+            $interfaces = $metadata.network.interface
+            $macAddress = $metadata.network.interface.macAddress
+            $privateIpAddress = $metadata.network.interface | Select-Object -First 1 | Select-Object -ExpandProperty ipv4 -First 1 | Select-Object -ExpandProperty ipAddress -First 1 | Select-Object -ExpandProperty privateIpAddress -First 1
+            $publicIpAddress = $metadata.network.interface | Select-Object -First 1 | Select-Object -ExpandProperty ipv4 -First 1 | Select-Object -ExpandProperty ipAddress -First 1 | Select-Object -ExpandProperty publicIpAddress -First 1
+            $publicIpAddressReportedFromAwsCheckIpService = Invoke-RestMethod -Uri https://checkip.amazonaws.com -WebSession $webSession
+            if ($publicIpAddressReportedFromAwsCheckIpService)
+            {
+                $publicIpAddressReportedFromAwsCheckIpService = $publicIpAddressReportedFromAwsCheckIpService.Trim()
+            }
         }
         else
         {
-            if ($imageReferenceId)
-            {
-                $imageReference = "$($imageReferenceId.Split('/')[-1]) (custom image)"
-            }
+            $imdReturnedExpectedResult = $false
+            Out-Log $imdReturnedExpectedResult -color Red -endLine
+            New-Check -name 'IMDS endpoint 169.254.169.254:80 returned expected result' -result 'Failed' -details ''
         }
-        $interfaces = $metadata.network.interface
-        $macAddress = $metadata.network.interface.macAddress
-        $privateIpAddress = $metadata.network.interface | Select-Object -First 1 | Select-Object -ExpandProperty ipv4 -First 1 | Select-Object -ExpandProperty ipAddress -First 1 | Select-Object -ExpandProperty privateIpAddress -First 1
-        $publicIpAddress = $metadata.network.interface | Select-Object -First 1 | Select-Object -ExpandProperty ipv4 -First 1 | Select-Object -ExpandProperty ipAddress -First 1 | Select-Object -ExpandProperty publicIpAddress -First 1
-        $publicIpAddressReportedFromAwsCheckIpService = Invoke-RestMethod -Uri https://checkip.amazonaws.com -WebSession $webSession
-        if ($publicIpAddressReportedFromAwsCheckIpService)
+    }
+
+    <#  Moved "isAzureVM" check earlier so it can be used as a conditional for other checks
+    if ($imdsReachable.Succeeded -eq $false)
+    {
+        Out-Log 'DHCP request returns option 245:' -startLine
+        $dhcpReturnedOption245 = Confirm-AzureVM
+        if ($dhcpReturnedOption245)
         {
-            $publicIpAddressReportedFromAwsCheckIpService = $publicIpAddressReportedFromAwsCheckIpService.Trim()
+            Out-Log $dhcpReturnedOption245 -color Green -endLine
+        }
+        else
+        {
+            Out-Log $dhcpReturnedOption245 -color Yellow -endLine
         }
     }
-    else
+    #>
+
+    if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succeeded)
     {
-        Out-Log $false -color Red -endLine
+        Out-Log 'Getting status from aggregatestatus.json' -verboseOnly
+        $aggregateStatusJsonFilePath = $windowsAzureFolder | Where-Object {$_.Name -eq 'aggregatestatus.json'} | Select-Object -ExpandProperty FullName
+        $aggregateStatus = Get-Content -Path $aggregateStatusJsonFilePath
+        $aggregateStatus = $aggregateStatus -replace '\0' | ConvertFrom-Json
+
+        $aggregateStatusGuestAgentStatusVersion = $aggregateStatus.aggregateStatus.guestAgentStatus.version
+        $aggregateStatusGuestAgentStatusStatus = $aggregateStatus.aggregateStatus.guestAgentStatus.status
+        $aggregateStatusGuestAgentStatusMessage = $aggregateStatus.aggregateStatus.guestAgentStatus.formattedMessage.message
+        $aggregateStatusGuestAgentStatusLastStatusUploadMethod = $aggregateStatus.aggregateStatus.guestAgentStatus.lastStatusUploadMethod
+        $aggregateStatusGuestAgentStatusLastStatusUploadTime = $aggregateStatus.aggregateStatus.guestAgentStatus.lastStatusUploadTime
+
+        Out-Log "Version: $aggregateStatusGuestAgentStatusVersion" -verboseOnly
+        Out-Log "Status: $aggregateStatusGuestAgentStatusStatus" -verboseOnly
+        Out-Log "Message: $aggregateStatusGuestAgentStatusMessage" -verboseOnly
+        Out-Log "LastStatusUploadMethod: $aggregateStatusGuestAgentStatusLastStatusUploadMethod" -verboseOnly
+        Out-Log "LastStatusUploadTime: $aggregateStatusGuestAgentStatusLastStatusUploadTime" -verboseOnly
+
+        $headers = @{'x-ms-version' = '2012-11-30'}
+        $proxy = New-Object System.Net.WebProxy
+        $webSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+        $webSession.Proxy = $proxy
+
+        $goalState = Invoke-RestMethod -Method GET -Uri 'http://168.63.129.16/machine?comp=goalstate' -Headers $headers -WebSession $webSession | Select-Object -ExpandProperty GoalState
+
+        $hostingEnvironmentConfigUri = $goalState.Container.RoleInstanceList.RoleInstance.Configuration.HostingEnvironmentConfig
+        $sharedConfigUri = $goalState.Container.RoleInstanceList.RoleInstance.Configuration.SharedConfig
+        $extensionsConfigUri = $goalState.Container.RoleInstanceList.RoleInstance.Configuration.ExtensionsConfig
+        $fullConfigUri = $goalState.Container.RoleInstanceList.RoleInstance.Configuration.FullConfig
+        $certificatesUri = $goalState.Container.RoleInstanceList.RoleInstance.Configuration.Certificates
+        $configName = $goalState.Container.RoleInstanceList.RoleInstance.Configuration.ConfigName
+
+        $hostingEnvironmentConfig = Invoke-RestMethod -Method GET -Uri $hostingEnvironmentConfigUri -Headers $headers -WebSession $webSession | Select-Object -ExpandProperty HostingEnvironmentConfig
+        $sharedConfig = Invoke-RestMethod -Method GET -Uri $sharedConfigUri -Headers $headers -WebSession $webSession | Select-Object -ExpandProperty SharedConfig
+        $extensions = Invoke-RestMethod -Method GET -Uri $extensionsConfigUri -Headers $headers -WebSession $webSession | Select-Object -ExpandProperty Extensions
+        $rdConfig = Invoke-RestMethod -Method GET -Uri $fullConfigUri -Headers $headers -WebSession $webSession | Select-Object -ExpandProperty RDConfig
+        $storedCertificate = $rdConfig.StoredCertificates.StoredCertificate | Where-Object {$_.name -eq 'TenantEncryptionCert'}
+        $tenantEncryptionCertThumbprint = $storedCertificate.certificateId -split ':' | Select-Object -Last 1
+        $tenantEncryptionCert = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object {$_.Thumbprint -eq $tenantEncryptionCertThumbprint}
+
+        $statusUploadBlobUri = $extensions.StatusUploadBlob.'#text'
+        $inVMGoalStateMetaData = $extensions.InVMGoalStateMetaData
+    }
+
+    if ($vmAgentInstalled)
+    {
+        Get-ThirdPartyLoadedModules -processName 'WaAppAgent'
+        Get-ThirdPartyLoadedModules -processName 'WindowsAzureGuestAgent'
     }
 }
-
-if ($imdsReachable.Succeeded -eq $false)
+else
 {
-    Out-Log 'DHCP request returns option 245:' -startLine
-    $dhcpReturnedOption245 = Confirm-AzureVM
-    if ($dhcpReturnedOption245)
-    {
-        Out-Log $dhcpReturnedOption245 -color Green -endLine
-    }
-    else
-    {
-        Out-Log $dhcpReturnedOption245 -color Yellow -endLine
-    }
-}
+    Out-Log 'Wireserver endpoint 168.63.129.16:80 reachable: Skipped (not an Azure VM)'
+    New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'Skipped' -details 'Not an Azure VM'
 
-if ($wireserverPort80Reachable.Succeeded -and $wireserverPort32526Reachable.Succeeded)
-{
-    Out-Log 'Getting status from aggregatestatus.json' -verboseOnly
-    $aggregateStatusJsonFilePath = $windowsAzureFolder | Where-Object {$_.Name -eq 'aggregatestatus.json'} | Select-Object -ExpandProperty FullName
-    $aggregateStatus = Get-Content -Path $aggregateStatusJsonFilePath
-    $aggregateStatus = $aggregateStatus -replace '\0' | ConvertFrom-Json
+    Out-Log 'Wireserver endpoint 168.63.129.16:32526 reachable: Skipped (not an Azure VM)'
+    New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'Skipped' -details 'Not an Azure VM'
 
-    $aggregateStatusGuestAgentStatusVersion = $aggregateStatus.aggregateStatus.guestAgentStatus.version
-    $aggregateStatusGuestAgentStatusStatus = $aggregateStatus.aggregateStatus.guestAgentStatus.status
-    $aggregateStatusGuestAgentStatusMessage = $aggregateStatus.aggregateStatus.guestAgentStatus.formattedMessage.message
-    $aggregateStatusGuestAgentStatusLastStatusUploadMethod = $aggregateStatus.aggregateStatus.guestAgentStatus.lastStatusUploadMethod
-    $aggregateStatusGuestAgentStatusLastStatusUploadTime = $aggregateStatus.aggregateStatus.guestAgentStatus.lastStatusUploadTime
+    Out-Log 'IMDS endpoint 169.254.169.254:80 reachable: Skipped (not an Azure VM)'
+    New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'Skipped' -details 'Not an Azure VM'
 
-    Out-Log "Version: $aggregateStatusGuestAgentStatusVersion" -verboseOnly
-    Out-Log "Status: $aggregateStatusGuestAgentStatusStatus" -verboseOnly
-    Out-Log "Message: $aggregateStatusGuestAgentStatusMessage" -verboseOnly
-    Out-Log "LastStatusUploadMethod: $aggregateStatusGuestAgentStatusLastStatusUploadMethod" -verboseOnly
-    Out-Log "LastStatusUploadTime: $aggregateStatusGuestAgentStatusLastStatusUploadTime" -verboseOnly
-
-    $headers = @{'x-ms-version' = '2012-11-30'}
-    $proxy = New-Object System.Net.WebProxy
-    $webSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
-    $webSession.Proxy = $proxy
-
-    $goalState = Invoke-RestMethod -Method GET -Uri 'http://168.63.129.16/machine?comp=goalstate' -Headers $headers -WebSession $webSession | Select-Object -ExpandProperty GoalState
-
-    $hostingEnvironmentConfigUri = $goalState.Container.RoleInstanceList.RoleInstance.Configuration.HostingEnvironmentConfig
-    $sharedConfigUri = $goalState.Container.RoleInstanceList.RoleInstance.Configuration.SharedConfig
-    $extensionsConfigUri = $goalState.Container.RoleInstanceList.RoleInstance.Configuration.ExtensionsConfig
-    $fullConfigUri = $goalState.Container.RoleInstanceList.RoleInstance.Configuration.FullConfig
-    $certificatesUri = $goalState.Container.RoleInstanceList.RoleInstance.Configuration.Certificates
-    $configName = $goalState.Container.RoleInstanceList.RoleInstance.Configuration.ConfigName
-
-    $hostingEnvironmentConfig = Invoke-RestMethod -Method GET -Uri $hostingEnvironmentConfigUri -Headers $headers -WebSession $webSession | Select-Object -ExpandProperty HostingEnvironmentConfig
-    $sharedConfig = Invoke-RestMethod -Method GET -Uri $sharedConfigUri -Headers $headers -WebSession $webSession | Select-Object -ExpandProperty SharedConfig
-    $extensions = Invoke-RestMethod -Method GET -Uri $extensionsConfigUri -Headers $headers -WebSession $webSession | Select-Object -ExpandProperty Extensions
-    $rdConfig = Invoke-RestMethod -Method GET -Uri $fullConfigUri -Headers $headers -WebSession $webSession | Select-Object -ExpandProperty RDConfig
-    $storedCertificate = $rdConfig.StoredCertificates.StoredCertificate | Where-Object {$_.name -eq 'TenantEncryptionCert'}
-    $tenantEncryptionCertThumbprint = $storedCertificate.certificateId -split ':' | Select-Object -Last 1
-    $tenantEncryptionCert = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object {$_.Thumbprint -eq $tenantEncryptionCertThumbprint}
-
-    $statusUploadBlobUri = $extensions.StatusUploadBlob.'#text'
-    $inVMGoalStateMetaData = $extensions.InVMGoalStateMetaData
-}
-
-if ($vmAgentInstalled)
-{
-    Get-ThirdPartyLoadedModules -processName 'WaAppAgent'
-    Get-ThirdPartyLoadedModules -processName 'WindowsAzureGuestAgent'
+    Out-Log 'IMDS endpoint 169.254.169.254:80 returned expected result: Skipped (not an Azure VM)'
+    New-Check -name 'IMDS endpoint 169.254.169.254:80 returned expected result' -result 'Skipped' -details 'Not an Azure VM'
 }
 
 $enabledFirewallRules = Get-EnabledFirewallRules
