@@ -21,7 +21,7 @@ Running Get-VMAgentHealth generates a report showing the results of health check
   - [Serial Console](#serial-console)
 - [License](#license)
 
-https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1
+https://aka.ms/vmhealth
 
 ## Prerequisites
 
@@ -37,14 +37,14 @@ $resourceGroupName = 'myrg'
 $vmName = 'myvm'
 $location = Get-AzVM -resourceGroupName $resourceGroupName -name $vmName | Select-Object -ExpandProperty Location
 $publisher = 'Microsoft.Compute'
-$extensionType = 'CustomScriptExtension'
-$name = "$publisher.$extensionType"
-$versions = Get-AzVMExtensionImage -Location $location -PublisherName $publisherName -Type $type
+$type = 'CustomScriptExtension'
+$name = "$publisher.$type"
+$versions = Get-AzVMExtensionImage -Location $location -PublisherName $publisher -Type $type
 [version]$version = $versions | Sort-Object {[version]$_.Version} | Select-Object -ExpandProperty Version -Last 1
 $typeHandlerVersion = "$($version.Major).$($version.Minor)"
 
 $name = 'CustomScriptExtension'
-$fileUri = 'https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1'
+$fileUri = 'https://aka.ms/vmhealth'
 $run = $fileUri -split '/' | Select-Object -Last 1
 Set-AzVMCustomScriptExtension -Location $location -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -FileUri $fileUri -Run $run -TypeHandlerVersion $typeHandlerVersion -ForceRerun (Get-Date).Ticks
 
@@ -52,7 +52,7 @@ $status = Get-AzVMCustomScriptExtension -ResourceGroupName $resourceGroupName -V
 $stdOut = $status.SubStatuses | Where-Object {$_.Code -match 'StdOut'} | Select-Object -ExpandProperty Message
 $stdErr = $status.SubStatuses | Where-Object {$_.Code -match 'StdErr'} | Select-Object -ExpandProperty Message
 
-Get-AzVM -resourceGroupName $resourceGroupName -name $vmName | select-object -expandproperty Extensions | where {$_.Publisher -eq $publisherName -and $_.VirtualMachineExtensionType -eq $name}
+Get-AzVM -resourceGroupName $resourceGroupName -name $vmName | Select-Object -ExpandProperty Extensions | Where-Object {$_.Publisher -eq $publisher -and $_.VirtualMachineExtensionType -eq $name}
 
 Remove-AzVMCustomScriptExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Force
 
@@ -62,48 +62,48 @@ $resourceGroupName = 'myrg'
 $vmName = 'myvm'
 $location = Get-AzVM -resourceGroupName $resourceGroupName -name $vmName | Select-Object -ExpandProperty Location
 $publisher = 'Microsoft.Compute'
-$extensionType = 'CustomScriptExtension'
-$name = "$publisher.$extensionType"
-[version]$version = (Get-AzVMExtensionImage -Location $location -PublisherName $publisher -Type $extensionType | Sort-Object {[Version]$_.Version} -Desc | Select-Object Version -First 1).Version
+$type = 'CustomScriptExtension'
+$name = "$publisher.$type"
+[version]$version = (Get-AzVMExtensionImage -Location $location -PublisherName $publisher -Type $type | Sort-Object {[Version]$_.Version} -Desc | Select-Object Version -First 1).Version
 $typeHandlerVersion = "$($version.Major).$($version.Minor)"
-$scriptUrl = 'https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1'
+$scriptUrl = 'https://aka.ms/vmhealth'
 $scriptFileName = $scriptUrl -split '/' | Select-Object -Last 1
 $settings = @{
 	'fileUris'         = @($scriptUrl)
 	'commandToExecute' = "powerShell -ExecutionPolicy Bypass -Nologo -NoProfile -File $scriptFileName"
 	'timestamp'        = (Get-Date).Ticks
 }
-Set-AzVMExtension -Location $location -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Publisher $publisher -ExtensionType $extensionType -TypeHandlerVersion $typeHandlerVersion -Settings $settings
+Set-AzVMExtension -Location $location -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Publisher $publisher -ExtensionType $type -TypeHandlerVersion $typeHandlerVersion -Settings $settings
 $status = Get-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Status
 $status.Statuses.Message
 Remove-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Force
 ```
 
 ```powershell
-Get-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Status
+Get-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Status
 ```
 
 ```powershell
-Remove-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Force
+Remove-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Force
 ```
 
 ```powershell
-[version]$version = Get-AzVMExtensionImage -Location westus2 -PublisherName Microsoft.Compute -Type CustomScriptExtension | Sort-Object {[version]$_.Version} | Select-Object -ExpandProperty Version -Last 1
+[version]$version = Get-AzVMExtensionImage -Location $location -PublisherName $pubisher -Type $type | Sort-Object {[version]$_.Version} | Select-Object -ExpandProperty Version -Last 1
 [string]$version = "$($version.Major).$($version.Minor)"
 ```
 
 ```powershell
-Get-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Status | select -ExpandProperty SubStatuses | where code -match 'stdout' | select -ExpandProperty Message
+Get-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Status | Select-Object -ExpandProperty SubStatuses | Where-Object code -match 'stdout' | Select-Object -ExpandProperty Message
 ```
 
 ```powershell
-Get-AzVMExtension -ResourceGroupName rg -VMName win11 -Name cse -Status | select -ExpandProperty SubStatuses | where code -match 'stderr' | select -ExpandProperty Message
+Get-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Status | Select-Object -ExpandProperty SubStatuses | Where-Object code -match 'stderr' | Select-Object -ExpandProperty Message
 ```
 
 ### Custom Script Extension (Azure CLI)
 
 ```
-'{"fileUris": ["https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1"],"commandToExecute": "./health.sh"}' > settings.json
+'{"fileUris": ["https://aka.ms/vmhealth"],"commandToExecute": "./health.sh"}' > settings.json
 
 az vm extension set --resource-group myrg --vm-name myvm --name customScript --publisher Microsoft.Azure.Extensions --settings ./settings.json
 
@@ -114,7 +114,7 @@ az vm extension set --resource-group myrg --vm-name myvm --name customScript --p
 ```powershell
 $resourceGroupName = 'myrg'
 $vmName = 'myvm'
-$sourceScriptUri = 'https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1'
+$sourceScriptUri = 'https://aka.ms/vmhealth'
 Set-AzVMRunCommand -ResourceGroupName $resourceGroupName -VMName $vmName -RunCommandName RunPowerShellScript -SourceScriptUri $sourceScriptUri
 Get-AzVMRunCommand -ResourceGroupName $resourceGroupName -VMName $vmName -RunCommandName RunPowerShellScript -Expand InstanceView | Select-Object -ExpandProperty InstanceView
 ```
@@ -122,7 +122,9 @@ Get-AzVMRunCommand -ResourceGroupName $resourceGroupName -VMName $vmName -RunCom
 ### Managed Run Command (Azure CLI)
 
 ```
-az vm run-command create --name Get-VMAgentHealth --vm-name ws12r2 --resource-group rg --script-uri 'https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1'
+resourceGroupName=rg
+vmName=ws22
+az vm run-command create --name Get-VMAgentHealth --vm-name ws12r2 --resource-group rg --script-uri 'https://aka.ms/vmhealth'
 
 $result = az vm run-command show --name Get-VMAgentHealth --vm-name ws12r2 --resource-group rg --expand instanceView
 $result = $result | ConvertFrom-Json
@@ -134,14 +136,14 @@ $result.instanceView.output
 ```powershell
 $resourceGroupName = 'myrg'
 $vmName = 'myvm'
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1 -OutFile Get-VMAgentHealth.ps1
+Invoke-WebRequest -Uri https://aka.ms/vmhealth -OutFile Get-VMAgentHealth.ps1
 Invoke-AzVMRunCommand -ResourceGroupName $resourceGroupName -Name $vmName -CommandId RunPowerShellScript -ScriptPath Get-VMAgentHealth.ps1
 ```
 
 ### Action Run Command (Azure CLI)
 
 ```
-curl https://raw.githubusercontent.com/craiglandis/Get-VMAgentHealth/main/Get-VMAgentHealth.ps1 -o Get-VMAgentHealth.ps1
+curl https://aka.ms/vmhealth -o Get-VMAgentHealth.ps1
 az vm run-command invoke -g rg -n ws12r2 --command-id RunPowerShellScript --scripts @{Get-VMAgentHealth.ps1}
 
 ```
