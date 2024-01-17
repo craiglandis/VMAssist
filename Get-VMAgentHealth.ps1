@@ -1348,8 +1348,9 @@ if ($currentVersionKey)
         $productName = $productName.Replace('Windows 10', 'Windows 11')
     }
     $ubr = $currentVersionKey.UBR
-    $installDate = $currentVersionKey.InstallDate
-    $installDateString = Get-Date -Date ([datetime]'1/1/1970').AddSeconds($installDate) -Format yyyy-MM-ddTHH:mm:ss
+    # Starting with Win10/WS16, InstallDate is when the last cumulative update was installed, not when Windows itself was installed
+    # $installDate = $currentVersionKey.InstallDate
+    # $installDateString = Get-Date -Date ([datetime]'1/1/1970').AddSeconds($installDate) -Format yyyy-MM-ddTHH:mm:ss
     if ($buildNumber -ge 14393)
     {
         $releaseId = $currentVersionKey.ReleaseId
@@ -1383,11 +1384,14 @@ else
     }
 }
 
-Out-Log "$osVersion installed $installDateString" -color Cyan
+Out-Log $osVersion -color Cyan
 $isHyperVGuest = Confirm-HyperVGuest
-Out-Log "isHyperVGuest: $isHyperVGuest" -verboseOnly
-$isAzureVM = Confirm-AzureVM
-Out-Log "isAzureVM: $isAzureVM" -verboseOnly
+Out-Log "isHyperVGuest: $isHyperVGuest"
+if ($isHyperVGuest)
+{
+    $isAzureVM = Confirm-AzureVM
+    Out-Log "isAzureVM: $isAzureVM"
+}
 
 $lastConfig = Get-ItemProperty -Path 'HKLM:\SYSTEM\HardwareConfig' -ErrorAction SilentlyContinue | Select-Object -Expandproperty LastConfig
 if ($lastConfig)
