@@ -3063,6 +3063,9 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 <# TODO
+# netsh wfp show filters dir=OUT remoteaddr=168.63.129.16 file=WireserverFilters.xml
+# netsh wfp show filters dir=OUT file=OutBoundFilters.xml
+# netsh wfp show filters dir=IN file=InboundFilters.xml
 # Figure out if it's quicker to test for IMDS connectivity or DHCP option 245 as the way to confirm it's in Azure
 # If the IMDS check is faster, can do that first, but it could fail even if it's in Azure, so then check DHCP option 245 last
 $uuid = Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID
