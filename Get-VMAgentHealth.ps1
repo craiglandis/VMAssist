@@ -60,8 +60,12 @@ function Confirm-HyperVGuest
     {
         # Deterministic for being a Hyper-V guest, but not for if it's in Azure or local
         $isHyperVGuest = $true
-        return $isHyperVGuest
     }
+    else
+    {
+        $isHyperVGuest = $false
+    }
+    return $isHyperVGuest
 }
 
 function Get-ApplicationErrors
@@ -117,6 +121,43 @@ function Get-ServiceCrashes
     }
 }
 
+function Get-WfpFilters
+{
+    $wireserverWfpFiltersPath = "$scriptFolderPath\wireserverFilters.xml"
+    $result = Invoke-ExpressionWithLogging "netsh wfp show filters dir=OUT remoteaddr=168.63.129.16 file=$wireserverWfpFiltersPath" -verboseOnly
+    [xml]$wireserverWfpFilters = Get-Content -Path $wireserverWfpFiltersPath
+
+    $wfpFiltersPath = "$scriptFolderPath\wfpFilters.xml"
+    $result = Invoke-ExpressionWithLogging "netsh wfp show filters file=$wfpFiltersPath" -verboseOnly
+    [xml]$wfpFilters = Get-Content -Path $wfpFiltersPath
+
+    $displayDataName = @{Name = 'displayData.name'; Expression = {$_.displayData.name}}
+    $displayDataDescription = @{Name = 'displayData.description'; Expression = {$_.displayData.description}}
+    $flagsNumItems = @{Name = 'flags.numItems'; Expression = {$_.flags.numItems}}
+    $providerDataData = @{Name = 'providerData.data'; Expression = {$_.providerData.data}}
+    $providerDataAsString = @{Name = 'providerData.asString'; Expression = {$_.providerData.asString}}
+    $weightType = @{Name = 'weight.type'; Expression = {$_.weight.type}}
+    $weightUint8 = @{Name = 'weight.uint8'; Expression = {$_.weight.uint8}}
+    $filterConditionNumItems = @{Name = 'filterCondition.numItems'; Expression = {$_.filterCondition.numItems}}
+    $actionType = @{Name = 'action.type'; Expression = {$_.action.type}}
+    $actionFilterType = @{Name = 'action.filterType'; Expression = {$_.action.filterType}}
+    $effectiveWeightType = @{Name = 'effectiveWeight.type'; Expression = {$_.effectiveWeight.type}}
+    $effectiveWeightUint64 = @{Name = 'effectiveWeight.uint64'; Expression = {$_.effectiveWeight.uint64}}
+
+    $providers = $wfpFilters.wfpdiag.providers.Item | Select-Object serviceName,providerKey,$displayDataName,$displayDataDescription,$flagsNumItems
+    $filters = $wfpFilters.wfpdiag.filters.item | Select-Object $actionType,$displayDataName,$displayDataDescription,filterKey,providerKey,layerKey,subLayerKey,providerContextKey,filterId,reserved,$flagsNumItems,$providerDataData,$providerDataAsString,$weightType,$weightUint8,$filterConditionNumItems,$actionFilterType,$effectiveWeightType,$effectiveWeightUint64
+    $filters = $filters | Sort-Object 'effectiveWeight.uint64'
+    $wireserverFilters = $wireserverWfpFilters.wfpdiag.filters.item | Select-Object $actionType,$displayDataName,$displayDataDescription,filterKey,providerKey,layerKey,subLayerKey,providerContextKey,filterId,reserved,$flagsNumItems,$providerDataData,$providerDataAsString,$weightType,$weightUint8,$filterConditionNumItems,$actionFilterType,$effectiveWeightType,$effectiveWeightUint64
+    $wireserverFilters = $wireserverFilters | Sort-Object 'effectiveWeight.uint64'
+
+    $result = [PSCustomObject]@{
+        Providers = $providers
+        Filters = $filters
+        WireserverFilters = $wireserverFilters
+    }
+    return $result
+}
+
 function Get-EnabledFirewallRules
 {
     $enabledRules = Get-NetFirewallRule -Enabled True | Where-Object {$_.Direction -eq 'Inbound'}
@@ -138,6 +179,23 @@ function Get-EnabledFirewallRules
         Outbound = $enabledOutboundFirewallRules
     }
     return $enabledFirewallRules
+}
+
+function Get-Counters
+{
+    $counters = @(
+        "\System\Processor Queue Length",
+        "\Memory\Pages/sec",
+        "\Memory\Available MBytes",
+        "\Processor(*)\% Processor Time",
+        "\Network Interface(*)\Bytes Received/sec",
+        "\Network Interface(*)\Bytes Sent/sec",
+        "\LogicalDisk(C:)\% Free Space",
+        "\LogicalDisk(*)\Avg. Disk Queue Length"
+    )
+    $counterValues = Get-Counter -Counter $counters -SampleInterval 5 -MaxSamples 5
+    $counterSamples = $counterValues.CounterSamples
+    $readings = $counterValues.Readings
 }
 
 function Get-FirewallProfiles
@@ -203,9 +261,11 @@ function Get-Services
     {
         foreach ($service in $services)
         {
-            [int32]$exitCode = $service.ExitCode
+            #[int32]$exitCode = $service.ExitCode
+            [double]$exitCode = $service.ExitCode
             $exitCodeMessage = [ComponentModel.Win32Exception]$exitCode | Select-Object -ExpandProperty Message
-            [int32]$serviceSpecificExitCode = $service.ServiceSpecificExitCode
+            #[int32]$serviceSpecificExitCode = $service.ServiceSpecificExitCode
+            [double]$serviceSpecificExitCode = $service.ServiceSpecificExitCode
             $serviceSpecificExitCodeMessage = [ComponentModel.Win32Exception]$serviceSpecificExitCode | Select-Object -ExpandProperty Message
             $service | Add-Member -MemberType NoteProperty -Name ExitCode -Value "$exitCode ($exitCodeMessage)" -Force
             $service | Add-Member -MemberType NoteProperty -Name ServiceSpecificExitCode -Value "$serviceSpecificExitCode ($serviceSpecificExitCodeMessage)" -Force
@@ -361,7 +421,7 @@ function Get-ServiceChecks
             elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $true -and $isExpectedStartType -eq $true)
             {
                 New-Check -name "$name service" -result 'Passed' -details $details
-                Out-Log "Status: $status StartType: $startType UserName: $userName" -color Green -endLine
+                Out-Log "Status: $status StartType: $startType StartName: $startName" -color Green -endLine
             }
             elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $true -and $isExpectedStartType -eq $false)
             {
@@ -1386,7 +1446,7 @@ else
 
 Out-Log $osVersion -color Cyan
 $isHyperVGuest = Confirm-HyperVGuest
-Out-Log "isHyperVGuest: $isHyperVGuest"
+Out-Log "Hyper-V Guest: $isHyperVGuest"
 if ($isHyperVGuest)
 {
     $isAzureVM = Confirm-AzureVM
@@ -1395,6 +1455,7 @@ if ($isHyperVGuest)
 else
 {
     $isAzureVM = $false
+    Out-Log "Azure VM: $isAzureVM"
 }
 
 $lastConfig = Get-ItemProperty -Path 'HKLM:\SYSTEM\HardwareConfig' -ErrorAction SilentlyContinue | Select-Object -Expandproperty LastConfig
@@ -1407,9 +1468,9 @@ if ($isAzureVM)
     $vmId = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows Azure' -ErrorAction SilentlyContinue | Select-Object -Expandproperty VmId
 }
 
+$windowsAzureFolderPath = "$env:SystemDrive\WindowsAzure"
 if ($isAzureVM)
 {
-    $windowsAzureFolderPath = "$env:SystemDrive\WindowsAzure"
     Out-Log "$windowsAzureFolderPath folder exists:" -startLine
     if (Test-Path -Path $windowsAzureFolderPath -PathType Container)
     {
@@ -1459,16 +1520,16 @@ if ($isAzureVM)
 else
 {
     $windowsAzureFolderExists = $false
+    Out-Log "$windowsAzureFolderPath folder exists: Skipped (not an Azure VM)"
     New-Check -name "$windowsAzureFolderPath folder exists" -result 'Skipped' -details 'Not an Azure VM'
-    Out-Log $windowsAzureFolderExists -color DarkGray -endLine
 
     $windowsAzureGuestAgentExe = $false
+    Out-Log "WindowsAzureGuestAgent.exe exists in $($windowsAzureFolderPath): Skipped (not an Azure VM)"
     New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'Skipped' -details 'Not an Azure VM'
-    Out-Log $windowsAzureGuestAgentExeExists -color DarkGray -endLine
 
     $waAppAgentExeExists = $false
+    Out-Log "WaAppAgent.exe exists in $($windowsAzureFolderPath): Skipped (Not an Azure VM)"
     New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'Skipped' -details 'Not an Azure VM'
-    Out-Log $waAppAgentExeExists -color DarkGray -endLine
 }
 
 Add-Type -TypeDefinition @'
@@ -1527,13 +1588,11 @@ if ($isAzureVM)
 }
 else
 {
-    Out-Log 'RdAgent service: ' -startLine
+    Out-Log 'RdAgent service: Skipped (not an Azure VM)'
     New-Check -name "RdAgent service" -result 'Skipped' -details "Not an Azure VM"
-    Out-Log 'Skipped' -color DarkGray -endLine
 
-    Out-Log 'WindowsAzureGuestAgent service: ' -startLine
+    Out-Log 'WindowsAzureGuestAgent service: Skipped (not an Azure VM)'
     New-Check -name "WindowsAzureGuestAgent service" -result 'Skipped' -details "Not an Azure VM"
-    Out-Log 'Skipped' -color DarkGray -endLine
 }
 $winmgmt = Get-ServiceChecks -name 'winmgmt' -expectedStatus 'Running' -expectedStartType 'Automatic'
 $keyiso = Get-ServiceChecks -name 'keyiso' -expectedStatus 'Running' -expectedStartType 'Manual'
@@ -1547,18 +1606,17 @@ if ($isAzureVM)
 }
 else
 {
-    Out-Log 'RdAgent service crashes:' -startLine
+    Out-Log 'RdAgent service crashes: Skipped (not an Azure VM)'
     New-Check -name 'RdAgent service crashes' -result 'Skipped' -details 'Not an Azure VM'
-    Out-Log 'Skipped' -color DarkGray -endLine
-    Out-Log 'Windows Azure Guest Agent service crashes:' -startLine
+
+    Out-Log 'Windows Azure Guest Agent service crashes: Skipped (not an Azure VM)'
     New-Check -name 'Windows Azure Guest Agent service crashes' -result 'Skipped' -details 'Not an Azure VM'
-    Out-Log 'Skipped' -color DarkGray -endLine
-    Out-Log 'WaAppAgent application errors:' -startLine
+
+    Out-Log 'WaAppAgent application errors: Skipped (not an Azure VM)'
     New-Check -name 'WaAppAgent application errors' -result 'Skipped' -details 'Not an Azure VM'
-    Out-Log 'Skipped' -color DarkGray -endLine
-    Out-Log 'WindowsAzureGuestAgent application errors:' -startLine
+
+    Out-Log 'WindowsAzureGuestAgent application errors: Skipped (not an Azure VM)'
     New-Check -name 'WindowsAzureGuestAgent application errors' -result 'Skipped' -details 'Not an Azure VM'
-    Out-Log 'Skipped' -color DarkGray -endLine
 }
 
 Out-Log 'StdRegProv WMI class queryable:' -startLine
@@ -1586,7 +1644,7 @@ else
 {
     $details = 'Skipped (Winmgmt service not running)'
     New-Check -name 'StdRegProv WMI class' -result 'Skipped' -details $details
-    Out-Log $details -color DarkGray -endLine
+    Out-Log $details -endLine
 }
 
 if ($isAzureVM)
@@ -1636,12 +1694,12 @@ if ($isAzureVM)
 else
 {
     $vmAgentInstalled = $false
-    New-Check -name 'VM agent installed' -result 'Skipped' -details 'Not an Azure VM'
-    Out-Log 'Skipped' -color DarkGray -endLine
 
-    Out-Log 'VM agent installed by provisioning agent or Windows Installer package (MSI):' -startLine
+    Out-Log 'VM agent installed: Skipped (not an Azure VM)'
+    New-Check -name 'VM agent installed' -result 'Skipped' -details 'Not an Azure VM'
+
+    Out-Log 'VM agent installed by provisioning agent or Windows Installer package (MSI): Skipped (not an Azure VM)'
     New-Check -name 'VM agent installed by provisioning agent' -result 'Skipped' -details 'Not an Azure VM'
-    Out-Log 'Skipped' -color DarkGray -endLine
 }
 
 Out-Log 'VM agent is supported version:' -startLine
@@ -1678,10 +1736,10 @@ if ($vmAgentInstalled)
 }
 else
 {
-    $details = "Skipped because VM agent is not installed"
+    $details = "Skipped (VM agent not installed)"
     New-Check -name 'VM agent is supported version' -result 'Skipped' -details $details
     $isAtLeastMinSupportedVersion = $false
-    Out-Log $details -color DarkGray -endLine
+    Out-Log $details -endLine
 }
 
 if ($vmAgentInstalled)
@@ -1908,10 +1966,9 @@ if ($vmAgentInstalled)
 }
 else
 {
-    $details = "Skipped because VM agent is not installed"
+    $details = "Skipped (VM agent not installed)"
     New-Check -name 'TenantEncryptionCert installed' -result 'Skipped' -details $details
-    New-Finding -type Critical -name 'TenantEncryptionCert not installed' -description '' -mitigation ''
-    Out-Log $details -color DarkGray -endLine
+    Out-Log $details -endLine
 }
 
 $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
@@ -2154,6 +2211,7 @@ else
 }
 
 $enabledFirewallRules = Get-EnabledFirewallRules
+$wfpFilters = Get-WfpFilters
 
 $machineKeysDefaultSddl = 'O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)'
 Out-Log 'MachineKeys folder has default permissions:' -startLine
@@ -2213,9 +2271,9 @@ if ($vmAgentInstalled)
 }
 else
 {
-    $details = "Skipped because VM agent is not installed"
+    $details = "Skipped (VM agent not installed)"
     New-Check -name "$windowsAzureFolderPath permissions" -result 'Skipped' -details $details
-    Out-Log $details -color DarkGray -endLine
+    Out-Log $details -endLine
 }
 
 $packagesFolderPath = "$env:SystemDrive\Packages"
@@ -2247,9 +2305,9 @@ if ($vmAgentInstalled)
 }
 else
 {
-    $details = "Skipped because VM agent is not installed"
+    $details = "Skipped (VM agent not installed)"
     New-Check -name "$packagesFolderPath permissions" -result 'Skipped' -details $details
-    Out-Log $details -color DarkGray -endLine
+    Out-Log $details -endLine
 }
 
 Out-Log "System drive has sufficient disk space:" -startLine
@@ -2980,6 +3038,16 @@ else
 {
     [void]$stringBuilder.Append("<h4>There are no enabled outbound Windows Firewall rules</h4>`r`n")
 }
+
+[void]$stringBuilder.Append("<h3>Windows Filtering Platform Filters - Wireserver</h3>`r`n")
+$wireserverWfpFiltersTable = $wfpFilters.wireserverFilters | ConvertTo-Html -Fragment -As Table
+$wireserverWfpFiltersTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append("<h3>Windows Filtering Platform Filters</h3>`r`n")
+$wfpFiltersTable = $wfpFilters.Filters | ConvertTo-Html -Fragment -As Table
+$wfpFiltersTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+[void]$stringBuilder.Append("<h3>Windows Filtering Platform Providers</h3>`r`n")
+$wfpProvidersTable = $wfpFilters.Providers | ConvertTo-Html -Fragment -As Table
+$wfpProvidersTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 [void]$stringBuilder.Append('</div>')
 
 [void]$stringBuilder.Append('<div id="Services" class="tabcontent">')
@@ -3062,20 +3130,12 @@ else
 }
 Out-Log "$findingsCount issue(s) found." -color $color
 
-<# TODO
-# netsh wfp show filters dir=OUT remoteaddr=168.63.129.16 file=WireserverFilters.xml
-# netsh wfp show filters dir=OUT file=OutBoundFilters.xml
-# netsh wfp show filters dir=IN file=InboundFilters.xml
-# Figure out if it's quicker to test for IMDS connectivity or DHCP option 245 as the way to confirm it's in Azure
-# If the IMDS check is faster, can do that first, but it could fail even if it's in Azure, so then check DHCP option 245 last
-$uuid = Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID
-Local Hyper-V example: 6840B682-F537-464C-A5A9-874061E91914
-Azure VM example: C42C97BC-DBFD-4FEE-8F07-E4C8937116A4
-### Confirm if Azure VM earlier so later Azure-specific checks can be skipped
-### Fix "03:54:32 01:14 [ERROR] Cannot convert value "2147680517" to type "System.Int32". Error: "Value was either too large or too small for an Int32." Line 182 [int32]$exitCode = $service.ExitCode"
-### Check for WCF Profiling being enabled
+<#
+### https://github.com/search?q=get-counter+language%3APowerShell&type=code&l=PowerShell
+### $uuid = Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID
+### Check for WCF profiling
 ### Check for system crashes (bugchecks), surface most recent one as well as crash count last 24 hour
-### Make sure to add test cases for each check
+### Add test cases for each check
 ### Disk space check should also check drive with page file if different than system drive
 ### Fix issues experienced when running on non-Azure device
 ### if possible, replace Get-NetIPConfiguration with cmdlets that don't rely on WMI
