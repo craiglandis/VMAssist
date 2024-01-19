@@ -1575,7 +1575,7 @@ namespace Win32.Service
 
 if ($isAzureVM)
 {
-    $rdagent = Get-ServiceChecks -name 'rdagent' -expectedStatus 'Running' -expectedStartType 'Automatic'
+    $rdagent = Get-ServiceChecks -name 'RdAgent' -expectedStatus 'Running' -expectedStartType 'Automatic'
     if ($rdagent)
     {
         $rdAgentServiceExists = $true
@@ -1594,8 +1594,8 @@ else
     Out-Log 'WindowsAzureGuestAgent service: Skipped (not an Azure VM)'
     New-Check -name "WindowsAzureGuestAgent service" -result 'Skipped' -details "Not an Azure VM"
 }
-$winmgmt = Get-ServiceChecks -name 'winmgmt' -expectedStatus 'Running' -expectedStartType 'Automatic'
-$keyiso = Get-ServiceChecks -name 'keyiso' -expectedStatus 'Running' -expectedStartType 'Manual'
+$winmgmt = Get-ServiceChecks -name 'Winmgmt' -expectedStatus 'Running' -expectedStartType 'Automatic'
+$keyiso = Get-ServiceChecks -name 'Keyiso' -expectedStatus 'Running' -expectedStartType 'Manual'
 
 if ($isAzureVM)
 {
@@ -1971,76 +1971,78 @@ else
     Out-Log $details -endLine
 }
 
-<#
-Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll must be present for the related machine.config settings to work
-C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink\v4.0_4.0.0.0__b03f5f7f11d50a3a\Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll
-C:\Windows\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink\3.0.0.0__b03f5f7f11d50a3a\Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll
-vsdiag_regwcf.exe is the tool to use to enable/disable WCF debugging. It does the machine.config edits.
-It is installed as part of the Windows Communication Framework component of Visual Studio, up-to-and-including VS2022:
-C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\vsdiag_regwcf.exe
-C:\OneDrive\tools\vsdiag_regwcf.exe -i
-gc C:\Windows\Microsoft.NET\Framework64\v4.0.30319\config\machine.config | findstr /i servicemodelsink
-            <add name="Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior" type="Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior, Microsoft.VisualStudio.Diagnostics.ServiceModelSink, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"/></behaviorExtensions>
-      <commonBehaviors><endpointBehaviors><Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior/></endpointBehaviors><serviceBehaviors><Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior/></serviceBehaviors></commonBehaviors></system.serviceModel>
-C:\OneDrive\tools\vsdiag_regwcf.exe -u
-gc C:\Windows\Microsoft.NET\Framework64\v4.0.30319\config\machine.config | findstr /i servicemodelsink
-#>
-
-$machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
-#$machineConfigFilePath = "$env:SystemRoot\Microsoft.NET\Framework\v4.0.30319\Config\machine.config"
-[xml]$machineConfigx64 = Get-Content -Path $machineConfigx64FilePath
-$matches = Get-Content -Path $machineConfigx64FilePath | Select-String -SimpleMatch 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
-if ($matches)
+function Get-WCFConfig
 {
-    $serviceModelSinkDllParentPath1 = 'C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
-    $serviceModelSinkDllParentPath2 = 'C:\Windows\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
-    $serviceModelSinkDllPath1 = Get-ChildItem -Path $ServiceModelSinkDllParentPath1 -Filter 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
-    $serviceModelSinkDllPath2 = Get-ChildItem -Path $ServiceModelSinkDllParentPath2 -Filter 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+    <#
+    Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll must be present for the related machine.config settings to work
+    C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink\v4.0_4.0.0.0__b03f5f7f11d50a3a\Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll
+    C:\Windows\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink\3.0.0.0__b03f5f7f11d50a3a\Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll
+    vsdiag_regwcf.exe is the tool to use to enable/disable WCF debugging. It does the machine.config edits.
+    It is installed as part of the Windows Communication Framework component of Visual Studio, up-to-and-including VS2022:
+    C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\vsdiag_regwcf.exe
+    C:\OneDrive\tools\vsdiag_regwcf.exe -i
+    gc C:\Windows\Microsoft.NET\Framework64\v4.0.30319\config\machine.config | findstr /i servicemodelsink
+                <add name="Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior" type="Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior, Microsoft.VisualStudio.Diagnostics.ServiceModelSink, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"/></behaviorExtensions>
+        <commonBehaviors><endpointBehaviors><Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior/></endpointBehaviors><serviceBehaviors><Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior/></serviceBehaviors></commonBehaviors></system.serviceModel>
+    C:\OneDrive\tools\vsdiag_regwcf.exe -u
+    gc C:\Windows\Microsoft.NET\Framework64\v4.0.30319\config\machine.config | findstr /i servicemodelsink
+    #>
 
-    if (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -ErrorAction SilentlyContinue)
+    $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
+    $matches = Get-Content -Path $machineConfigx64FilePath | Select-String -SimpleMatch 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
+    if ($matches)
     {
-        $vsInstance = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -Property ProductLocation -ErrorAction SilentlyContinue"
-    }
-    elseif (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -ErrorAction SilentlyContinue)
-    {
-        $vsInstance = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -Property ProductLocation -ErrorAction SilentlyContinue"
-    }
-    else
-    {
-        Out-Log "Visual Studio is not installed."
-        Out-Log "The vsdiag_regwcf.exe tool is installed by the Windows Communication Framework component of Visual Studio. It cannot run as a standalone EXE."
-        Out-Log "To install Visual Studio: https://aka.ms/vs/17/release/vs_enterprise.exe"
-        exit
-    }
+        $serviceModelSinkDllParentPath1 = 'C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
+        $serviceModelSinkDllParentPath2 = 'C:\Windows\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
+        $serviceModelSinkDllPath1 = Get-ChildItem -Path $ServiceModelSinkDllParentPath1 -Filter 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+        $serviceModelSinkDllPath2 = Get-ChildItem -Path $ServiceModelSinkDllParentPath2 -Filter 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
 
-    if (Test-Path -Path $productLocation -PathType Leaf)
-    {
-        $vsdiagRegwcfFilePath = "$(Split-Path -Path $productLocation)\vsdiag_regwcf.exe"
-        if (Test-Path -Path $vsdiagRegwcfFilePath -PathType Leaf)
+        if (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -ErrorAction SilentlyContinue)
         {
-            $timestamp = Get-Date -Format 'yyyyMMddHHmmss'
-            $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
-            Invoke-ExpressionWithLogging "Copy-Item -Path $machineConfigx64FilePath $machineConfigx64FilePath.$timestamp"
-            Invoke-ExpressionWithLogging "& '$vsdiagRegwcfFilePath' -u"
-            $result = Invoke-ExpressionWithLogging "& '$vsdiagRegwcfFilePath' -s" | Out-String -Width 4096
-            Out-Log $result -raw
+            $vsInstance = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -Property ProductLocation -ErrorAction SilentlyContinue"
+        }
+        elseif (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -ErrorAction SilentlyContinue)
+        {
+            $vsInstance = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -Property ProductLocation -ErrorAction SilentlyContinue"
         }
         else
         {
-            Out-Log "File not found: $vsdiagRegwcfFilePath"
+            Out-Log "Visual Studio is not installed."
+            Out-Log "The vsdiag_regwcf.exe tool is installed by the Windows Communication Framework component of Visual Studio. It cannot run as a standalone EXE."
+            Out-Log "To install Visual Studio: https://aka.ms/vs/17/release/vs_enterprise.exe"
+            exit
+        }
+
+        if (Test-Path -Path $productLocation -PathType Leaf)
+        {
+            $vsdiagRegwcfFilePath = "$(Split-Path -Path $productLocation)\vsdiag_regwcf.exe"
+            if (Test-Path -Path $vsdiagRegwcfFilePath -PathType Leaf)
+            {
+                $timestamp = Get-Date -Format 'yyyyMMddHHmmss'
+                $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
+                Invoke-ExpressionWithLogging "Copy-Item -Path $machineConfigx64FilePath $machineConfigx64FilePath.$timestamp"
+                Invoke-ExpressionWithLogging "& '$vsdiagRegwcfFilePath' -u"
+                $result = Invoke-ExpressionWithLogging "& '$vsdiagRegwcfFilePath' -s" | Out-String -Width 4096
+                Out-Log $result -raw
+            }
+            else
+            {
+                Out-Log "File not found: $vsdiagRegwcfFilePath"
+                exit 2
+            }
+        }
+        else
+        {
+            Out-Log "File not found: $productLocation"
             exit 2
         }
-    }
-    else
-    {
-        Out-Log "File not found: $productLocation"
-        exit 2
-    }
 
-    foreach ($match in $matches){"Line $($match.LineNumber): $($match.Line)"}
-    # New-Check
-    # New-Finding
+        foreach ($match in $matches){"Line $($match.LineNumber): $($match.Line)"}
+        # New-Check
+        # New-Finding
+    }
 }
+
 
 
 
@@ -2983,6 +2985,25 @@ for (i = 0; i < coll.length; i++) {
     }
   });
 }
+
+var acc = document.getElementsByClassName("accordion");
+var i;
+
+for (i = 0; i < acc.length; i++) {
+  acc[i].addEventListener("click", function() {
+    /* Toggle between adding and removing the "active" class,
+    to highlight the button that controls the panel */
+    this.classList.toggle("active");
+
+    /* Toggle between hiding and showing the active panel */
+    var panel = this.nextElementSibling;
+    if (panel.style.display === "block") {
+      panel.style.display = "none";
+    } else {
+      panel.style.display = "block";
+    }
+  });
+}
 </script>
 '@
 
@@ -3014,12 +3035,27 @@ $tabs | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 $findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
 if ($findingsCount -ge 1)
 {
+    foreach($finding in $findings)
+    {
+        [void]$stringBuilder.Append("<button class='accordion'>$($finding.Name)</button>")
+        [void]$stringBuilder.Append('<div class="panel" style="display:none;">')
+        [void]$stringBuilder.Append('<p>')
+        [void]$stringBuilder.Append("<br>TimeCreated: <span style='font-weight:bold'>$($finding.TimeCreated)</span>")
+        [void]$stringBuilder.Append("<br>Type: <span style='font-weight:bold'>$($finding.Type)</span>")
+        #[void]$stringBuilder.Append("<br>Name: <span style='font-weight:bold'>$($finding.Name)</span>")
+        [void]$stringBuilder.Append("<br>Description: <span style='font-weight:bold'>$($finding.Description)</span>")
+        [void]$stringBuilder.Append("<br>Mitigation: <span style='font-weight:bold'>$($finding.Mitigation)</span>")
+        [void]$stringBuilder.Append('</p>')
+        [void]$stringBuilder.Append('</div>')
+    }
+    <#
     $findingsTable = $findings | Select-Object Type, Name, Description, Mitigation | ConvertTo-Html -Fragment -As Table
     $findingsTable = $findingsTable -replace '<td>Critical</td>', '<td class="CRITICAL">Critical</td>'
     $findingsTable = $findingsTable -replace '<td>Warning</td>', '<td class="WARNING">Warning</td>'
     $findingsTable = $findingsTable -replace '<td>Information</td>', '<td class="INFORMATION">Information</td>'
     $global:dbgFindingsTable = $findingsTable
     $findingsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
+    #>
 }
 else
 {
