@@ -27,6 +27,8 @@ param(
     [switch]$setprofile,
     [switch]$enableStaticIp,
     [switch]$enableDhcp,
+    [switch]$enableWcfDebugging,
+    [switch]$disableWcfDebugging,
     [switch]$setNonDefaultMachineKeysAcl,
     [switch]$setDefaultMachineKeysAcl,
     [switch]$setNonDefaultWindowsAzureAcl,
@@ -607,6 +609,99 @@ if ($removeCSE)
     $result = Invoke-ExpressionWithLogging "Remove-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -Force"
     Out-Log ($result | Out-String) -raw
 }
+
+if ($enableWcfDebugging)
+{
+    # VS22 17.8+ have MSFT_VSInstance class in root/cimv2/vs namespace
+    # <VS22 17.8 the MSFT_VSInstance class is in root/cimv2 namespace
+
+    if (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -ErrorAction SilentlyContinue)
+    {
+        $productLocation = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -Property ProductLocation -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ProductLocation"
+    }
+    elseif (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -ErrorAction SilentlyContinue)
+    {
+        $productLocation = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -Property ProductLocation -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ProductLocation"
+    }
+    else
+    {
+        Out-Log "Visual Studio is not installed."
+        Out-Log "The vsdiag_regwcf.exe tool is installed by the Windows Communication Framework component of Visual Studio. It cannot run as a standalone EXE."
+        Out-Log "To install Visual Studio: https://aka.ms/vs/17/release/vs_enterprise.exe"
+        exit
+    }
+
+    if (Test-Path -Path $productLocation -PathType Leaf)
+    {
+        $vsdiagRegwcfFilePath = "$(Split-Path -Path $productLocation)\vsdiag_regwcf.exe"
+        if (Test-Path -Path $vsdiagRegwcfFilePath -PathType Leaf)
+        {
+            $timestamp = Get-Date -Format 'yyyyMMddHHmmss'
+            $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
+            Invoke-ExpressionWithLogging "Copy-Item -Path $machineConfigx64FilePath $machineConfigx64FilePath.$timestamp"
+            Invoke-ExpressionWithLogging "& '$vsdiagRegwcfFilePath' -i"
+            $result = Invoke-ExpressionWithLogging "& '$vsdiagRegwcfFilePath' -s" | Out-String -Width 4096
+            Out-Log $result -raw
+        }
+        else
+        {
+            Out-Log "File not found: $vsdiagRegwcfFilePath"
+            exit 2
+        }
+    }
+    else
+    {
+        Out-Log "File not found: $productLocation"
+        exit 2
+    }
+}
+
+if ($disableWcfDebugging)
+{
+    # VS22 17.8+ have MSFT_VSInstance class in root/cimv2/vs namespace
+    # <VS22 17.8 the MSFT_VSInstance class is in root/cimv2 namespace
+
+    if (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -ErrorAction SilentlyContinue)
+    {
+        $productLocation = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -Property ProductLocation -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ProductLocation"
+    }
+    elseif (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -ErrorAction SilentlyContinue)
+    {
+        $productLocation = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -Property ProductLocation -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ProductLocation"
+    }
+    else
+    {
+        Out-Log "Visual Studio is not installed."
+        Out-Log "The vsdiag_regwcf.exe tool is installed by the Windows Communication Framework component of Visual Studio. It cannot run as a standalone EXE."
+        Out-Log "To install Visual Studio: https://aka.ms/vs/17/release/vs_enterprise.exe"
+        exit
+    }
+
+    if (Test-Path -Path $productLocation -PathType Leaf)
+    {
+        $vsdiagRegwcfFilePath = "$(Split-Path -Path $productLocation)\vsdiag_regwcf.exe"
+        if (Test-Path -Path $vsdiagRegwcfFilePath -PathType Leaf)
+        {
+            $timestamp = Get-Date -Format 'yyyyMMddHHmmss'
+            $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
+            Invoke-ExpressionWithLogging "Copy-Item -Path $machineConfigx64FilePath $machineConfigx64FilePath.$timestamp"
+            Invoke-ExpressionWithLogging "& '$vsdiagRegwcfFilePath' -u"
+            $result = Invoke-ExpressionWithLogging "& '$vsdiagRegwcfFilePath' -s" | Out-String -Width 4096
+            Out-Log $result -raw
+        }
+        else
+        {
+            Out-Log "File not found: $vsdiagRegwcfFilePath"
+            exit 2
+        }
+    }
+    else
+    {
+        Out-Log "File not found: $productLocation"
+        exit 2
+    }
+}
+
 
 if ($setprofile)
 {
