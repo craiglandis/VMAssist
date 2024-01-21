@@ -40,6 +40,87 @@ trap
     Exit
 }
 
+function Get-WCFConfig
+{
+    <#
+    Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll must be present for the related machine.config settings to work
+    C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink\v4.0_4.0.0.0__b03f5f7f11d50a3a\Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll
+    C:\Windows\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink\3.0.0.0__b03f5f7f11d50a3a\Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll
+    vsdiag_regwcf.exe is the tool to use to enable/disable WCF debugging. It does the machine.config edits.
+    It is installed as part of the Windows Communication Framework component of Visual Studio, up-to-and-including VS2022:
+    C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\vsdiag_regwcf.exe
+    C:\OneDrive\tools\vsdiag_regwcf.exe -i
+    gc C:\Windows\Microsoft.NET\Framework64\v4.0.30319\config\machine.config | findstr /i servicemodelsink
+                <add name="Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior" type="Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior, Microsoft.VisualStudio.Diagnostics.ServiceModelSink, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"/></behaviorExtensions>
+        <commonBehaviors><endpointBehaviors><Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior/></endpointBehaviors><serviceBehaviors><Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior/></serviceBehaviors></commonBehaviors></system.serviceModel>
+    C:\OneDrive\tools\vsdiag_regwcf.exe -u
+    gc C:\Windows\Microsoft.NET\Framework64\v4.0.30319\config\machine.config | findstr /i servicemodelsink
+    #>
+
+    $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
+    $matches = Get-Content -Path $machineConfigx64FilePath | Select-String -SimpleMatch 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
+    if ($matches)
+    {
+        $serviceModelSinkDllParentPath1 = 'C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
+        $serviceModelSinkDllParentPath2 = 'C:\Windows\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
+        $serviceModelSinkDllPath1 = Get-ChildItem -Path $ServiceModelSinkDllParentPath1 -Filter 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+        $serviceModelSinkDllPath2 = Get-ChildItem -Path $ServiceModelSinkDllParentPath2 -Filter 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+
+        if (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -ErrorAction SilentlyContinue)
+        {
+            $vsInstance = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -ErrorAction SilentlyContinue"
+        }
+        elseif (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -ErrorAction SilentlyContinue)
+        {
+            $vsInstance = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -ErrorAction SilentlyContinue"
+        }
+
+        if ($vsInstance)
+        {
+            $productLocation = $vsInstance | Select-Object -ExpandProperty ProductLocation -ErrorAction SilentlyContinue
+        }
+        else
+        {
+            Out-Log "Visual Studio is not installed."
+            Out-Log "The vsdiag_regwcf.exe tool is installed by the Windows Communication Framework component of Visual Studio. It cannot run as a standalone EXE."
+            Out-Log "To install Visual Studio: https://aka.ms/vs/17/release/vs_enterprise.exe"
+        }
+
+        if ($productLocation -and (Test-Path -Path $productLocation -PathType Leaf))
+        {
+            $vsdiagRegwcfFilePath = "$(Split-Path -Path $productLocation)\vsdiag_regwcf.exe"
+            if (Test-Path -Path $vsdiagRegwcfFilePath -PathType Leaf)
+            {
+                $vsdiagRegwcfExists = $true
+                Out-Log "Found $vsdiagRegwcfExists" -verboseOnly
+            }
+            else
+            {
+                $vsdiagRegwcfExists = $false
+                Out-Log "File not found: $vsdiagRegwcfExists" -verboseOnly
+            }
+        }
+        else
+        {
+            Out-Log "File not found: $productLocation"
+            $vsdiagRegwcfExists = $false
+        }
+
+        $machineConfigStrings = $matches.ToString()
+        $wcfDebuggingEnabled = $true
+        Out-Log $wcfDebuggingEnabled
+        New-Check -name 'WCF debugging config' -result 'FAIL' -details 'WCF debugging is enabled'
+        $description = "$machineConfigx64FilePath shows WCF debugging is enabled: $machineConfigStrings"
+        New-Finding -type Critical -name 'WCF debugging enabled' -description $description
+    }
+    else
+    {
+        $wcfDebuggingEnabled = $false
+        Out-Log $wcfDebuggingEnabled
+        New-Check -name 'WCF debugging config' -result 'OK' -details 'WCF debugging not enabled'
+    }
+}
+
 function Confirm-HyperVGuest
 {
     # SystemManufacturer/SystemProductName valus are in different locations depending if Gen1 vs Gen2
@@ -89,7 +170,7 @@ function Get-ApplicationErrors
     }
     else
     {
-        New-Check -name "$name process errors" -result 'Passed' -details "No $name process errors in last 1 day"
+        New-Check -name "$name process errors" -result 'OK' -details "No $name process errors in last 1 day"
         Out-Log $true -color Green -endLine
     }
 }
@@ -116,7 +197,7 @@ function Get-ServiceCrashes
     }
     else
     {
-        New-Check -name "$name service crashes" -result 'Passed' -details "No $name service crashes in last 1 day"
+        New-Check -name "$name service crashes" -result 'OK' -details "No $name service crashes in last 1 day"
         Out-Log $true -color Green -endLine
     }
 }
@@ -230,26 +311,26 @@ function Get-ThirdPartyLoadedModules
             if ($processThirdPartyModules)
             {
                 $details = "$($($processThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
-                New-Check -name "Third-party modules in $processName" -result 'Information' -details $details
+                New-Check -name "Third-party modules in $processName" -result 'Info' -details $details
                 Out-Log $true -endLine -color Cyan
                 New-Finding -type Information -name "Third-party modules in $processName" -description $details -mitigation ''
             }
             else
             {
-                New-Check -name "Third-party modules in $processName" -result 'Passed' -details "No third-party modules in $processName"
+                New-Check -name "Third-party modules in $processName" -result 'OK' -details "No third-party modules in $processName"
                 Out-Log $false -endLine -color Green
             }
         }
         else
         {
-            New-Check -name "Third-party modules in $processName" -result 'Passed' -details "No third-party modules in $processName"
+            New-Check -name "Third-party modules in $processName" -result 'OK' -details "No third-party modules in $processName"
             Out-Log $false -endLine -color Green
         }
     }
     else
     {
         $details = "$processName process not running"
-        New-Check -name "Third-party modules in $processName" -result 'Information' -details $details
+        New-Check -name "Third-party modules in $processName" -result 'Info' -details $details
         Out-Log $details -color Cyan -endLine
     }
 }
@@ -420,7 +501,7 @@ function Get-ServiceChecks
             }
             elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $true -and $isExpectedStartType -eq $true)
             {
-                New-Check -name "$name service" -result 'Passed' -details $details
+                New-Check -name "$name service" -result 'OK' -details $details
                 Out-Log "Status: $status StartType: $startType StartName: $startName" -color Green -endLine
             }
             elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $true -and $isExpectedStartType -eq $false)
@@ -824,6 +905,7 @@ function New-Check
 {
     param(
         [string]$name,
+        [ValidateSet('OK','FAIL','SKIPPED')]
         [string]$result,
         [string]$details
     )
@@ -1476,13 +1558,13 @@ if ($isAzureVM)
     {
         $windowsAzureFolderExists = $true
         Out-Log $windowsAzureFolderExists -color Green -endLine
-        New-Check -name "$windowsAzureFolderPath folder exists" -result 'Passed' -details ''
+        New-Check -name "$windowsAzureFolderPath folder exists" -result 'OK' -details ''
         $windowsAzureFolder = Invoke-ExpressionWithLogging "Get-ChildItem -Path $windowsAzureFolderPath -Recurse -ErrorAction SilentlyContinue" -verboseOnly
         Out-Log 'WindowsAzureGuestAgent.exe exists:' -startLine
         $windowsAzureGuestAgentExe = $windowsAzureFolder | Where-Object {$_.Name -eq 'WindowsAzureGuestAgent.exe'}
         if ($windowsAzureGuestAgentExe)
         {
-            New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'Passed' -details ''
+            New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'OK' -details ''
             $windowsAzureGuestAgentExeExists = $true
             $windowsAzureGuestAgentExeFileVersion = $windowsAzureGuestAgentExe | Select-Object -ExpandProperty VersionInfo | Select-Object -ExpandProperty FileVersion
             Out-Log "$windowsAzureGuestAgentExeExists (version $windowsAzureGuestAgentExeFileVersion)" -color Green -endLine
@@ -1498,7 +1580,7 @@ if ($isAzureVM)
         $waAppAgentExe = $windowsAzureFolder | Where-Object {$_.Name -eq 'WaAppAgent.exe'}
         if ($waAppAgentExe)
         {
-            New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'Passed' -details ''
+            New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'OK' -details ''
             $waAppAgentExeExists = $true
             $waAppAgentExeFileVersion = $waAppAgentExe | Select-Object -ExpandProperty VersionInfo | Select-Object -ExpandProperty FileVersion
             Out-Log "$waAppAgentExeExists (version $waAppAgentExeFileVersion)" -color Green -endLine
@@ -1629,7 +1711,7 @@ if ($winmgmt.Status -eq 'Running')
     {
         $stdRegProvQuerySuccess = $true
         Out-Log $stdRegProvQuerySuccess -color Green -endLine
-        New-Check -name 'StdRegProv WMI class queryable' -result 'Passed' -details ''
+        New-Check -name 'StdRegProv WMI class queryable' -result 'OK' -details ''
     }
     else
     {
@@ -1657,7 +1739,7 @@ if ($isAzureVM)
     {
         $vmAgentInstalled = $true
         $details = "VM agent is installed ($detailsSuffix)"
-        New-Check -name 'VM agent installed' -result 'Passed' -details $details
+        New-Check -name 'VM agent installed' -result 'OK' -details $details
         Out-Log $vmAgentInstalled -color Green -endLine
     }
     else
@@ -1681,12 +1763,12 @@ if ($isAzureVM)
 
         if ($agentUninstallKey)
         {
-            New-Check -name 'VM agent installed by provisioning agent' -result 'Passed' -details ''
+            New-Check -name 'VM agent installed by provisioning agent' -result 'OK' -details ''
             Out-Log 'MSI: MSI' -color Green -endLine
         }
         else
         {
-            New-Check -name 'VM agent installed by provisioning agent' -result 'Passed' -details ''
+            New-Check -name 'VM agent installed by provisioning agent' -result 'OK' -details ''
             Out-Log 'Provisioning agent' -color Green -endLine
         }
     }
@@ -1723,7 +1805,7 @@ if ($vmAgentInstalled)
         $minSupportedGuestAgentVersion = '2.7.41491.1010'
         if ($guestKeyGuestAgentVersion -and [version]$guestKeyGuestAgentVersion -ge [version]$minSupportedGuestAgentVersion)
         {
-            New-Check -name 'VM agent is supported version' -result 'Passed' -details "Installed version: $guestKeyGuestAgentVersion, minimum supported version: $minSupportedGuestAgentVersion"
+            New-Check -name 'VM agent is supported version' -result 'OK' -details "Installed version: $guestKeyGuestAgentVersion, minimum supported version: $minSupportedGuestAgentVersion"
             $isAtLeastMinSupportedVersion = $true
             Out-Log "$isAtLeastMinSupportedVersion (installed: $guestKeyGuestAgentVersion, minimum supported: $minSupportedGuestAgentVersion)" -color Green -endLine
         }
@@ -1916,14 +1998,14 @@ Out-Log "$machinePoliciesInternetSettingsKeyPath\ProxySettingsPerUser: $proxySet
 
 if ($proxyConfigured)
 {
-    New-Check -name 'Proxy configured' -result 'Information' -details $proxyServers
+    New-Check -name 'Proxy configured' -result 'Info' -details $proxyServers
     Out-Log $proxyConfigured -color Cyan -endLine
     $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows-azure-guest-agent#solution-3-enable-dhcp-and-make-sure-that-the-server-isnt-blocked-by-firewalls-proxies-or-other-sources">Check proxy settings</a>'
     New-Finding -type Information -name 'Proxy configured' -description $proxyServers -mitigation $mitigation
 }
 else
 {
-    New-Check -name 'Proxy configured' -result 'Passed' -details 'No proxy configured'
+    New-Check -name 'Proxy configured' -result 'OK' -details 'No proxy configured'
     Out-Log $proxyConfigured -color Green -endLine
 }
 
@@ -1940,14 +2022,14 @@ if ($vmAgentInstalled)
         $effective = Get-Date -Date $tenantEncryptionCert.NotBefore.ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
         $expires = Get-Date -Date $tenantEncryptionCert.NotAfter.ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
         $now = Get-Date -Date (Get-Date).ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
-        New-Check -name 'TenantEncryptionCert installed' -result 'Passed' -details "Subject: $subject Issuer: $issuer"
+        New-Check -name 'TenantEncryptionCert installed' -result 'OK' -details "Subject: $subject Issuer: $issuer"
 
         Out-Log 'TenantEncryptionCert within validity period:' -startLine
         if ($tenantEncryptionCert.NotBefore -le [System.DateTime]::Now -and $tenantEncryptionCert.NotAfter -gt [System.DateTime]::Now)
         {
             $tenantEncryptionCertWithinValidityPeriod = $true
             Out-Log $tenantEncryptionCertWithinValidityPeriod -color Green -endLine
-            New-Check -name 'TenantEncryptionCert within validity period' -result 'Passed' -details "Now: $now Effective: $effective Expires: $expires"
+            New-Check -name 'TenantEncryptionCert within validity period' -result 'OK' -details "Now: $now Effective: $effective Expires: $expires"
         }
         else
         {
@@ -1971,80 +2053,7 @@ else
     Out-Log $details -endLine
 }
 
-function Get-WCFConfig
-{
-    <#
-    Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll must be present for the related machine.config settings to work
-    C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink\v4.0_4.0.0.0__b03f5f7f11d50a3a\Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll
-    C:\Windows\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink\3.0.0.0__b03f5f7f11d50a3a\Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll
-    vsdiag_regwcf.exe is the tool to use to enable/disable WCF debugging. It does the machine.config edits.
-    It is installed as part of the Windows Communication Framework component of Visual Studio, up-to-and-including VS2022:
-    C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\vsdiag_regwcf.exe
-    C:\OneDrive\tools\vsdiag_regwcf.exe -i
-    gc C:\Windows\Microsoft.NET\Framework64\v4.0.30319\config\machine.config | findstr /i servicemodelsink
-                <add name="Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior" type="Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior, Microsoft.VisualStudio.Diagnostics.ServiceModelSink, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"/></behaviorExtensions>
-        <commonBehaviors><endpointBehaviors><Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior/></endpointBehaviors><serviceBehaviors><Microsoft.VisualStudio.Diagnostics.ServiceModelSink.Behavior/></serviceBehaviors></commonBehaviors></system.serviceModel>
-    C:\OneDrive\tools\vsdiag_regwcf.exe -u
-    gc C:\Windows\Microsoft.NET\Framework64\v4.0.30319\config\machine.config | findstr /i servicemodelsink
-    #>
-
-    $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
-    $matches = Get-Content -Path $machineConfigx64FilePath | Select-String -SimpleMatch 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
-    if ($matches)
-    {
-        $serviceModelSinkDllParentPath1 = 'C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
-        $serviceModelSinkDllParentPath2 = 'C:\Windows\assembly\GAC_MSIL\Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
-        $serviceModelSinkDllPath1 = Get-ChildItem -Path $ServiceModelSinkDllParentPath1 -Filter 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
-        $serviceModelSinkDllPath2 = Get-ChildItem -Path $ServiceModelSinkDllParentPath2 -Filter 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink.dll' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
-
-        if (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -ErrorAction SilentlyContinue)
-        {
-            $vsInstance = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -Property ProductLocation -ErrorAction SilentlyContinue"
-        }
-        elseif (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -ErrorAction SilentlyContinue)
-        {
-            $vsInstance = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -Property ProductLocation -ErrorAction SilentlyContinue"
-        }
-        else
-        {
-            Out-Log "Visual Studio is not installed."
-            Out-Log "The vsdiag_regwcf.exe tool is installed by the Windows Communication Framework component of Visual Studio. It cannot run as a standalone EXE."
-            Out-Log "To install Visual Studio: https://aka.ms/vs/17/release/vs_enterprise.exe"
-            exit
-        }
-
-        if (Test-Path -Path $productLocation -PathType Leaf)
-        {
-            $vsdiagRegwcfFilePath = "$(Split-Path -Path $productLocation)\vsdiag_regwcf.exe"
-            if (Test-Path -Path $vsdiagRegwcfFilePath -PathType Leaf)
-            {
-                $timestamp = Get-Date -Format 'yyyyMMddHHmmss'
-                $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
-                Invoke-ExpressionWithLogging "Copy-Item -Path $machineConfigx64FilePath $machineConfigx64FilePath.$timestamp"
-                Invoke-ExpressionWithLogging "& '$vsdiagRegwcfFilePath' -u"
-                $result = Invoke-ExpressionWithLogging "& '$vsdiagRegwcfFilePath' -s" | Out-String -Width 4096
-                Out-Log $result -raw
-            }
-            else
-            {
-                Out-Log "File not found: $vsdiagRegwcfFilePath"
-                exit 2
-            }
-        }
-        else
-        {
-            Out-Log "File not found: $productLocation"
-            exit 2
-        }
-
-        foreach ($match in $matches){"Line $($match.LineNumber): $($match.Line)"}
-        # New-Check
-        # New-Finding
-    }
-}
-
-
-
+Get-WCFConfig
 
 if ($isAzureVM)
 {
@@ -2058,7 +2067,7 @@ if ($isAzureVM)
     $mitigation = '<a href="https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16">What is IP address 168.63.129.16?</a>'
     if ($wireserverPort80Reachable.Succeeded)
     {
-        New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'Passed' -details ''
+        New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'OK' -details ''
         Out-Log "$($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)" -color Green -endline
     }
     else
@@ -2073,7 +2082,7 @@ if ($isAzureVM)
     $description = "Wireserver endpoint 168.63.129.16:32526 reachable: $($wireserverPort32526Reachable.Succeeded) $($wireserverPort80Reachable.Error)"
     if ($wireserverPort32526Reachable.Succeeded)
     {
-        New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'Passed' -details ''
+        New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'OK' -details ''
         Out-Log $wireserverPort32526Reachable.Succeeded -color Green -endLine
     }
     else
@@ -2088,7 +2097,7 @@ if ($isAzureVM)
     $description = "IMDS endpoint 169.254.169.254:80 reachable: $($imdsReachable.Succeeded) $($imdsReachable.Error)"
     if ($imdsReachable.Succeeded)
     {
-        New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'Passed' -details ''
+        New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'OK' -details ''
         Out-Log $imdsReachable.Succeeded -color Green -endLine
     }
     else
@@ -2116,7 +2125,7 @@ if ($isAzureVM)
         {
             $imdReturnedExpectedResult = $true
             Out-Log $imdReturnedExpectedResult -color Green -endLine
-            New-Check -name 'IMDS endpoint 169.254.169.254:80 returned expected result' -result 'Passed' -details ''
+            New-Check -name 'IMDS endpoint 169.254.169.254:80 returned expected result' -result 'OK' -details ''
 
             $global:dbgMetadata = $metadata
 
@@ -2298,14 +2307,14 @@ if ($machineKeysSddl -eq $machineKeysDefaultSddl)
     $machineKeysHasDefaultPermissions = $true
     Out-Log $machineKeysHasDefaultPermissions -color Green -endLine
     $details = "$machineKeysPath folder has default NTFS permissions" # <br>SDDL: $machineKeysSddl<br>$machineKeysAccessString"
-    New-Check -name 'MachineKeys folder permissions' -result 'Passed' -details $details
+    New-Check -name 'MachineKeys folder permissions' -result 'OK' -details $details
 }
 else
 {
     $machineKeysHasDefaultPermissions = $false
     Out-Log $machineKeysHasDefaultPermissions -color Cyan -endLine
     $details = "$machineKeysPath folder does not have default NTFS permissions<br>SDDL: $machineKeysSddl<br>$machineKeysAccessString"
-    New-Check -name 'MachineKeys folder permissions' -result 'Information' -details $details
+    New-Check -name 'MachineKeys folder permissions' -result 'Info' -details $details
     $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/troubleshoot-extension-certificates-issues-windows-vm#solution-2-fix-the-access-control-list-acl-in-the-machinekeys-or-systemkeys-folders">Troubleshoot extension certificates</a>'
     New-Finding -type Information -name 'Non-default MachineKeys permissions' -description $details -mitigation $mitigation
 }
@@ -2328,14 +2337,14 @@ if ($vmAgentInstalled)
         $windowsAzureHasDefaultPermissions = $true
         Out-Log $windowsAzureHasDefaultPermissions -color Green -endLine
         $details = "$windowsAzureFolderPath folder has default NTFS permissions" # <br>SDDL: $windowsAzureSddl<br>$windowsAzureAccessString"
-        New-Check -name "$windowsAzureFolderPath permissions" -result 'Passed' -details $details
+        New-Check -name "$windowsAzureFolderPath permissions" -result 'OK' -details $details
     }
     else
     {
         $windowsAzureHasDefaultPermissions = $false
         Out-Log $windowsAzureHasDefaultPermissions -color Cyan -endLine
         $details = "$windowsAzureFolderPath does not have default NTFS permissions<br>SDDL: $windowsAzureSddl<br>$windowsAzureAccessString"
-        New-Check -name "$windowsAzureFolderPath permissions" -result 'Information' -details $details
+        New-Check -name "$windowsAzureFolderPath permissions" -result 'Info' -details $details
         $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/troubleshoot-extension-certificates-issues-windows-vm#solution-2-fix-the-access-control-list-acl-in-the-machinekeys-or-systemkeys-folders">Troubleshoot extension certificates</a>'
         New-Finding -type Information -name "Non-default $windowsAzureFolderPath permissions" -description $details -mitigation $mitigation
     }
@@ -2362,14 +2371,14 @@ if ($vmAgentInstalled)
         $packagesHasDefaultPermissions = $true
         Out-Log $packagesHasDefaultPermissions -color Green -endLine
         $details = "$packagesFolderPath folder has default NTFS permissions" # <br>SDDL: $packagesSddl<br>$packagesAccessString"
-        New-Check -name "$packagesFolderPath permissions" -result 'Passed' -details $details
+        New-Check -name "$packagesFolderPath permissions" -result 'OK' -details $details
     }
     else
     {
         $packagesHasDefaultPermissions = $false
         Out-Log $packagesHasDefaultPermissions -color Cyan -endLine
         $details = "$packagesFolderPath does not have default NTFS permissions<br>SDDL: $packagesSddl<br>$packagesAccessString"
-        New-Check -name "$packagesFolderPath permissions" -result 'Information' -details $details
+        New-Check -name "$packagesFolderPath permissions" -result 'Info' -details $details
         $mitigation = '<a href="https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/troubleshoot-extension-certificates-issues-windows-vm#solution-2-fix-the-access-control-list-acl-in-the-machinekeys-or-systemkeys-folders">Troubleshoot extension certificates</a>'
         New-Finding -type Information -name "Non-default $packagesFolderPath permissions" -description $details -mitigation $mitigation
     }
@@ -2410,7 +2419,7 @@ if ($systemDriveFreeSpaceBytes)
     {
         $details = "$($systemDriveFreeSpaceGB)GB free on system drive $systemDriveLetter"
         Out-Log $details -color Green -endLine
-        New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'Passed' -details $details
+        New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'OK' -details $details
     }
 }
 else
@@ -2560,7 +2569,7 @@ if ($winmgmt.Status -eq 'Running')
         {
             $dhcpDisabledNicsString += "Description: $($dhcpDisabledNic.Description) Alias: $($dhcpDisabledNic.Alias) Index: $($dhcpDisabledNic.Index) IpAddress: $($dhcpDisabledNic.IpAddress)"
         }
-        New-Check -name "DHCP-assigned IP addresses" -result 'Information' -details $dhcpDisabledNicsString
+        New-Check -name "DHCP-assigned IP addresses" -result 'Info' -details $dhcpDisabledNicsString
         New-Finding -type Information -name "DHCP-disabled NICs" -description $dhcpDisabledNicsString -mitigation ''
     }
     else
@@ -2568,7 +2577,7 @@ if ($winmgmt.Status -eq 'Running')
         $dhcpAssignedIpAddresses = $true
         Out-Log $dhcpAssignedIpAddresses -endLine -color Green
         $details = "All NICs have DHCP-assigned IP addresses"
-        New-Check -name "DHCP-assigned IP addresses" -result 'Passed' -details $details
+        New-Check -name "DHCP-assigned IP addresses" -result 'OK' -details $details
     }
 
     $nicsImds = New-Object System.Collections.Generic.List[Object]
@@ -2849,8 +2858,13 @@ $css = @'
             color: Black;
             text-align: left
         }
-        td.INFORMATION {
+        td.INFO {
             background: Cyan;
+            color: Black;
+            text-align: left
+        }
+        td.OK {
+            background: PaleGreen;
             color: Black;
             text-align: left
         }
@@ -2934,6 +2948,32 @@ $css = @'
           display: none;
           overflow: hidden;
           background-color: #f1f1f1;
+        }
+
+        /* Style the buttons that are used to open and close the accordion panel */
+        .accordion {
+          background-color: #eee;
+          color: #444;
+          cursor: pointer;
+          padding: 18px;
+          width: 100%;
+          text-align: left;
+          border: none;
+          outline: none;
+          transition: 0.4s;
+        }
+
+        /* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
+        .active, .accordion:hover {
+          background-color: #ccc;
+        }
+
+        /* Style the accordion panel. Note: hidden by default */
+        .panel {
+          padding: 0 18px;
+          background-color: white;
+          display: none;
+          overflow: hidden;
         }
     </style>
 </head>
@@ -3063,8 +3103,9 @@ else
 }
 
 $checksTable = $checks | Select-Object Name, Result, Details | ConvertTo-Html -Fragment -As Table
-$checksTable = $checksTable -replace '<td>Information</td>', '<td class="INFORMATION">Information</td>'
+$checksTable = $checksTable -replace '<td>Info</td>', '<td class="INFO">Info</td>'
 $checksTable = $checksTable -replace '<td>Passed</td>', '<td class="PASSED">Passed</td>'
+$checksTable = $checksTable -replace '<td>OK</td>', '<td class="OK">OK</td>'
 $checksTable = $checksTable -replace '<td>Failed</td>', '<td class="FAILED">Failed</td>'
 $checksTable = $checksTable -replace '<td>Skipped</td>', '<td class="SKIPPED">Skipped</td>'
 $global:dbgChecksTable = $checksTable
