@@ -56,7 +56,7 @@ function Get-WCFConfig
     C:\OneDrive\tools\vsdiag_regwcf.exe -u
     gc C:\Windows\Microsoft.NET\Framework64\v4.0.30319\config\machine.config | findstr /i servicemodelsink
     #>
-
+    Out-Log 'WCF debugging enabled:' -startLine
     $machineConfigx64FilePath = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\config\machine.config"
     $matches = Get-Content -Path $machineConfigx64FilePath | Select-String -SimpleMatch 'Microsoft.VisualStudio.Diagnostics.ServiceModelSink'
     if ($matches)
@@ -68,11 +68,11 @@ function Get-WCFConfig
 
         if (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -ErrorAction SilentlyContinue)
         {
-            $vsInstance = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -ErrorAction SilentlyContinue"
+            $vsInstance = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2/vs' -ErrorAction SilentlyContinue" -verboseOnly
         }
         elseif (Get-CimClass -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -ErrorAction SilentlyContinue)
         {
-            $vsInstance = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -ErrorAction SilentlyContinue"
+            $vsInstance = Invoke-ExpressionWithLogging "Get-CimInstance -ClassName 'MSFT_VSInstance' -Namespace 'root/cimv2' -ErrorAction SilentlyContinue" -verboseOnly
         }
 
         if ($vsInstance)
@@ -108,15 +108,15 @@ function Get-WCFConfig
 
         $machineConfigStrings = $matches.ToString()
         $wcfDebuggingEnabled = $true
-        Out-Log $wcfDebuggingEnabled
-        New-Check -name 'WCF debugging config' -result 'FAIL' -details 'WCF debugging is enabled'
+        Out-Log $wcfDebuggingEnabled -color Yellow -endLine
+        New-Check -name 'WCF debugging config' -result 'FAILED' -details 'WCF debugging is enabled'
         $description = "$machineConfigx64FilePath shows WCF debugging is enabled: $machineConfigStrings"
         New-Finding -type Critical -name 'WCF debugging enabled' -description $description
     }
     else
     {
         $wcfDebuggingEnabled = $false
-        Out-Log $wcfDebuggingEnabled
+        Out-Log $wcfDebuggingEnabled -color Green -endLine
         New-Check -name 'WCF debugging config' -result 'OK' -details 'WCF debugging not enabled'
     }
 }
@@ -160,12 +160,12 @@ function Get-ApplicationErrors
     {
         $applicationErrorsCount = $applicationErrors | Measure-Object | Select-Object -ExpandProperty Count
         $latestApplicationError = $applicationErrors | Sort-Object TimeCreated | Select-Object -Last 1
-        $timeCreated = Get-Date $latestApplicationError.TimeCreated -Format yyyy-MM-ddTHH:mm:ss
+        $timeCreated = Get-Date $latestApplicationError.TimeCreated -Format 'yyyy-MM-ddTHH:mm:ss'
         $id = $latestApplicationError.Id
         $message = $latestApplicationError.Message
         $description = "$applicationErrorsCount $name process errors in the last 1 day. Most recent: $timeCreated $id $message"
         New-Finding -type 'Critical' -name "$name application error" -description $description -mitigation ''
-        New-Check -name "$name process errors" -result 'Failed' -details ''
+        New-Check -name "$name process errors" -result 'FAILED' -details ''
         Out-Log $false -color Red -endLine
     }
     else
@@ -182,28 +182,29 @@ function Get-ServiceCrashes
     )
     Out-Log "$name service crashes:" -startLine
     $serviceCrashes = Get-WinEvent -FilterHashtable @{ProviderName = 'Service Control Manager'; Id = 7031,7034; StartTime = ((Get-Date).AddDays(-1))} -ErrorAction SilentlyContinue | Where-Object {$_.Message -match $name}
-    $applicationErrors = Get-WinEvent -FilterHashtable @{ProviderName = 'Application Error';Id = 1000; StartTime = ((Get-Date).AddDays(-7))} -ErrorAction SilentlyContinue | Where-Object {$_.Message -match $name}
     if ($serviceCrashes)
     {
         $serviceCrashesCount = $serviceCrashes | Measure-Object | Select-Object -ExpandProperty Count
         $latestCrash = $serviceCrashes | Sort-Object TimeCreated | Select-Object -Last 1
-        $timeCreated = Get-Date $latestApplicationError.TimeCreated -Format yyyy-MM-ddTHH:mm:ss
-        $id = $latestApplicationError.Id
-        $message = $latestApplicationError.Message
+        $timeCreated = Get-Date $latestCrash.TimeCreated -Format 'yyyy-MM-ddTHH:mm:ss'
+        $id = $latestCrash.Id
+        $message = $latestCrash.Message
         $description = "$serviceCrashesCount $name service crashes in the last 1 day. Most recent: $timeCreated $id $message"
         New-Finding -type 'Critical' -name "$name service terminated unexpectedly" -description $description -mitigation ''
-        New-Check -name "$name service crashes" -result 'Failed' -details ''
-        Out-Log $false -color Red -endLine
+        New-Check -name "$name service crashes" -result 'FAILED' -details ''
+        Out-Log $true -color Red -endLine
     }
     else
     {
         New-Check -name "$name service crashes" -result 'OK' -details "No $name service crashes in last 1 day"
-        Out-Log $true -color Green -endLine
+        Out-Log $false -color Green -endLine
     }
 }
 
 function Get-WfpFilters
 {
+    Out-Log "Getting WFP filters:" -startLine
+
     $wireserverWfpFiltersPath = "$scriptFolderPath\wireserverFilters.xml"
     $result = Invoke-ExpressionWithLogging "netsh wfp show filters dir=OUT remoteaddr=168.63.129.16 file=$wireserverWfpFiltersPath" -verboseOnly
     [xml]$wireserverWfpFilters = Get-Content -Path $wireserverWfpFiltersPath
@@ -236,12 +237,18 @@ function Get-WfpFilters
         Filters = $filters
         WireserverFilters = $wireserverFilters
     }
+
+    $filtersCount = $filters | Measure-Object | Select-Object -ExpandProperty Count
+    Out-Log "$filtersCount WPF filters" -endLine
     return $result
 }
 
 function Get-EnabledFirewallRules
 {
-    $enabledRules = Get-NetFirewallRule -Enabled True | Where-Object {$_.Direction -eq 'Inbound'}
+    Out-Log "Getting enabled Windows firewall rules: " -startLine
+    $getNetFirewallRuleDuration = Measure-Command {$enabledRules = Get-NetFirewallRule -Enabled True | Where-Object {$_.Direction -eq 'Inbound'}}
+
+    $getNetFirewallPortFilterStartTime = Get-Date
 
     foreach ($enabledRule in $enabledRules)
     {
@@ -252,6 +259,8 @@ function Get-EnabledFirewallRules
         $enabledRule | Add-Member -MemberType NoteProperty -Name IcmpType -Value $portFilter.IcmpType
         $enabledRule | Add-Member -MemberType NoteProperty -Name DynamicTarget -Value $portFilter.DynamicTarget
     }
+    $getNetFirewallPortFilterEndTime = Get-Date
+    $getNetFirewallPortFilterDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f (New-TimeSpan -Start $getNetFirewallPortFilterStartTime -End $getNetFirewallPortFilterEndTime)
 
     $enabledInboundFirewallRules = $enabledRules | Where-Object {$_.Direction -eq 'Inbound'} | Select-Object DisplayName,Profile,Action,Protocol,LocalPort,RemotePort,IcmpType,DynamicTarget | Sort-Object DisplayName
     $enabledOutboundFirewallRules = $enabledRules | Where-Object {$_.Direction -eq 'Outbound'} | Select-Object DisplayName,Profile,Action,Protocol,LocalPort,RemotePort,IcmpType,DynamicTarget | Sort-Object DisplayName
@@ -259,6 +268,13 @@ function Get-EnabledFirewallRules
         Inbound = $enabledInboundFirewallRules
         Outbound = $enabledOutboundFirewallRules
     }
+
+    $enabledFirewallRulesCount = $enabledRules | Measure-Object | Select-Object -ExpandProperty Count
+    $enabledInboundFirewallRulesCount = $enabledInboundFirewallRules | Measure-Object | Select-Object -ExpandProperty Count
+    $enabledOutboundFirewallRulesCount = $enabledOutboundFirewallRules | Measure-Object | Select-Object -ExpandProperty Count
+    Out-Log "$enabledFirewallRulesCount enabled Windows firewall rules ($enabledInboundFirewallRulesCount inbound, $enabledOutboundFirewallRulesCount outbound)" -endLine
+    Out-Log "Get-NetFirewallRule duration: $('{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f $getNetFirewallRuleDuration)" -verboseOnly
+    Out-Log "Get-NetFirewallPortFilter duration: $getNetFirewallPortFilterDuration" -verboseOnly
     return $enabledFirewallRules
 }
 
@@ -292,28 +308,36 @@ function Get-ThirdPartyLoadedModules
     )
     $microsoftWindowsProductionPCA2011 = 'CN=Microsoft Windows Production PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US'
     Out-Log "Third-party modules in $($processName):" -startLine
-    $process = Get-Process -Name WaAppAgent -ErrorAction SilentlyContinue
-    if ($process)
+    if ($isVMAgentInstalled)
     {
-        $processThirdPartyModules = $process | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
-        if ($processThirdPartyModules)
+        $process = Get-Process -Name WaAppAgent -ErrorAction SilentlyContinue
+        if ($process)
         {
-            foreach ($processThirdPartyModule in $processThirdPartyModules)
-            {
-                $filePath = $processThirdPartyModule.FileName
-                $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath" -verboseOnly
-                $issuer = $signature.SignerCertificate.Issuer
-                if ($issuer -eq $microsoftWindowsProductionPCA2011)
-                {
-                    $processThirdPartyModules = $processThirdPartyModules | Where-Object {$_.FileName -ne $filePath}
-                }
-            }
+            $processThirdPartyModules = $process | Select-Object -ExpandProperty modules | Where-Object Company -NE 'Microsoft Corporation' | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company
             if ($processThirdPartyModules)
             {
-                $details = "$($($processThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
-                New-Check -name "Third-party modules in $processName" -result 'Info' -details $details
-                Out-Log $true -endLine -color Cyan
-                New-Finding -type Information -name "Third-party modules in $processName" -description $details -mitigation ''
+                foreach ($processThirdPartyModule in $processThirdPartyModules)
+                {
+                    $filePath = $processThirdPartyModule.FileName
+                    $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath" -verboseOnly
+                    $issuer = $signature.SignerCertificate.Issuer
+                    if ($issuer -eq $microsoftWindowsProductionPCA2011)
+                    {
+                        $processThirdPartyModules = $processThirdPartyModules | Where-Object {$_.FileName -ne $filePath}
+                    }
+                }
+                if ($processThirdPartyModules)
+                {
+                    $details = "$($($processThirdPartyModules.ModuleName -join ',').TrimEnd(','))"
+                    New-Check -name "Third-party modules in $processName" -result 'Info' -details $details
+                    Out-Log $true -endLine -color Cyan
+                    New-Finding -type Information -name "Third-party modules in $processName" -description $details -mitigation ''
+                }
+                else
+                {
+                    New-Check -name "Third-party modules in $processName" -result 'OK' -details "No third-party modules in $processName"
+                    Out-Log $false -endLine -color Green
+                }
             }
             else
             {
@@ -323,15 +347,15 @@ function Get-ThirdPartyLoadedModules
         }
         else
         {
-            New-Check -name "Third-party modules in $processName" -result 'OK' -details "No third-party modules in $processName"
-            Out-Log $false -endLine -color Green
+            $details = "$processName process not running"
+            New-Check -name "Third-party modules in $processName" -result 'Info' -details $details
+            Out-Log $details -color Cyan -endLine
         }
     }
     else
     {
-        $details = "$processName process not running"
-        New-Check -name "Third-party modules in $processName" -result 'Info' -details $details
-        Out-Log $details -color Cyan -endLine
+        New-Check -name "Third-party modules in $processName" -result 'SKIPPED' -details "Skipped (VM agent installed: $isVMAgentInstalled)"
+        Out-Log "Skipped (VM agent installed: $isVMAgentInstalled)" -endLine
     }
 }
 
@@ -495,7 +519,7 @@ function Get-ServiceChecks
 
             if ($isInstalled -eq $false)
             {
-                New-Check -name "$name service" -result 'Failed' -details "$name service is not installed"
+                New-Check -name "$name service" -result 'FAILED' -details "$name service is not installed"
                 New-Finding -type 'Critical' -name "$name service is not installed" -description '' -mitigation ''
                 Out-Log 'Not Installed' -color Red -endLine
             }
@@ -506,19 +530,19 @@ function Get-ServiceChecks
             }
             elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $true -and $isExpectedStartType -eq $false)
             {
-                New-Check -name "$name service" -result 'Failed' -details $details
+                New-Check -name "$name service" -result 'FAILED' -details $details
                 New-Finding -type 'Warning' -name "$name service start type $startType (expected: $expectedStartType)" -description '' -mitigation ''
                 Out-Log "Status: $status (expected $expectedStatus) StartType: $startType (expected $expectedStartType)" -color Red -endLine
             }
             elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $false -and $isExpectedStartType -eq $true)
             {
-                New-Check -name "$name service" -result 'Failed' -details $details
+                New-Check -name "$name service" -result 'FAILED' -details $details
                 New-Finding -type 'Critical' -name "$name service status $status (expected: $expectedStatus)" -description '' -mitigation ''
                 Out-Log "Status: $status (expected $expectedStatus) StartType: $startType (expected $expectedStartType)" -color Red -endLine
             }
             elseif ($isInstalled -eq $true -and $isExpectedStatus -eq $false -and $isExpectedStartType -eq $false)
             {
-                New-Check -name "$name service" -result 'Failed' -details $details
+                New-Check -name "$name service" -result 'FAILED' -details $details
                 New-Finding -type 'Critical' -name "$name service status $status (expected: $expectedStatus)" -description '' -mitigation ''
                 Out-Log "Status: $status (expected $expectedStatus) StartType: $startType (expected $expectedStartType)" -color Red -endLine
             }
@@ -532,14 +556,14 @@ function Get-ServiceChecks
             if ($actualImagePath)
             {
                 $details = "ImagePath registry value is incorrect"
-                New-Check -name "$name service" -result 'Failed' -details $details
+                New-Check -name "$name service" -result 'FAILED' -details $details
                 $description = "HKLM:\SYSTEM\CurrentControlSet\Services\$name\ImagePath is '$imagePath' but actual location of $imageName is '$actualImagePath'"
                 New-Finding -type 'Critical' -name "$name service ImagePath registry value is incorrect" -description $description -mitigation ''
                 Out-Log 'Not Installed' -color Red -endLine
             }
             else
             {
-                New-Check -name "$name service" -result 'Failed' -details "$name service is not installed"
+                New-Check -name "$name service" -result 'FAILED' -details "$name service is not installed"
                 New-Finding -type 'Critical' -name "$name service is not installed" -description '' -mitigation ''
                 Out-Log 'Not Installed' -color Red -endLine
             }
@@ -547,7 +571,7 @@ function Get-ServiceChecks
     }
     else
     {
-        New-Check -name "$name service" -result 'Failed' -details "$name service is not installed"
+        New-Check -name "$name service" -result 'FAILED' -details "$name service is not installed"
         New-Finding -type 'Critical' -name "$name service is not installed" -description '' -mitigation ''
         Out-Log 'Not Installed' -color Red -endLine
     }
@@ -905,7 +929,7 @@ function New-Check
 {
     param(
         [string]$name,
-        [ValidateSet('OK','FAIL','SKIPPED')]
+        [ValidateSet('OK','FAILED','SKIPPED')]
         [string]$result,
         [string]$details
     )
@@ -1532,7 +1556,7 @@ Out-Log "Hyper-V Guest: $isHyperVGuest"
 if ($isHyperVGuest)
 {
     $isAzureVM = Confirm-AzureVM
-    Out-Log "isAzureVM: $isAzureVM"
+    Out-Log "Azure VM: $isAzureVM"
 }
 else
 {
@@ -1571,7 +1595,7 @@ if ($isAzureVM)
         }
         else
         {
-            New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'Failed' -details ''
+            New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'FAILED' -details ''
             $windowsAzureGuestAgentExe = $false
             Out-Log $windowsAzureGuestAgentExeExists -color Red -endLine
         }
@@ -1587,7 +1611,7 @@ if ($isAzureVM)
         }
         else
         {
-            New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'Failed' -details ''
+            New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'FAILED' -details ''
             $waAppAgentExeExists = $false
             Out-Log $waAppAgentExeExists -color Red -endLine
         }
@@ -1595,23 +1619,23 @@ if ($isAzureVM)
     else
     {
         $windowsAzureFolderExists = $false
-        New-Check -name "$windowsAzureFolderPath folder exists" -result 'Failed' -details ''
+        New-Check -name "$windowsAzureFolderPath folder exists" -result 'FAILED' -details ''
         Out-Log $windowsAzureFolderExists -color Red -endLine
     }
 }
 else
 {
     $windowsAzureFolderExists = $false
-    Out-Log "$windowsAzureFolderPath folder exists: Skipped (not an Azure VM)"
-    New-Check -name "$windowsAzureFolderPath folder exists" -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log "$windowsAzureFolderPath folder exists: Skipped (Azure VM: $isAzureVM)"
+    New-Check -name "$windowsAzureFolderPath folder exists" -result 'Skipped' -details "Azure VM: $isAzureVM"
 
     $windowsAzureGuestAgentExe = $false
-    Out-Log "WindowsAzureGuestAgent.exe exists in $($windowsAzureFolderPath): Skipped (not an Azure VM)"
-    New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log "WindowsAzureGuestAgent.exe exists in $($windowsAzureFolderPath): Skipped (Azure VM: $isAzureVM)"
+    New-Check -name "WindowsAzureGuestAgent.exe exists in $windowsAzureFolderPath" -result 'Skipped' -details "Azure VM: $isAzureVM"
 
     $waAppAgentExeExists = $false
-    Out-Log "WaAppAgent.exe exists in $($windowsAzureFolderPath): Skipped (Not an Azure VM)"
-    New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log "WaAppAgent.exe exists in $($windowsAzureFolderPath): Skipped (Azure VM: $isAzureVM)"
+    New-Check -name "WaAppAgent.exe exists in $windowsAzureFolderPath" -result 'Skipped' -details "Azure VM: $isAzureVM"
 }
 
 Add-Type -TypeDefinition @'
@@ -1670,11 +1694,11 @@ if ($isAzureVM)
 }
 else
 {
-    Out-Log 'RdAgent service: Skipped (not an Azure VM)'
-    New-Check -name "RdAgent service" -result 'Skipped' -details "Not an Azure VM"
+    Out-Log "RdAgent service: Skipped (Azure VM: $isAzureVM)"
+    New-Check -name "RdAgent service" -result 'Skipped' -details "Azure VM: $isAzureVM"
 
-    Out-Log 'WindowsAzureGuestAgent service: Skipped (not an Azure VM)'
-    New-Check -name "WindowsAzureGuestAgent service" -result 'Skipped' -details "Not an Azure VM"
+    Out-Log "WindowsAzureGuestAgent service: Skipped (Azure VM: $isAzureVM)"
+    New-Check -name "WindowsAzureGuestAgent service" -result 'Skipped' -details "Azure VM: $isAzureVM"
 }
 $winmgmt = Get-ServiceChecks -name 'Winmgmt' -expectedStatus 'Running' -expectedStartType 'Automatic'
 $keyiso = Get-ServiceChecks -name 'Keyiso' -expectedStatus 'Running' -expectedStartType 'Manual'
@@ -1688,17 +1712,17 @@ if ($isAzureVM)
 }
 else
 {
-    Out-Log 'RdAgent service crashes: Skipped (not an Azure VM)'
-    New-Check -name 'RdAgent service crashes' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log "RdAgent service crashes: Skipped (Azure VM: $isAzureVM)"
+    New-Check -name 'RdAgent service crashes' -result 'Skipped' -details "Azure VM: $isAzureVM"
 
-    Out-Log 'Windows Azure Guest Agent service crashes: Skipped (not an Azure VM)'
-    New-Check -name 'Windows Azure Guest Agent service crashes' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log "Windows Azure Guest Agent service crashes: Skipped (Azure VM: $isAzureVM)"
+    New-Check -name 'Windows Azure Guest Agent service crashes' -result 'Skipped' -details "Azure VM: $isAzureVM"
 
-    Out-Log 'WaAppAgent application errors: Skipped (not an Azure VM)'
-    New-Check -name 'WaAppAgent application errors' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log "WaAppAgent application errors: Skipped (Azure VM: $isAzureVM)"
+    New-Check -name 'WaAppAgent application errors' -result 'Skipped' -details "Azure VM: $isAzureVM"
 
-    Out-Log 'WindowsAzureGuestAgent application errors: Skipped (not an Azure VM)'
-    New-Check -name 'WindowsAzureGuestAgent application errors' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log "WindowsAzureGuestAgent application errors: Skipped (Azure VM: $isAzureVM)"
+    New-Check -name 'WindowsAzureGuestAgent application errors' -result 'Skipped' -details "Azure VM: $isAzureVM"
 }
 
 Out-Log 'StdRegProv WMI class queryable:' -startLine
@@ -1717,7 +1741,7 @@ if ($winmgmt.Status -eq 'Running')
     {
         $stdRegProvQuerySuccess = $false
         Out-Log $stdRegProvQuerySuccess -color Red -endLine
-        New-Check -name 'StdRegProv WMI class queryable' -result 'Failed' -details ''
+        New-Check -name 'StdRegProv WMI class queryable' -result 'FAILED' -details ''
         $description = "StdRegProv WMI class query failed with error code $wmicExitCode"
         New-Finding -type Critical -name 'StdRegProv WMI class query failed' -description $description -mitigation ''
     }
@@ -1737,21 +1761,21 @@ if ($isAzureVM)
     $detailsSuffix = "$windowsAzureFolderPath exists: $([bool]$windowsAzureFolder), WaAppAgent.exe in $($windowsAzureFolderPath): $([bool]$waAppAgentExe), WindowsAzureGuestAgent.exe in $($windowsAzureFolderPath): $([bool]$windowsAzureGuestAgentExe), RdAgent service installed: $([bool]$rdagent), WindowsAzureGuestAgent service installed: $([bool]$windowsAzureGuestAgent)"
     if ([bool]$windowsAzureFolder -and [bool]$rdagent -and [bool]$windowsAzureGuestAgent -and [bool]$waAppAgentExe -and [bool]$windowsAzureGuestAgentExe)
     {
-        $vmAgentInstalled = $true
+        $isVMAgentInstalled = $true
         $details = "VM agent is installed ($detailsSuffix)"
         New-Check -name 'VM agent installed' -result 'OK' -details $details
-        Out-Log $vmAgentInstalled -color Green -endLine
+        Out-Log $isVMAgentInstalled -color Green -endLine
     }
     else
     {
-        $vmAgentInstalled = $false
+        $isVMAgentInstalled = $false
         $details = "VM agent is not installed ($detailsSuffix)"
-        New-Check -name 'VM agent installed' -result 'Failed' -details $details
-        Out-Log $vmAgentInstalled -color Red -endLine
+        New-Check -name 'VM agent installed' -result 'FAILED' -details $details
+        Out-Log $isVMAgentInstalled -color Red -endLine
         New-Finding -type Critical -Name 'VM agent not installed' -description $details -mitigation ''
     }
 
-    if ($vmAgentInstalled)
+    if ($isVMAgentInstalled)
     {
         Out-Log 'VM agent installed by provisioning agent or Windows Installer package (MSI):' -startLine
         $uninstallKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'
@@ -1775,17 +1799,17 @@ if ($isAzureVM)
 }
 else
 {
-    $vmAgentInstalled = $false
+    $isVMAgentInstalled = $false
 
-    Out-Log 'VM agent installed: Skipped (not an Azure VM)'
-    New-Check -name 'VM agent installed' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log "VM agent installed: Skipped (Azure VM: $isAzureVM)"
+    New-Check -name 'VM agent installed' -result 'Skipped' -details "Azure VM: $isAzureVM"
 
-    Out-Log 'VM agent installed by provisioning agent or Windows Installer package (MSI): Skipped (not an Azure VM)'
-    New-Check -name 'VM agent installed by provisioning agent' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log "VM agent installed by provisioning agent or Windows Installer package (MSI): Skipped (Azure VM: $isAzureVM)"
+    New-Check -name 'VM agent installed by provisioning agent' -result 'Skipped' -details "Azure VM: $isAzureVM"
 }
 
 Out-Log 'VM agent is supported version:' -startLine
-if ($vmAgentInstalled)
+if ($isVMAgentInstalled)
 {
     $guestKeyPath = 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest'
     $guestKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
@@ -1811,20 +1835,20 @@ if ($vmAgentInstalled)
         }
         else
         {
-            New-Check -name 'VM agent is supported version' -result 'Failed' -details "Installed version: $guestKeyGuestAgentVersion, minimum supported version: $minSupportedGuestAgentVersion"
+            New-Check -name 'VM agent is supported version' -result 'FAILED' -details "Installed version: $guestKeyGuestAgentVersion, minimum supported version: $minSupportedGuestAgentVersion"
             Out-Log "$isAtLeastMinSupportedVersion (installed: $guestKeyGuestAgentVersion, minimum supported: $minSupportedGuestAgentVersion)" -color Red -endLine
         }
     }
 }
 else
 {
-    $details = "Skipped (VM agent not installed)"
+    $details = "Skipped (VM agent installed: $isVMAgentInstalled)"
     New-Check -name 'VM agent is supported version' -result 'Skipped' -details $details
     $isAtLeastMinSupportedVersion = $false
     Out-Log $details -endLine
 }
 
-if ($vmAgentInstalled)
+if ($isVMAgentInstalled)
 {
     $guestAgentKeyPath = 'HKLM:\SOFTWARE\Microsoft\GuestAgent'
     $guestAgentKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$guestAgentKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
@@ -2010,18 +2034,18 @@ else
 }
 
 Out-Log 'TenantEncryptionCert installed:' -startLine
-if ($vmAgentInstalled)
+if ($isVMAgentInstalled)
 {
-    $tenantEncryptionCert = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object {$_.FriendlyName -eq 'TenantEncryptionCert' -and $_.Issuer -eq 'DC=Windows Azure CRP Certificate Generator' -and $_.Subject -eq 'DC=Windows Azure CRP Certificate Generator'}
+    $tenantEncryptionCert = Get-ChildItem -Path 'Cert:\LocalMachine\My' | Where-Object {$_.FriendlyName -eq 'TenantEncryptionCert' -and $_.Issuer -eq 'DC=Windows Azure CRP Certificate Generator' -and $_.Subject -eq 'DC=Windows Azure CRP Certificate Generator'}
     if ($tenantEncryptionCert)
     {
         $tenantEncryptionCertInstalled = $true
         Out-Log $tenantEncryptionCertInstalled -color Green -endLine
         $subject = $tenantEncryptionCert.Subject
         $issuer =  $tenantEncryptionCert.Issuer
-        $effective = Get-Date -Date $tenantEncryptionCert.NotBefore.ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
-        $expires = Get-Date -Date $tenantEncryptionCert.NotAfter.ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
-        $now = Get-Date -Date (Get-Date).ToUniversalTime() -Format yyyy-MM-ddTHH:mm:ssZ
+        $effective = Get-Date -Date $tenantEncryptionCert.NotBefore.ToUniversalTime() -Format 'yyyy-MM-ddTHH:mm:ssZ'
+        $expires = Get-Date -Date $tenantEncryptionCert.NotAfter.ToUniversalTime() -Format 'yyyy-MM-ddTHH:mm:ssZ'
+        $now = Get-Date -Date (Get-Date).ToUniversalTime() -Format 'yyyy-MM-ddTHH:mm:ssZ'
         New-Check -name 'TenantEncryptionCert installed' -result 'OK' -details "Subject: $subject Issuer: $issuer"
 
         Out-Log 'TenantEncryptionCert within validity period:' -startLine
@@ -2035,20 +2059,20 @@ if ($vmAgentInstalled)
         {
             $tenantEncryptionCertWithinValidityPeriod = $false
             Out-Log $tenantEncryptionCertWithinValidityPeriod -color Red -endLine
-            New-Check -name 'TenantEncryptionCert within validity period' -result 'Failed' -details "Now: $now Effective: $effective Expires: $expires"
+            New-Check -name 'TenantEncryptionCert within validity period' -result 'FAILED' -details "Now: $now Effective: $effective Expires: $expires"
             New-Finding -type Critical -name 'TenantEncryptionCert not within validity period' -description "Now: $now Effective: $effective Expires: $expires" -mitigation $mitigation
         }
     }
     else
     {
-        New-Check -name 'TenantEncryptionCert installed' -result 'Failed' -details ''
+        New-Check -name 'TenantEncryptionCert installed' -result 'FAILED' -details ''
         New-Finding -type Critical -name 'TenantEncryptionCert not installed' -description '' -mitigation ''
         Out-Log $false -color Red -endLine
     }
 }
 else
 {
-    $details = "Skipped (VM agent not installed)"
+    $details = "Skipped (VM agent installed: $isVMAgentInstalled)"
     New-Check -name 'TenantEncryptionCert installed' -result 'Skipped' -details $details
     Out-Log $details -endLine
 }
@@ -2072,7 +2096,7 @@ if ($isAzureVM)
     }
     else
     {
-        New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'Failed' -details ''
+        New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'FAILED' -details ''
         Out-Log $wireserverPort80Reachable.Succeeded -color Red -endLine
         New-Finding -type Critical -name 'Wireserver endpoint 168.63.129.16:80 not reachable' -description $description -mitigation $mitigation
     }
@@ -2087,7 +2111,7 @@ if ($isAzureVM)
     }
     else
     {
-        New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'Failed' -details ''
+        New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'FAILED' -details ''
         Out-Log "$($wireserverPort32526Reachable.Succeeded) $($wireserverPort80Reachable.Error)" -color Red -endLine
         New-Finding -type Critical -name 'Wireserver endpoint 168.63.129.16:32526 not reachable' -description $description -mitigation $mitigation
     }
@@ -2102,7 +2126,7 @@ if ($isAzureVM)
     }
     else
     {
-        New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'Failed' -details ''
+        New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'FAILED' -details ''
         Out-Log "$($imdsReachable.Succeeded) $($imdsReachable.Error)" -color Red -endLine
         New-Finding -type Information -name 'IMDS endpoint 169.254.169.254:80 not reachable' -description $description
     }
@@ -2204,7 +2228,7 @@ if ($isAzureVM)
         {
             $imdReturnedExpectedResult = $false
             Out-Log $imdReturnedExpectedResult -color Red -endLine
-            New-Check -name 'IMDS endpoint 169.254.169.254:80 returned expected result' -result 'Failed' -details ''
+            New-Check -name 'IMDS endpoint 169.254.169.254:80 returned expected result' -result 'FAILED' -details ''
         }
     }
 
@@ -2269,7 +2293,7 @@ if ($isAzureVM)
         $inVMGoalStateMetaData = $extensions.InVMGoalStateMetaData
     }
 
-    if ($vmAgentInstalled)
+    if ($isVMAgentInstalled)
     {
         Get-ThirdPartyLoadedModules -processName 'WaAppAgent'
         Get-ThirdPartyLoadedModules -processName 'WindowsAzureGuestAgent'
@@ -2277,17 +2301,23 @@ if ($isAzureVM)
 }
 else
 {
-    Out-Log 'Wireserver endpoint 168.63.129.16:80 reachable: Skipped (not an Azure VM)'
-    New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'Skipped' -details 'Not an Azure VM'
+    New-Check -name "Third-party modules in WaAppAgent" -result 'SKIPPED' -details "Skipped (VM agent installed: $isVMAgentInstalled)"
+    Out-Log "Third-party modules in WaAppAgent: Skipped (VM agent installed: $isVMAgentInstalled)"
 
-    Out-Log 'Wireserver endpoint 168.63.129.16:32526 reachable: Skipped (not an Azure VM)'
-    New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'Skipped' -details 'Not an Azure VM'
+    New-Check -name "Third-party modules in WindowsAzureGuestAgent" -result 'SKIPPED' -details "Skipped (VM agent installed: $isVMAgentInstalled)"
+    Out-Log "Third-party modules in WindowsAzureGuestAgent: Skipped (VM agent installed: $isVMAgentInstalled)"
 
-    Out-Log 'IMDS endpoint 169.254.169.254:80 reachable: Skipped (not an Azure VM)'
-    New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log "Wireserver endpoint 168.63.129.16:80 reachable: Skipped (Azure VM: $isAzureVM)"
+    New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'Skipped' -details "Azure VM: $isAzureVM"
 
-    Out-Log 'IMDS endpoint 169.254.169.254:80 returned expected result: Skipped (not an Azure VM)'
-    New-Check -name 'IMDS endpoint 169.254.169.254:80 returned expected result' -result 'Skipped' -details 'Not an Azure VM'
+    Out-Log "Wireserver endpoint 168.63.129.16:32526 reachable: Skipped (Azure VM: $isAzureVM)"
+    New-Check -name 'Wireserver endpoint 168.63.129.16:32526 reachable' -result 'Skipped' -details "Azure VM: $isAzureVM"
+
+    Out-Log "IMDS endpoint 169.254.169.254:80 reachable: Skipped (Azure VM: $isAzureVM)"
+    New-Check -name 'IMDS endpoint 169.254.169.254:80 reachable' -result 'Skipped' -details "Azure VM: $isAzureVM"
+
+    Out-Log "IMDS endpoint 169.254.169.254:80 returned expected result: Skipped (Azure VM: $isAzureVM)"
+    New-Check -name 'IMDS endpoint 169.254.169.254:80 returned expected result' -result 'Skipped' -details "Azure VM: $isAzureVM"
 }
 
 $enabledFirewallRules = Get-EnabledFirewallRules
@@ -2324,7 +2354,7 @@ else
 # (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders.
 # If GA fails to remove/set the permission, it can't proceed further.
 Out-Log "$windowsAzureFolderPath folder has default permissions:" -startLine
-if ($vmAgentInstalled)
+if ($isVMAgentInstalled)
 {
     $windowsAzureDefaultSddl = 'O:SYG:SYD:PAI(A;OICI;0x1200a9;;;WD)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'
     $windowsAzureAcl = Get-Acl -Path $windowsAzureFolderPath
@@ -2351,14 +2381,14 @@ if ($vmAgentInstalled)
 }
 else
 {
-    $details = "Skipped (VM agent not installed)"
+    $details = "Skipped (VM agent installed: $isVMAgentInstalled)"
     New-Check -name "$windowsAzureFolderPath permissions" -result 'Skipped' -details $details
     Out-Log $details -endLine
 }
 
 $packagesFolderPath = "$env:SystemDrive\Packages"
 Out-Log "$packagesFolderPath folder has default permissions:" -startLine
-if ($vmAgentInstalled)
+if ($isVMAgentInstalled)
 {
     $packagesDefaultSddl = 'O:BAG:SYD:PAI(A;OICI;0x1200a9;;;WD)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'
     $packagesAcl = Get-Acl -Path $packagesFolderPath
@@ -2385,7 +2415,7 @@ if ($vmAgentInstalled)
 }
 else
 {
-    $details = "Skipped (VM agent not installed)"
+    $details = "Skipped (VM agent installed: $isVMAgentInstalled)"
     New-Check -name "$packagesFolderPath permissions" -result 'Skipped' -details $details
     Out-Log $details -endLine
 }
@@ -2405,7 +2435,7 @@ if ($systemDriveFreeSpaceBytes)
     {
         $details = "<100MB free ($($systemDriveFreeSpaceMB)MB free) on drive $systemDriveLetter"
         Out-Log $false -color Red -endLine
-        New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'Failed' -details $details
+        New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'FAILED' -details $details
         New-Finding -type Critical -name "System drive low disk space" -description $details -mitigation ''
     }
     elseif ($systemDriveFreeSpaceGB -lt 1)

@@ -1296,7 +1296,7 @@
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{f5093a02-7f29-40ce-a43d-e6348025fe54}</filterKey>
+			<filterKey>{b237cacb-caee-4a04-a0f7-131129d1a500}</filterKey>
 			<displayData>
 				<name>Internet Connection Sharing (DHCPv4-In)</name>
 				<description>Inbound rule for Internet Connection Sharing to allow use of the IPv4 DHCP Server. [UDP 68]</description>
@@ -1304,8 +1304,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>ad17000000000000</data>
-				<asString>........</asString>
+				<data>b128000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1364,14 +1364,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202209</filterId>
+			<filterId>224155</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529144642964553728</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{370d4a22-b259-422f-b05e-eb8039594edf}</filterKey>
+			<filterKey>{d8e4ffff-c9a5-43f0-9689-7b3fd71e61b5}</filterKey>
 			<displayData>
 				<name>Internet Connection Sharing (DHCP Server-In)</name>
 				<description>Inbound rule for Internet Connection Sharing to allow use of the IPv4 DHCP Server. [UDP 67]</description>
@@ -1379,8 +1379,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>ac17000000000000</data>
-				<asString>........</asString>
+				<data>b028000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1439,14 +1439,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202203</filterId>
+			<filterId>224149</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529144642964553728</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{3cd38612-952e-4a08-a8fe-39b86f934d18}</filterKey>
+			<filterKey>{cd629835-0e86-4783-8879-def6711c1f89}</filterKey>
 			<displayData>
 				<name>HNS Container Networking - DNS (UDP-In) - C08CB7B8-9B3C-408E-8E30-5E16A3AEB445 - 0</name>
 				<description>HNS Container Networking - DNS (UDP-In) - C08CB7B8-9B3C-408E-8E30-5E16A3AEB445 - 0</description>
@@ -1454,8 +1454,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a517000000000000</data>
-				<asString>........</asString>
+				<data>a928000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1495,148 +1495,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202173</filterId>
+			<filterId>224119</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529144539885338624</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{cf6c09b4-2f5a-4231-8514-00c7c363cf88}</filterKey>
-			<displayData>
-				<name>Core Networking - Teredo (UDP-In)</name>
-				<description>Inbound UDP rule to allow Teredo edge traversal, a technology that provides address assignment and automatic tunneling for unicast IPv6 traffic when an IPv6/IPv4 host is located behind an IPv4 network address translator.</description>
-			</displayData>
-			<flags/>
-			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
-			<providerData>
-				<data>ea17000000000000</data>
-				<asString>........</asString>
-			</providerData>
-			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
-			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
-			<weight>
-				<type>FWP_UINT8</type>
-				<uint8>9</uint8>
-			</weight>
-			<filterCondition numItems="4">
-				<item>
-					<fieldKey>FWPM_CONDITION_ALE_APP_ID</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_BYTE_BLOB_TYPE</type>
-						<byteBlob>
-							<data>5c006400650076006900630065005c0068006100720064006400690073006b0076006f006c0075006d00650033005c00770069006e0064006f00770073005c00730079007300740065006d00330032005c0073007600630068006f00730074002e006500780065000000</data>
-							<asString>\device\harddiskvolume3\windows\system32\svchost.exe</asString>
-						</byteBlob>
-					</conditionValue>
-				</item>
-				<item>
-					<fieldKey>FWPM_CONDITION_ALE_USER_ID</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_SECURITY_DESCRIPTOR_TYPE</type>
-						<sd>O:SYG:SYD:(A;;CCRC;;;S-1-5-80-62724632-2456781206-3863850748-1496050881-1042387526)</sd>
-					</conditionValue>
-				</item>
-				<item>
-					<fieldKey>FWPM_CONDITION_IP_LOCAL_PORT</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_UINT16</type>
-						<uint16>3544</uint16>
-					</conditionValue>
-				</item>
-				<item>
-					<fieldKey>FWPM_CONDITION_IP_PROTOCOL</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_UINT8</type>
-						<uint8>17</uint8>
-					</conditionValue>
-				</item>
-			</filterCondition>
-			<action>
-				<type>FWP_ACTION_PERMIT</type>
-				<filterType/>
-			</action>
-			<rawContext>0</rawContext>
-			<reserved/>
-			<filterId>202611</filterId>
-			<effectiveWeight>
-				<type>FWP_UINT64</type>
-				<uint64>11529003905476198400</uint64>
-			</effectiveWeight>
-		</item>
-		<item>
-			<filterKey>{d234b74a-deca-44eb-b947-637d0a27bf3b}</filterKey>
-			<displayData>
-				<name>Core Networking - Teredo (UDP-In)</name>
-				<description>Inbound UDP rule to allow Teredo edge traversal, a technology that provides address assignment and automatic tunneling for unicast IPv6 traffic when an IPv6/IPv4 host is located behind an IPv4 network address translator.</description>
-			</displayData>
-			<flags/>
-			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
-			<providerData>
-				<data>ea17000000000000</data>
-				<asString>........</asString>
-			</providerData>
-			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
-			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
-			<weight>
-				<type>FWP_UINT8</type>
-				<uint8>9</uint8>
-			</weight>
-			<filterCondition numItems="4">
-				<item>
-					<fieldKey>FWPM_CONDITION_ALE_APP_ID</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_BYTE_BLOB_TYPE</type>
-						<byteBlob>
-							<data>5c006400650076006900630065005c0068006100720064006400690073006b0076006f006c0075006d00650033005c00770069006e0064006f00770073005c00730079007300740065006d00330032005c0073007600630068006f00730074002e006500780065000000</data>
-							<asString>\device\harddiskvolume3\windows\system32\svchost.exe</asString>
-						</byteBlob>
-					</conditionValue>
-				</item>
-				<item>
-					<fieldKey>FWPM_CONDITION_ALE_USER_ID</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_SECURITY_DESCRIPTOR_TYPE</type>
-						<sd>O:SYG:SYD:(A;;CCRC;;;S-1-5-80-62724632-2456781206-3863850748-1496050881-1042387526)</sd>
-					</conditionValue>
-				</item>
-				<item>
-					<fieldKey>FWPM_CONDITION_IP_LOCAL_PORT</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_UINT16</type>
-						<uint16>56137</uint16>
-					</conditionValue>
-				</item>
-				<item>
-					<fieldKey>FWPM_CONDITION_IP_PROTOCOL</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_UINT8</type>
-						<uint8>17</uint8>
-					</conditionValue>
-				</item>
-			</filterCondition>
-			<action>
-				<type>FWP_ACTION_PERMIT</type>
-				<filterType/>
-			</action>
-			<rawContext>0</rawContext>
-			<reserved/>
-			<filterId>202609</filterId>
-			<effectiveWeight>
-				<type>FWP_UINT64</type>
-				<uint64>11529003905476198400</uint64>
-			</effectiveWeight>
-		</item>
-		<item>
-			<filterKey>{9ba40046-0dee-46e3-adf2-f99a906eba11}</filterKey>
+			<filterKey>{90daeecc-c74e-4167-a618-2e09c54fa156}</filterKey>
 			<displayData>
 				<name>Network Discovery (LLMNR-UDP-In)</name>
 				<description>Inbound rule for Network Discovery to allow Link Local Multicast Name Resolution. [UDP 5355]</description>
@@ -1644,8 +1510,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a417000000000000</data>
-				<asString>........</asString>
+				<data>a828000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1696,14 +1562,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202167</filterId>
+			<filterId>224113</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{9d2f26c5-4627-48d6-801e-39e3cea7ed88}</filterKey>
+			<filterKey>{6ddf37f6-c6b1-4014-bf24-87dd30c57ad5}</filterKey>
 			<displayData>
 				<name>Network Discovery (SSDP-In)</name>
 				<description>Inbound rule for Network Discovery to allow use of the Simple Service Discovery Protocol. [UDP 1900]</description>
@@ -1711,8 +1577,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a317000000000000</data>
-				<asString>........</asString>
+				<data>a728000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1763,14 +1629,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202161</filterId>
+			<filterId>224107</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{4dc7c433-38a0-4817-9325-5470644b5b36}</filterKey>
+			<filterKey>{c032b00e-1ab1-4d0e-9fea-85cd8bb86b7e}</filterKey>
 			<displayData>
 				<name>Network Discovery (Pub-WSD-In)</name>
 				<description>Inbound rule for Network Discovery to discover devices via Function Discovery. [UDP 3702]</description>
@@ -1778,8 +1644,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a117000000000000</data>
-				<asString>........</asString>
+				<data>a528000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1830,14 +1696,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202149</filterId>
+			<filterId>224095</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{8339affb-b2f6-46a0-81cc-6a43d50bb183}</filterKey>
+			<filterKey>{aacaf49d-352b-464a-903f-3d55c4d2deea}</filterKey>
 			<displayData>
 				<name>Network Discovery (WSD-In)</name>
 				<description>Inbound rule for Network Discovery to discover devices via Function Discovery. [UDP 3702]</description>
@@ -1845,8 +1711,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a017000000000000</data>
-				<asString>........</asString>
+				<data>a428000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1897,14 +1763,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202143</filterId>
+			<filterId>224089</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{67b3540d-478c-4ddf-8a18-119013fa15a2}</filterKey>
+			<filterKey>{3a64d839-9db5-4145-b489-a23a00ba96d6}</filterKey>
 			<displayData>
 				<name>File and Printer Sharing (LLMNR-UDP-In)</name>
 				<description>Inbound rule for File and Printer Sharing to allow Link Local Multicast Name Resolution. [UDP 5355]</description>
@@ -1912,8 +1778,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9717000000000000</data>
-				<asString>........</asString>
+				<data>9b28000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1964,14 +1830,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202097</filterId>
+			<filterId>224043</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{c4339abe-d34e-41a4-a6f2-2f4d4129fb5c}</filterKey>
+			<filterKey>{76d6ab92-a973-4d0e-bd3a-96235b0e7ba4}</filterKey>
 			<displayData>
 				<name>mDNS (UDP-In)</name>
 				<description>Inbound rule for mDNS traffic [UDP]</description>
@@ -1979,8 +1845,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9617000000000000</data>
-				<asString>........</asString>
+				<data>9a28000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2031,14 +1897,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202091</filterId>
+			<filterId>224037</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{102cdfac-916c-43b9-87a8-822d1cea11ae}</filterKey>
+			<filterKey>{c95515ee-4c62-49d9-b650-431ab1e5a631}</filterKey>
 			<displayData>
 				<name>WFD ASP Coordination Protocol (UDP-In)</name>
 				<description>Inbound rule for WLAN Service to allow coordination protocol for WFD Service sessions [UDP 7235]</description>
@@ -2046,8 +1912,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9217000000000000</data>
-				<asString>........</asString>
+				<data>9628000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2098,7 +1964,7 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202079</filterId>
+			<filterId>224025</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
@@ -2440,7 +2306,7 @@
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{17e5633b-bd0f-4872-a59c-eea163084996}</filterKey>
+			<filterKey>{fcfefd92-0bae-4430-b406-b26cf0b5c5c8}</filterKey>
 			<displayData>
 				<name>Network Discovery (WSD-In)</name>
 				<description>Inbound rule for Network Discovery to discover devices via Device Association Framework. [UDP 3702]</description>
@@ -2448,8 +2314,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a217000000000000</data>
-				<asString>........</asString>
+				<data>a628000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2492,14 +2358,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202155</filterId>
+			<filterId>224101</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{ee788515-9785-454e-8e36-ec6679a2538a}</filterKey>
+			<filterKey>{e1257d98-5a2c-4790-b46d-01e138fd9d54}</filterKey>
 			<displayData>
 				<name>File and Printer Sharing (NB-Name-In)</name>
 				<description>Inbound rule for File and Printer Sharing to allow NetBIOS Name Resolution. [UDP 137]</description>
@@ -2507,8 +2373,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9e17000000000000</data>
-				<asString>........</asString>
+				<data>a228000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2551,14 +2417,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202131</filterId>
+			<filterId>224077</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{ce72a845-6315-46c8-ac64-0c78188c047b}</filterKey>
+			<filterKey>{2c6ab93a-ddc2-43e8-9c84-3b28d3da6699}</filterKey>
 			<displayData>
 				<name>File and Printer Sharing (NB-Datagram-In)</name>
 				<description>Inbound rule for File and Printer Sharing to allow NetBIOS Datagram transmission and reception. [UDP 138]</description>
@@ -2566,8 +2432,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9817000000000000</data>
-				<asString>........</asString>
+				<data>9c28000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2610,14 +2476,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202103</filterId>
+			<filterId>224049</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{1de6075c-74bc-4cbe-ae4f-520a57ad04b2}</filterKey>
+			<filterKey>{b9e64504-3da3-41d0-b54a-2916ae21651c}</filterKey>
 			<displayData>
 				<name>Network Discovery (NB-Datagram-In)</name>
 				<description>Inbound rule for Network Discovery to allow NetBIOS Datagram transmission and reception. [UDP 138]</description>
@@ -2625,8 +2491,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>8d17000000000000</data>
-				<asString>........</asString>
+				<data>9128000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2669,14 +2535,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202053</filterId>
+			<filterId>223999</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{5f83e61a-997a-410e-9bdb-7ca6103b2e80}</filterKey>
+			<filterKey>{72b3bbb5-5bf8-4f95-9ed3-0a3f5145e563}</filterKey>
 			<displayData>
 				<name>Network Discovery (NB-Name-In)</name>
 				<description>Inbound rule for Network Discovery to allow NetBIOS Name Resolution. [UDP 137]</description>
@@ -2684,8 +2550,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>8b17000000000000</data>
-				<asString>........</asString>
+				<data>8f28000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2728,7 +2594,7 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202035</filterId>
+			<filterId>223981</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
@@ -3266,7 +3132,7 @@
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{fdd9c4ba-0f90-4531-aee1-2d95010e4592}</filterKey>
+			<filterKey>{a46f0aae-1c9d-4f52-b6c7-a5532e82d651}</filterKey>
 			<displayData>
 				<name>Microsoft Media Foundation Network Source IN [UDP 5004-5009]</name>
 				<description>InBound Rule for the Microsoft Media Foundation's Capture SVC to open UDP port to enable RTSP</description>
@@ -3274,8 +3140,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>8a17000000000000</data>
-				<asString>........</asString>
+				<data>8e28000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3335,7 +3201,7 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202029</filterId>
+			<filterId>223975</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11212626031653421056</uint64>
@@ -4731,7 +4597,7 @@
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{e99ba55d-7e84-47af-a9c8-b9e4650d92b3}</filterKey>
+			<filterKey>{404c28e9-64fc-4916-b22c-3287d3a5f0aa}</filterKey>
 			<displayData>
 				<name>AppContainerLoopback</name>
 				<description>This filter blocks loopback traffic to port 137</description>
@@ -4783,14 +4649,14 @@
 			</action>
 			<providerContextKey>{7f0fdfe9-b5aa-4df8-98c2-8bb515bbc12a}</providerContextKey>
 			<reserved/>
-			<filterId>202583</filterId>
+			<filterId>224169</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744073709551615</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{f697695f-ee59-4f15-b687-67a7e37927ae}</filterKey>
+			<filterKey>{324e257c-5fa3-44d4-b469-4e1e5eef3b40}</filterKey>
 			<displayData>
 				<name>AppContainerLoopback</name>
 				<description>This filter allows outbound AppContainer loopback traffic</description>
@@ -4826,14 +4692,14 @@
 			</action>
 			<providerContextKey>{7f0fdfe9-b5aa-4df8-98c2-8bb515bbc12a}</providerContextKey>
 			<reserved/>
-			<filterId>202581</filterId>
+			<filterId>224167</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744073709551615</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{3576a2a0-9f04-43b5-a1f2-9a41ad26c664}</filterKey>
+			<filterKey>{bc9d375b-2087-4339-9d7a-49d500325321}</filterKey>
 			<displayData>
 				<name>AppContainerLoopback</name>
 				<description>This filter blocks AppContainer loopback traffic</description>
@@ -4877,14 +4743,14 @@
 			</action>
 			<providerContextKey>{7f0fdfe9-b5aa-4df8-98c2-8bb515bbc12a}</providerContextKey>
 			<reserved/>
-			<filterId>202589</filterId>
+			<filterId>224175</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744073709551614</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{a7d4be35-c5b7-4941-a993-5b4b787e3df5}</filterKey>
+			<filterKey>{60c3ab96-eb3f-41ef-b2f3-0082d6f14fd6}</filterKey>
 			<displayData>
 				<name>InternetClient Default Rule</name>
 				<description>InternetClient Default Rule</description>
@@ -4892,8 +4758,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_APP_ISOLATION</providerKey>
 			<providerData>
-				<data>8917000000000000</data>
-				<asString>........</asString>
+				<data>8d28000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_APP_ISOLATION</subLayerKey>
@@ -4957,14 +4823,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202027</filterId>
+			<filterId>223973</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>206158432248</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{66be84a0-0ab7-4175-a583-fce0cbdb90b3}</filterKey>
+			<filterKey>{edae18e0-a90f-4001-90eb-915330e5e0b3}</filterKey>
 			<displayData>
 				<name>InternetClientServer Outbound Default Rule</name>
 				<description>InternetClientServer Outbound Default Rule</description>
@@ -4972,8 +4838,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_APP_ISOLATION</providerKey>
 			<providerData>
-				<data>8817000000000000</data>
-				<asString>........</asString>
+				<data>8c28000000000000</data>
+				<asString>.(......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_APP_ISOLATION</subLayerKey>
@@ -5037,7 +4903,7 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>202025</filterId>
+			<filterId>223971</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>206158432248</uint64>
@@ -8372,78 +8238,6 @@
 				<uint64>3458764513820540928</uint64>
 			</effectiveWeight>
 		</item>
-		<item>
-			<filterKey>{e78b6f3f-a487-4acb-8b63-22986153adf1}</filterKey>
-			<displayData>
-				<name>Teredo Flow-Established Filter  (outbound)</name>
-				<description>Intercepts outbound tunneled UDPv4 Teredo flow creations</description>
-			</displayData>
-			<flags/>
-			<providerKey>{dc169153-09ee-4e42-bf8e-6f8a58f9f398}</providerKey>
-			<providerData/>
-			<layerKey>FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4</layerKey>
-			<subLayerKey>{7bf26662-1886-4d58-85c4-507cce2a53c5}</subLayerKey>
-			<weight>
-				<type>FWP_EMPTY</type>
-			</weight>
-			<filterCondition numItems="1">
-				<item>
-					<fieldKey>FWPM_CONDITION_DIRECTION</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_UINT32</type>
-						<uint32>0</uint32>
-					</conditionValue>
-				</item>
-			</filterCondition>
-			<action>
-				<type>FWP_ACTION_CALLOUT_TERMINATING</type>
-				<filterType>{0dc65b81-df58-404e-b830-619304effeb1}</filterType>
-			</action>
-			<rawContext>0</rawContext>
-			<reserved/>
-			<filterId>202020</filterId>
-			<effectiveWeight>
-				<type>FWP_UINT64</type>
-				<uint64>16352</uint64>
-			</effectiveWeight>
-		</item>
-		<item>
-			<filterKey>{9bd9a78a-205a-4885-a318-b8a93840261e}</filterKey>
-			<displayData>
-				<name>Teredo Flow-Established Filter (inbound)</name>
-				<description>Intercepts inbound tunneled UDPv4 Teredo flow creations</description>
-			</displayData>
-			<flags/>
-			<providerKey>{dc169153-09ee-4e42-bf8e-6f8a58f9f398}</providerKey>
-			<providerData/>
-			<layerKey>FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4</layerKey>
-			<subLayerKey>{7bf26662-1886-4d58-85c4-507cce2a53c5}</subLayerKey>
-			<weight>
-				<type>FWP_EMPTY</type>
-			</weight>
-			<filterCondition numItems="1">
-				<item>
-					<fieldKey>FWPM_CONDITION_DIRECTION</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_UINT32</type>
-						<uint32>1</uint32>
-					</conditionValue>
-				</item>
-			</filterCondition>
-			<action>
-				<type>FWP_ACTION_CALLOUT_TERMINATING</type>
-				<filterType>{0dc65b81-df58-404e-b830-619304effeb1}</filterType>
-			</action>
-			<rawContext>0</rawContext>
-			<reserved/>
-			<filterId>202019</filterId>
-			<effectiveWeight>
-				<type>FWP_UINT64</type>
-				<uint64>16352</uint64>
-			</effectiveWeight>
-		</item>
 	</filters>
 	<providers>
 		<item>
@@ -8503,16 +8297,6 @@
 			<displayData>
 				<name>Microsoft Corporation</name>
 				<description>Microsoft Windows Teredo firewall provider</description>
-			</displayData>
-			<flags/>
-			<providerData/>
-			<serviceName/>
-		</item>
-		<item>
-			<providerKey>{dc169153-09ee-4e42-bf8e-6f8a58f9f398}</providerKey>
-			<displayData>
-				<name>Microsoft Corporation</name>
-				<description>Microsoft Windows Teredo tunnel driver provider</description>
 			</displayData>
 			<flags/>
 			<providerData/>
