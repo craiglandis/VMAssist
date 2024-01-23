@@ -2968,6 +2968,17 @@ $css = @'
           background-color: #ccc;
         }
 
+        .accordion:after {
+            content: '\02795'; /* Unicode character for "plus" sign (+) */
+            color: #777;
+            float: right;
+            margin-left: 5px;
+        }
+
+          .active:after {
+            content: "\2796"; /* Unicode character for "minus" sign (-) */
+        }
+
         /* Style the accordion panel. Note: hidden by default */
         .panel {
           padding: 0 18px;
