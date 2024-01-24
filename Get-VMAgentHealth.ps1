@@ -21,8 +21,7 @@
 param (
     [string]$outputPath = 'C:\logs',
     [switch]$showReport,
-    [switch]$fakeFinding,
-    [switch]$skipAdminCheck
+    [switch]$fakeFinding
 )
 
 trap
@@ -1471,13 +1470,10 @@ $verbose = [bool]$PSBoundParameters['verbose']
 $debug = [bool]$PSBoundParameters['debug']
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')
-if ($skipAdminCheck -eq $false)
+if ($isAdmin -eq $false)
 {
-    if ($isAdmin -eq $false)
-    {
-        Write-Host 'Script must be run from an elevated PowerShell session' -ForegroundColor Cyan
-        exit
-    }
+    Write-Host 'Script must be run from an elevated PowerShell session' -ForegroundColor Cyan
+    exit
 }
 
 if ($outputPath)
