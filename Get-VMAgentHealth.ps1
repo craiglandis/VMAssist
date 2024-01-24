@@ -111,7 +111,7 @@ function Get-WCFConfig
         $wcfDebuggingEnabled = $true
         Out-Log $wcfDebuggingEnabled -color Yellow -endLine
         New-Check -name 'WCF debugging config' -result 'FAILED' -details 'WCF debugging is enabled'
-        $description = "$machineConfigx64FilePath shows WCF debugging is enabled: $machineConfigStrings"
+        $description = "$machineConfigx64FilePath shows WCF debugging is enabled: `n$($machineConfigStrings | Out-String)"
         New-Finding -type Critical -name 'WCF debugging enabled' -description $description
     }
     else
