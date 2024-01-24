@@ -68,7 +68,7 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>173020</filterId>
+			<filterId>172476</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>0</uint64>
@@ -97,7 +97,7 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>173018</filterId>
+			<filterId>172474</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>0</uint64>
@@ -192,7 +192,7 @@
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{e908c2b4-686c-4470-80ee-142d3114eda2}</filterKey>
+			<filterKey>{7afc196d-2432-4bce-a7df-4859034d62f3}</filterKey>
 			<displayData>
 				<name>Query User</name>
 				<description>Prompt the User for a decision corresponding to Inbound Traffic. This filter blocks any inbound packets for which there is no explicit rule to allow the packet, unless the user has allowed through the Query User pop up.</description>
@@ -203,7 +203,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>3e05000000000000</data>
+				<data>f011000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_INBOUND_ICMP_ERROR_V4</layerKey>
@@ -228,14 +228,14 @@
 			</action>
 			<providerContextKey>{feb49053-a00e-42a7-ab12-6f0b07ae1b2b}</providerContextKey>
 			<reserved/>
-			<filterId>178327</filterId>
+			<filterId>197981</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>9223372036854775812</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{51ec3997-6eaf-4a41-882d-2cc3d0110fe4}</filterKey>
+			<filterKey>{8897f5c8-7c21-4835-a47b-5233520c0773}</filterKey>
 			<displayData>
 				<name>Query User</name>
 				<description>Prompt the User for a decision corresponding to Inbound Traffic. This filter blocks any inbound packets for which there is no explicit rule to allow the packet, unless the user has allowed through the Query User pop up.</description>
@@ -246,7 +246,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>3e05000000000000</data>
+				<data>f011000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_INBOUND_ICMP_ERROR_V4</layerKey>
@@ -262,14 +262,14 @@
 			</action>
 			<providerContextKey>{feb49053-a00e-42a7-ab12-6f0b07ae1b2b}</providerContextKey>
 			<reserved/>
-			<filterId>178335</filterId>
+			<filterId>197989</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>3458764513820540928</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{1403f9ca-87bd-4702-a1da-ddd3b6caef43}</filterKey>
+			<filterKey>{7e57ef71-528c-4fc1-b748-8df7a5df0ae2}</filterKey>
 			<displayData>
 				<name>Port Scanning Prevention Filter</name>
 				<description>This filter prevents port scanning. This many times means there are no listeners. If debugging ensure your scenario has one.</description>
@@ -338,14 +338,14 @@
 			</action>
 			<providerContextKey>{999ba50e-b870-4b5c-84e6-33a0e61cc8d1}</providerContextKey>
 			<reserved/>
-			<filterId>179151</filterId>
+			<filterId>198805</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744073709551615</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{4c0fc118-b51e-4e11-a8e7-122d3a643b3e}</filterKey>
+			<filterKey>{f93a70a6-5df3-4e8b-9c2d-70fced2a0c12}</filterKey>
 			<displayData>
 				<name>Port Scanning Prevention Filter</name>
 				<description>This filter prevents port scanning. This many times means there are no listeners. If debugging ensure your scenario has one.</description>
@@ -414,7 +414,7 @@
 			</action>
 			<providerContextKey>{999ba50e-b870-4b5c-84e6-33a0e61cc8d1}</providerContextKey>
 			<reserved/>
-			<filterId>179146</filterId>
+			<filterId>198800</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744073709551615</uint64>
@@ -465,7 +465,7 @@
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{05041643-0f7e-48c7-83da-eeed0b94ede3}</filterKey>
+			<filterKey>{31261913-ea64-48de-ae7d-d0dad22f7706}</filterKey>
 			<displayData>
 				<name>Port Scanning Prevention Filter</name>
 				<description>This filter prevents port scanning. This many times means there are no listeners. If debugging ensure your scenario has one.</description>
@@ -534,14 +534,14 @@
 			</action>
 			<providerContextKey>{999ba50e-b870-4b5c-84e6-33a0e61cc8d1}</providerContextKey>
 			<reserved/>
-			<filterId>179153</filterId>
+			<filterId>198807</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744069414584322</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{59161e72-b030-415d-97f5-14392bcc09a1}</filterKey>
+			<filterKey>{d89bd06d-68a5-4acd-a24a-19d67684ae60}</filterKey>
 			<displayData>
 				<name>Port Scanning Prevention Filter</name>
 				<description>This filter prevents port scanning. This many times means there are no listeners. If debugging ensure your scenario has one.</description>
@@ -610,14 +610,14 @@
 			</action>
 			<providerContextKey>{999ba50e-b870-4b5c-84e6-33a0e61cc8d1}</providerContextKey>
 			<reserved/>
-			<filterId>179152</filterId>
+			<filterId>198806</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744069414584322</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{dc448e85-f280-4aca-b2b8-63daa2481154}</filterKey>
+			<filterKey>{fc5f758c-f223-4fee-8ef5-9f32922c9fa5}</filterKey>
 			<displayData>
 				<name>Port Scanning Prevention Filter</name>
 				<description>This filter prevents port scanning. This many times means there are no listeners. If debugging ensure your scenario has one.</description>
@@ -686,14 +686,14 @@
 			</action>
 			<providerContextKey>{999ba50e-b870-4b5c-84e6-33a0e61cc8d1}</providerContextKey>
 			<reserved/>
-			<filterId>179148</filterId>
+			<filterId>198802</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744069414584322</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{70975116-3d4f-4675-b220-089fc925a8b1}</filterKey>
+			<filterKey>{bfa29b51-68e1-47af-8001-851a5e914b65}</filterKey>
 			<displayData>
 				<name>Port Scanning Prevention Filter</name>
 				<description>This filter prevents port scanning. This many times means there are no listeners. If debugging ensure your scenario has one.</description>
@@ -762,14 +762,14 @@
 			</action>
 			<providerContextKey>{999ba50e-b870-4b5c-84e6-33a0e61cc8d1}</providerContextKey>
 			<reserved/>
-			<filterId>179147</filterId>
+			<filterId>198801</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744069414584322</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{4d762cf2-7d4c-4280-a986-7d5e5fe94ff1}</filterKey>
+			<filterKey>{3fdd00cc-517b-4539-b784-3f191824b972}</filterKey>
 			<displayData>
 				<name>Port Scanning Prevention Filter</name>
 				<description>This filter prevents port scanning. This many times means there are no listeners. If debugging ensure your scenario has one.</description>
@@ -838,14 +838,14 @@
 			</action>
 			<providerContextKey>{999ba50e-b870-4b5c-84e6-33a0e61cc8d1}</providerContextKey>
 			<reserved/>
-			<filterId>179141</filterId>
+			<filterId>198795</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>9223372586040164364</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{ddc44af5-9027-4963-9e99-c0ad2f1a13b8}</filterKey>
+			<filterKey>{b6889ef1-a5a3-4085-abd2-a9bbbae7ff43}</filterKey>
 			<displayData>
 				<name>Port Scanning Prevention Filter</name>
 				<description>This filter prevents port scanning. This many times means there are no listeners. If debugging ensure your scenario has one.</description>
@@ -914,14 +914,14 @@
 			</action>
 			<providerContextKey>{999ba50e-b870-4b5c-84e6-33a0e61cc8d1}</providerContextKey>
 			<reserved/>
-			<filterId>179136</filterId>
+			<filterId>198790</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>9223372586040164364</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{30697922-f3db-4eca-840e-1d990f34e60e}</filterKey>
+			<filterKey>{9bc820e9-707b-4114-ad70-1ac4fa4d03f6}</filterKey>
 			<displayData>
 				<name>Port Scanning Prevention Filter</name>
 				<description>This filter prevents port scanning. This many times means there are no listeners. If debugging ensure your scenario has one.</description>
@@ -990,14 +990,14 @@
 			</action>
 			<providerContextKey>{999ba50e-b870-4b5c-84e6-33a0e61cc8d1}</providerContextKey>
 			<reserved/>
-			<filterId>179142</filterId>
+			<filterId>198796</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>9223372585771728908</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{eda38aa4-d244-4bc3-99b0-9e23c8faeb5b}</filterKey>
+			<filterKey>{979452df-0af8-4255-9779-61912a54b45c}</filterKey>
 			<displayData>
 				<name>Port Scanning Prevention Filter</name>
 				<description>This filter prevents port scanning. This many times means there are no listeners. If debugging ensure your scenario has one.</description>
@@ -1066,14 +1066,14 @@
 			</action>
 			<providerContextKey>{999ba50e-b870-4b5c-84e6-33a0e61cc8d1}</providerContextKey>
 			<reserved/>
-			<filterId>179137</filterId>
+			<filterId>198791</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>9223372585771728908</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{5242917f-9247-4cdd-9393-bc63a1032011}</filterKey>
+			<filterKey>{7c6b01cb-4f49-490a-9f84-9e87906a67b0}</filterKey>
 			<displayData>
 				<name>Port Scanning Prevention Filter</name>
 				<description>This filter prevents port scanning. This many times means there are no listeners. If debugging ensure your scenario has one.</description>
@@ -1142,14 +1142,14 @@
 			</action>
 			<providerContextKey>{999ba50e-b870-4b5c-84e6-33a0e61cc8d1}</providerContextKey>
 			<reserved/>
-			<filterId>179143</filterId>
+			<filterId>198797</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>9223372584463106060</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{cda23a14-ca68-4fd0-9de1-8d2102ed1b8c}</filterKey>
+			<filterKey>{1cd00e54-66be-4c2a-9c86-310a3894bb85}</filterKey>
 			<displayData>
 				<name>Port Scanning Prevention Filter</name>
 				<description>This filter prevents port scanning. This many times means there are no listeners. If debugging ensure your scenario has one.</description>
@@ -1218,14 +1218,14 @@
 			</action>
 			<providerContextKey>{999ba50e-b870-4b5c-84e6-33a0e61cc8d1}</providerContextKey>
 			<reserved/>
-			<filterId>179138</filterId>
+			<filterId>198792</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>9223372584463106060</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{803e2639-6419-4ce5-a8d7-622b3232768f}</filterKey>
+			<filterKey>{2a0edd92-e65e-4888-bba4-207b24325dd1}</filterKey>
 			<displayData>
 				<name>Default Outbound</name>
 				<description>This is the default outbound filter which blocks or permits traffic based on user configured default settings</description>
@@ -1233,8 +1233,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>3f05000000000000</data>
-				<asString>?.......</asString>
+				<data>f111000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_OUTBOUND_ICMP_ERROR_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1258,14 +1258,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178341</filterId>
+			<filterId>197995</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>9223372036854775812</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{8397c903-e629-4f96-817f-9ed03439a049}</filterKey>
+			<filterKey>{b115f3f7-039c-43a9-9e79-4f4d037a1642}</filterKey>
 			<displayData>
 				<name>Default Outbound</name>
 				<description>This is the default outbound filter which blocks or permits traffic based on user configured default settings</description>
@@ -1273,8 +1273,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>3f05000000000000</data>
-				<asString>?.......</asString>
+				<data>f111000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_OUTBOUND_ICMP_ERROR_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1289,14 +1289,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178345</filterId>
+			<filterId>197999</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>3458764513820540928</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{b237cacb-caee-4a04-a0f7-131129d1a500}</filterKey>
+			<filterKey>{36f3b3a6-3c5e-4fb7-aa6f-7304a33abfc8}</filterKey>
 			<displayData>
 				<name>Internet Connection Sharing (DHCPv4-In)</name>
 				<description>Inbound rule for Internet Connection Sharing to allow use of the IPv4 DHCP Server. [UDP 68]</description>
@@ -1304,8 +1304,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>b128000000000000</data>
-				<asString>.(......</asString>
+				<data>da12000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1364,14 +1364,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224155</filterId>
+			<filterId>199044</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529144642964553728</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{d8e4ffff-c9a5-43f0-9689-7b3fd71e61b5}</filterKey>
+			<filterKey>{33319b6c-6326-45ec-8ead-5ed0b1208f3e}</filterKey>
 			<displayData>
 				<name>Internet Connection Sharing (DHCP Server-In)</name>
 				<description>Inbound rule for Internet Connection Sharing to allow use of the IPv4 DHCP Server. [UDP 67]</description>
@@ -1379,8 +1379,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>b028000000000000</data>
-				<asString>.(......</asString>
+				<data>d912000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1439,14 +1439,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224149</filterId>
+			<filterId>199038</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529144642964553728</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{cd629835-0e86-4783-8879-def6711c1f89}</filterKey>
+			<filterKey>{19df7d16-ac09-4bed-92ba-529ec86f6f84}</filterKey>
 			<displayData>
 				<name>HNS Container Networking - DNS (UDP-In) - C08CB7B8-9B3C-408E-8E30-5E16A3AEB445 - 0</name>
 				<description>HNS Container Networking - DNS (UDP-In) - C08CB7B8-9B3C-408E-8E30-5E16A3AEB445 - 0</description>
@@ -1454,8 +1454,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a928000000000000</data>
-				<asString>.(......</asString>
+				<data>d212000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1495,14 +1495,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224119</filterId>
+			<filterId>199008</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529144539885338624</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{90daeecc-c74e-4167-a618-2e09c54fa156}</filterKey>
+			<filterKey>{6ab79583-155d-4b57-91d0-27f35193f282}</filterKey>
 			<displayData>
 				<name>Network Discovery (LLMNR-UDP-In)</name>
 				<description>Inbound rule for Network Discovery to allow Link Local Multicast Name Resolution. [UDP 5355]</description>
@@ -1510,8 +1510,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a828000000000000</data>
-				<asString>.(......</asString>
+				<data>d112000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1562,14 +1562,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224113</filterId>
+			<filterId>199002</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{6ddf37f6-c6b1-4014-bf24-87dd30c57ad5}</filterKey>
+			<filterKey>{ed75ff3b-27d6-4d01-a2ee-3effc20daa4a}</filterKey>
 			<displayData>
 				<name>Network Discovery (SSDP-In)</name>
 				<description>Inbound rule for Network Discovery to allow use of the Simple Service Discovery Protocol. [UDP 1900]</description>
@@ -1577,8 +1577,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a728000000000000</data>
-				<asString>.(......</asString>
+				<data>d012000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1629,14 +1629,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224107</filterId>
+			<filterId>198996</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{c032b00e-1ab1-4d0e-9fea-85cd8bb86b7e}</filterKey>
+			<filterKey>{29428d10-eca6-4026-aae2-73521ce73230}</filterKey>
 			<displayData>
 				<name>Network Discovery (Pub-WSD-In)</name>
 				<description>Inbound rule for Network Discovery to discover devices via Function Discovery. [UDP 3702]</description>
@@ -1644,8 +1644,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a528000000000000</data>
-				<asString>.(......</asString>
+				<data>ce12000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1696,14 +1696,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224095</filterId>
+			<filterId>198984</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{aacaf49d-352b-464a-903f-3d55c4d2deea}</filterKey>
+			<filterKey>{38d4ebc7-4d2a-4b98-97f7-399792838c0f}</filterKey>
 			<displayData>
 				<name>Network Discovery (WSD-In)</name>
 				<description>Inbound rule for Network Discovery to discover devices via Function Discovery. [UDP 3702]</description>
@@ -1711,8 +1711,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a428000000000000</data>
-				<asString>.(......</asString>
+				<data>cd12000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1763,14 +1763,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224089</filterId>
+			<filterId>198978</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{3a64d839-9db5-4145-b489-a23a00ba96d6}</filterKey>
+			<filterKey>{6e62d32d-fa20-4636-ba9f-8d50f6c3c90e}</filterKey>
 			<displayData>
 				<name>File and Printer Sharing (LLMNR-UDP-In)</name>
 				<description>Inbound rule for File and Printer Sharing to allow Link Local Multicast Name Resolution. [UDP 5355]</description>
@@ -1778,8 +1778,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9b28000000000000</data>
-				<asString>.(......</asString>
+				<data>c412000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1830,14 +1830,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224043</filterId>
+			<filterId>198932</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{76d6ab92-a973-4d0e-bd3a-96235b0e7ba4}</filterKey>
+			<filterKey>{874baa20-3883-40f0-ba4e-3278823c3b5c}</filterKey>
 			<displayData>
 				<name>mDNS (UDP-In)</name>
 				<description>Inbound rule for mDNS traffic [UDP]</description>
@@ -1845,8 +1845,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9a28000000000000</data>
-				<asString>.(......</asString>
+				<data>c312000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1897,14 +1897,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224037</filterId>
+			<filterId>198926</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{c95515ee-4c62-49d9-b650-431ab1e5a631}</filterKey>
+			<filterKey>{c5dc181c-1d2c-4c7c-bbf0-0b8d84834345}</filterKey>
 			<displayData>
 				<name>WFD ASP Coordination Protocol (UDP-In)</name>
 				<description>Inbound rule for WLAN Service to allow coordination protocol for WFD Service sessions [UDP 7235]</description>
@@ -1912,8 +1912,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9628000000000000</data>
-				<asString>.(......</asString>
+				<data>bf12000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -1964,14 +1964,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224025</filterId>
+			<filterId>198914</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{41dff1e8-0634-40dd-a42a-798d4b8e945e}</filterKey>
+			<filterKey>{92b6e2e9-36ae-4d16-98a2-ddd1a982082b}</filterKey>
 			<displayData>
 				<name>Remote Desktop - User Mode (UDP-In)</name>
 				<description>Inbound rule for the Remote Desktop service to allow RDP traffic. [UDP 3389]</description>
@@ -1979,8 +1979,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>6605000000000000</data>
-				<asString>f.......</asString>
+				<data>1812000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2031,14 +2031,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178528</filterId>
+			<filterId>198182</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{b257cb75-a623-40a8-8dc7-86e6627b5697}</filterKey>
+			<filterKey>{99106a1d-d8a9-4b29-8405-283685bf836f}</filterKey>
 			<displayData>
 				<name>Remote Assistance (PNRP-In)</name>
 				<description>Inbound rule for Remote Assistance to allow use Peer Name Resolution Protocol. [UDP 3540]</description>
@@ -2046,8 +2046,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>4f05000000000000</data>
-				<asString>O.......</asString>
+				<data>0112000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2098,14 +2098,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178412</filterId>
+			<filterId>198066</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{b7fa64a6-8ad4-46e4-9527-f929b6892294}</filterKey>
+			<filterKey>{d00dfe29-2b20-4c66-af89-ce9030c2e17a}</filterKey>
 			<displayData>
 				<name>Core Networking - Dynamic Host Configuration Protocol for IPv6(DHCPV6-In)</name>
 				<description>Allows DHCPV6 (Dynamic Host Configuration Protocol for IPv6) messages for stateful and stateless configuration.</description>
@@ -2113,8 +2113,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>4a05000000000000</data>
-				<asString>J.......</asString>
+				<data>fc11000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2165,14 +2165,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178379</filterId>
+			<filterId>198033</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{b6d76f73-0bb4-4bd9-b09d-e8272d6f261a}</filterKey>
+			<filterKey>{04223177-3eef-476a-a04a-d1b92a5ad57b}</filterKey>
 			<displayData>
 				<name>Core Networking - Dynamic Host Configuration Protocol (DHCP-In)</name>
 				<description>Allows DHCP (Dynamic Host Configuration Protocol) messages for stateful auto-configuration.</description>
@@ -2180,8 +2180,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>4905000000000000</data>
-				<asString>I.......</asString>
+				<data>fb11000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2232,14 +2232,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178375</filterId>
+			<filterId>198029</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{b027a3d5-1364-422c-aa3c-aba9b36086c6}</filterKey>
+			<filterKey>{07e725ea-9c75-43f5-99ee-24c418d321bd}</filterKey>
 			<displayData>
 				<name>Delivery Optimization (UDP-In)</name>
 				<description>Inbound rule to allow Delivery Optimization to connect to remote endpoints</description>
@@ -2247,8 +2247,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>4605000000000000</data>
-				<asString>F.......</asString>
+				<data>f811000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2299,14 +2299,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178361</filterId>
+			<filterId>198015</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{fcfefd92-0bae-4430-b406-b26cf0b5c5c8}</filterKey>
+			<filterKey>{d847f75e-1b1b-4c70-addd-577fd07ef551}</filterKey>
 			<displayData>
 				<name>Network Discovery (WSD-In)</name>
 				<description>Inbound rule for Network Discovery to discover devices via Device Association Framework. [UDP 3702]</description>
@@ -2314,8 +2314,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a628000000000000</data>
-				<asString>.(......</asString>
+				<data>cf12000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2358,14 +2358,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224101</filterId>
+			<filterId>198990</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{e1257d98-5a2c-4790-b46d-01e138fd9d54}</filterKey>
+			<filterKey>{8b960324-3cc0-426b-8d3d-8c3f96c88e20}</filterKey>
 			<displayData>
 				<name>File and Printer Sharing (NB-Name-In)</name>
 				<description>Inbound rule for File and Printer Sharing to allow NetBIOS Name Resolution. [UDP 137]</description>
@@ -2373,8 +2373,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a228000000000000</data>
-				<asString>.(......</asString>
+				<data>cb12000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2417,14 +2417,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224077</filterId>
+			<filterId>198966</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{2c6ab93a-ddc2-43e8-9c84-3b28d3da6699}</filterKey>
+			<filterKey>{c3ef3333-5b75-43f6-a9ff-a039d6346845}</filterKey>
 			<displayData>
 				<name>File and Printer Sharing (NB-Datagram-In)</name>
 				<description>Inbound rule for File and Printer Sharing to allow NetBIOS Datagram transmission and reception. [UDP 138]</description>
@@ -2432,8 +2432,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9c28000000000000</data>
-				<asString>.(......</asString>
+				<data>c512000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2476,14 +2476,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>224049</filterId>
+			<filterId>198938</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{b9e64504-3da3-41d0-b54a-2916ae21651c}</filterKey>
+			<filterKey>{fbced232-62ec-4d42-91b3-823af1d732e3}</filterKey>
 			<displayData>
 				<name>Network Discovery (NB-Datagram-In)</name>
 				<description>Inbound rule for Network Discovery to allow NetBIOS Datagram transmission and reception. [UDP 138]</description>
@@ -2491,8 +2491,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9128000000000000</data>
-				<asString>.(......</asString>
+				<data>ba12000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2535,14 +2535,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>223999</filterId>
+			<filterId>198888</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{72b3bbb5-5bf8-4f95-9ed3-0a3f5145e563}</filterKey>
+			<filterKey>{a2d83a24-2881-4161-adb1-45aeb5f6839a}</filterKey>
 			<displayData>
 				<name>Network Discovery (NB-Name-In)</name>
 				<description>Inbound rule for Network Discovery to allow NetBIOS Name Resolution. [UDP 137]</description>
@@ -2550,8 +2550,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>8f28000000000000</data>
-				<asString>.(......</asString>
+				<data>b812000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2594,14 +2594,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>223981</filterId>
+			<filterId>198870</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{4f82fc58-e34c-4f82-82f3-1565e7a937f1}</filterKey>
+			<filterKey>{a70449ea-da65-4dcb-bc14-2121fec5644a}</filterKey>
 			<displayData>
 				<name>Spotify Music</name>
 				<description>Spotify Music</description>
@@ -2609,8 +2609,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>920f000000000000</data>
-				<asString>........</asString>
+				<data>5712000000000000</data>
+				<asString>W.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2653,14 +2653,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>191946</filterId>
+			<filterId>198546</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{849b0ac0-9a1b-428b-a5ea-6631a90aefb5}</filterKey>
+			<filterKey>{6a13e042-4775-48c1-b70a-6526e3f4ccfb}</filterKey>
 			<displayData>
 				<name>Spotify Music</name>
 				<description>Spotify Music</description>
@@ -2668,8 +2668,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>910f000000000000</data>
-				<asString>........</asString>
+				<data>5612000000000000</data>
+				<asString>V.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2712,14 +2712,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>191942</filterId>
+			<filterId>198542</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{b2ec762b-e2c6-415b-81f3-ed7932e0071f}</filterKey>
+			<filterKey>{ee6ad556-a32e-48b9-9f5b-daf6a420299d}</filterKey>
 			<displayData>
 				<name>Microsoft Edge (mDNS-In)</name>
 				<description>Inbound rule for Microsoft Edge to allow mDNS traffic.</description>
@@ -2727,8 +2727,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a405000000000000</data>
-				<asString>........</asString>
+				<data>4c12000000000000</data>
+				<asString>L.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2771,14 +2771,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178888</filterId>
+			<filterId>198502</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{7e77eeaa-10ed-40ad-bace-25770f4370cc}</filterKey>
+			<filterKey>{1e5fa870-2921-4a91-a4a0-9b35d0f524f5}</filterKey>
 			<displayData>
 				<name>Microsoft Edge (mDNS-In)</name>
 				<description>Inbound rule for Microsoft Edge to allow mDNS traffic.</description>
@@ -2786,8 +2786,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a305000000000000</data>
-				<asString>........</asString>
+				<data>4b12000000000000</data>
+				<asString>K.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -2830,132 +2830,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178884</filterId>
+			<filterId>198498</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{04aa6caf-cb50-4064-8ed0-41640101ce07}</filterKey>
-			<displayData>
-				<name>Spotify Music</name>
-				<description>Spotify Music</description>
-			</displayData>
-			<flags/>
-			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
-			<providerData>
-				<data>9d05000000000000</data>
-				<asString>........</asString>
-			</providerData>
-			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
-			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
-			<weight>
-				<type>FWP_UINT8</type>
-				<uint8>9</uint8>
-			</weight>
-			<filterCondition numItems="3">
-				<item>
-					<fieldKey>FWPM_CONDITION_ALE_APP_ID</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_BYTE_BLOB_TYPE</type>
-						<byteBlob>
-							<data>5c006400650076006900630065005c0068006100720064006400690073006b0076006f006c0075006d00650033005c00700072006f006700720061006d002000660069006c00650073005c00770069006e0064006f007700730061007000700073005c00730070006f007400690066007900610062002e00730070006f0074006900660079006d0075007300690063005f0031002e003200320036002e0031003100380037002e0030005f007800360034005f005f007a00700064006e0065006b00640072007a0072006500610030005c00730070006f0074006900660079002e006500780065000000</data>
-							<asString>\device\harddiskvolume3\program files\windowsapps\spotifyab.spotifymusic_1.226.1187.0_x64__zpdnekdrzrea0\spotify.exe</asString>
-						</byteBlob>
-					</conditionValue>
-				</item>
-				<item>
-					<fieldKey>FWPM_CONDITION_IP_LOCAL_PORT</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_UINT16</type>
-						<uint16>57621</uint16>
-					</conditionValue>
-				</item>
-				<item>
-					<fieldKey>FWPM_CONDITION_IP_PROTOCOL</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_UINT8</type>
-						<uint8>17</uint8>
-					</conditionValue>
-				</item>
-			</filterCondition>
-			<action>
-				<type>FWP_ACTION_PERMIT</type>
-				<filterType/>
-			</action>
-			<rawContext>0</rawContext>
-			<reserved/>
-			<filterId>178844</filterId>
-			<effectiveWeight>
-				<type>FWP_UINT64</type>
-				<uint64>11529003871116460032</uint64>
-			</effectiveWeight>
-		</item>
-		<item>
-			<filterKey>{4cf18b88-3eb3-47f2-82a0-fdee83675425}</filterKey>
-			<displayData>
-				<name>Spotify Music</name>
-				<description>Spotify Music</description>
-			</displayData>
-			<flags/>
-			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
-			<providerData>
-				<data>9c05000000000000</data>
-				<asString>........</asString>
-			</providerData>
-			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
-			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
-			<weight>
-				<type>FWP_UINT8</type>
-				<uint8>9</uint8>
-			</weight>
-			<filterCondition numItems="3">
-				<item>
-					<fieldKey>FWPM_CONDITION_ALE_APP_ID</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_BYTE_BLOB_TYPE</type>
-						<byteBlob>
-							<data>5c006400650076006900630065005c0068006100720064006400690073006b0076006f006c0075006d00650033005c00700072006f006700720061006d002000660069006c00650073005c00770069006e0064006f007700730061007000700073005c00730070006f007400690066007900610062002e00730070006f0074006900660079006d0075007300690063005f0031002e003200320036002e0031003100380037002e0030005f007800360034005f005f007a00700064006e0065006b00640072007a0072006500610030005c00730070006f0074006900660079002e006500780065000000</data>
-							<asString>\device\harddiskvolume3\program files\windowsapps\spotifyab.spotifymusic_1.226.1187.0_x64__zpdnekdrzrea0\spotify.exe</asString>
-						</byteBlob>
-					</conditionValue>
-				</item>
-				<item>
-					<fieldKey>FWPM_CONDITION_IP_LOCAL_PORT</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_UINT16</type>
-						<uint16>8088</uint16>
-					</conditionValue>
-				</item>
-				<item>
-					<fieldKey>FWPM_CONDITION_IP_PROTOCOL</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_UINT8</type>
-						<uint8>17</uint8>
-					</conditionValue>
-				</item>
-			</filterCondition>
-			<action>
-				<type>FWP_ACTION_PERMIT</type>
-				<filterType/>
-			</action>
-			<rawContext>0</rawContext>
-			<reserved/>
-			<filterId>178840</filterId>
-			<effectiveWeight>
-				<type>FWP_UINT64</type>
-				<uint64>11529003871116460032</uint64>
-			</effectiveWeight>
-		</item>
-		<item>
-			<filterKey>{3357dd96-c058-43c9-ac78-59ab292a0554}</filterKey>
+			<filterKey>{2ee33cd3-f2dc-4da9-bff2-4c981b1d0965}</filterKey>
 			<displayData>
 				<name>Airhost service for Zoom Video Meetings</name>
 				<description>Allow network traffic for Zoom Video Conference</description>
@@ -2963,8 +2845,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>8005000000000000</data>
-				<asString>........</asString>
+				<data>3212000000000000</data>
+				<asString>2.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3007,14 +2889,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178672</filterId>
+			<filterId>198326</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{2025b309-b07b-4198-8f65-c217bd2c83a2}</filterKey>
+			<filterKey>{37323c27-1e02-4751-8be3-38ab04423d43}</filterKey>
 			<displayData>
 				<name>Airhost service for Zoom Video Meetings</name>
 				<description>Allow network traffic for Zoom Video Conference</description>
@@ -3022,8 +2904,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>8005000000000000</data>
-				<asString>........</asString>
+				<data>3212000000000000</data>
+				<asString>2.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3066,14 +2948,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178668</filterId>
+			<filterId>198322</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{4dadf511-59d8-4435-9e50-8a7ce91d0a71}</filterKey>
+			<filterKey>{4f54ecc1-a326-4739-a1e1-274dac27638d}</filterKey>
 			<displayData>
 				<name>Microsoft Office Outlook</name>
 				<description/>
@@ -3081,8 +2963,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>6805000000000000</data>
-				<asString>h.......</asString>
+				<data>1a12000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3125,14 +3007,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178544</filterId>
+			<filterId>198198</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003871116460032</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{a46f0aae-1c9d-4f52-b6c7-a5532e82d651}</filterKey>
+			<filterKey>{8883b424-d41c-4001-88c5-d177495298cf}</filterKey>
 			<displayData>
 				<name>Microsoft Media Foundation Network Source IN [UDP 5004-5009]</name>
 				<description>InBound Rule for the Microsoft Media Foundation's Capture SVC to open UDP port to enable RTSP</description>
@@ -3140,8 +3022,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>8e28000000000000</data>
-				<asString>.(......</asString>
+				<data>b712000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3201,14 +3083,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>223975</filterId>
+			<filterId>198864</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11212626031653421056</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{4c6d2a55-759e-4474-8626-03ebb59a7991}</filterKey>
+			<filterKey>{b8254b06-f4bf-471d-924e-923f0715a089}</filterKey>
 			<displayData>
 				<name>Airhost service for Zoom Video Meetings</name>
 				<description>Allow network traffic for Zoom Video Conference</description>
@@ -3216,8 +3098,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>8005000000000000</data>
-				<asString>........</asString>
+				<data>3212000000000000</data>
+				<asString>2.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3269,14 +3151,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178670</filterId>
+			<filterId>198324</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10571707475323518976</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{673c4563-1518-4ed7-b553-1381ee8a07bb}</filterKey>
+			<filterKey>{0a909d97-4086-46d8-abda-5bf1af651fac}</filterKey>
 			<displayData>
 				<name>Zoom Video Meeting</name>
 				<description>Allow network traffic for Zoom Video Conference</description>
@@ -3284,8 +3166,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>7e05000000000000</data>
-				<asString>~.......</asString>
+				<data>3012000000000000</data>
+				<asString>0.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3337,14 +3219,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178640</filterId>
+			<filterId>198294</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10571707475323518976</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{39037efc-cf07-4f30-893c-d6ad7fc963d5}</filterKey>
+			<filterKey>{8615ed1e-68d4-464b-b963-86791d277638}</filterKey>
 			<displayData>
 				<name>TslGame</name>
 				<description>TslGame</description>
@@ -3352,8 +3234,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>7d05000000000000</data>
-				<asString>}.......</asString>
+				<data>2f12000000000000</data>
+				<asString>/.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3396,14 +3278,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178636</filterId>
+			<filterId>198290</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363841486323714</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{d56b08a8-f555-4a1e-876a-7228bcf5540b}</filterKey>
+			<filterKey>{abddd32f-ea66-435e-8314-65834a7fa124}</filterKey>
 			<displayData>
 				<name>Microsoft Teams (work or school)</name>
 				<description>Microsoft Teams (work or school)</description>
@@ -3411,8 +3293,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>f20e000000000000</data>
-				<asString>........</asString>
+				<data>5012000000000000</data>
+				<asString>P.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3447,14 +3329,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>191186</filterId>
+			<filterId>198518</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363841486323712</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{17aa59db-0180-4363-949f-8b1b900265c3}</filterKey>
+			<filterKey>{ca3fff76-edb6-44b2-a04e-945ff1af50c5}</filterKey>
 			<displayData>
 				<name>Microsoft Teams</name>
 				<description>Microsoft Teams</description>
@@ -3462,8 +3344,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>c10e000000000000</data>
-				<asString>........</asString>
+				<data>4e12000000000000</data>
+				<asString>N.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3498,14 +3380,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>190944</filterId>
+			<filterId>198510</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363841486323712</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{a91efee3-e4d6-4d3a-a18e-7a136b12bb31}</filterKey>
+			<filterKey>{b41cbb18-63f0-4eed-bbea-06b233366e90}</filterKey>
 			<displayData>
 				<name>ms-resource:AppDisplayName_Preview_Alt</name>
 				<description>ms-resource:AppDisplayName_Preview_Alt</description>
@@ -3513,8 +3395,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a005000000000000</data>
-				<asString>........</asString>
+				<data>4812000000000000</data>
+				<asString>H.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3549,65 +3431,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178856</filterId>
+			<filterId>198470</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363841486323712</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{6018ef61-19a4-479a-bbae-e362a650fa03}</filterKey>
-			<displayData>
-				<name>Microsoft Teams</name>
-				<description>Microsoft Teams</description>
-			</displayData>
-			<flags/>
-			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
-			<providerData>
-				<data>9605000000000000</data>
-				<asString>........</asString>
-			</providerData>
-			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
-			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
-			<weight>
-				<type>FWP_UINT8</type>
-				<uint8>9</uint8>
-			</weight>
-			<filterCondition numItems="2">
-				<item>
-					<fieldKey>FWPM_CONDITION_ALE_APP_ID</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_BYTE_BLOB_TYPE</type>
-						<byteBlob>
-							<data>5c006400650076006900630065005c0068006100720064006400690073006b0076006f006c0075006d00650033005c00700072006f006700720061006d002000660069006c00650073005c00770069006e0064006f007700730061007000700073005c006d006900630072006f0073006f00660074007400650061006d0073005f00320033003300330035002e003200300035002e0032003500350039002e003700320036005f007800360034005f005f003800770065006b007900620033006400380062006200770065005c006d0073007400650061006d0073002e006500780065000000</data>
-							<asString>\device\harddiskvolume3\program files\windowsapps\microsoftteams_23335.205.2559.726_x64__8wekyb3d8bbwe\msteams.exe</asString>
-						</byteBlob>
-					</conditionValue>
-				</item>
-				<item>
-					<fieldKey>FWPM_CONDITION_IP_PROTOCOL</fieldKey>
-					<matchType>FWP_MATCH_EQUAL</matchType>
-					<conditionValue>
-						<type>FWP_UINT8</type>
-						<uint8>17</uint8>
-					</conditionValue>
-				</item>
-			</filterCondition>
-			<action>
-				<type>FWP_ACTION_PERMIT</type>
-				<filterType/>
-			</action>
-			<rawContext>0</rawContext>
-			<reserved/>
-			<filterId>178816</filterId>
-			<effectiveWeight>
-				<type>FWP_UINT64</type>
-				<uint64>10376363841486323712</uint64>
-			</effectiveWeight>
-		</item>
-		<item>
-			<filterKey>{e5da0840-b6c5-4e01-98a6-4ef8d40c6514}</filterKey>
+			<filterKey>{012ac0b7-0082-4275-a589-bd2bcf185f77}</filterKey>
 			<displayData>
 				<name>ARCADE GAME SERIES: GALAGA</name>
 				<description/>
@@ -3615,8 +3446,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>8205000000000000</data>
-				<asString>........</asString>
+				<data>3412000000000000</data>
+				<asString>4.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3651,14 +3482,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178684</filterId>
+			<filterId>198338</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363841486323712</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{418d8540-1043-450c-8a8a-f24b5598a4f0}</filterKey>
+			<filterKey>{5a832cb5-cc15-497e-91d6-1bc7aaff57ea}</filterKey>
 			<displayData>
 				<name>Sid Meier's Civilization V</name>
 				<description/>
@@ -3666,8 +3497,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>7a05000000000000</data>
-				<asString>z.......</asString>
+				<data>2c12000000000000</data>
+				<asString>,.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3702,14 +3533,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178616</filterId>
+			<filterId>198270</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363841486323712</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{2cbaa72b-66b5-40e7-b7be-a7fc3a96e78f}</filterKey>
+			<filterKey>{c0d637ca-4619-4160-9bf9-187d7e860975}</filterKey>
 			<displayData>
 				<name>3DMark</name>
 				<description/>
@@ -3717,8 +3548,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>7805000000000000</data>
-				<asString>x.......</asString>
+				<data>2a12000000000000</data>
+				<asString>*.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3753,14 +3584,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178608</filterId>
+			<filterId>198262</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363841486323712</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{e69d9601-64e1-442e-b66a-9b1e3029f0b9}</filterKey>
+			<filterKey>{20fcea83-4d51-46df-8ea4-68a2e0a914b8}</filterKey>
 			<displayData>
 				<name>Steam Web Helper</name>
 				<description/>
@@ -3768,8 +3599,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>7605000000000000</data>
-				<asString>v.......</asString>
+				<data>2812000000000000</data>
+				<asString>(.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3804,14 +3635,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178600</filterId>
+			<filterId>198254</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363841486323712</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{876547e4-2cee-4167-8ce3-abffdc9f39b4}</filterKey>
+			<filterKey>{16b1ec45-d1be-4a80-be46-4f5fc64b9ba2}</filterKey>
 			<displayData>
 				<name>Steam</name>
 				<description/>
@@ -3819,8 +3650,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>7405000000000000</data>
-				<asString>t.......</asString>
+				<data>2612000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -3855,14 +3686,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178592</filterId>
+			<filterId>198246</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363841486323712</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{da64cd5d-623c-406a-a4af-52cf4c406dce}</filterKey>
+			<filterKey>{10d2c3ae-f861-4148-b66a-1eef038991ae}</filterKey>
 			<displayData>
 				<name>Query User</name>
 				<description>Prompt the User for a decision corresponding to Inbound Traffic. This filter blocks any inbound packets for which there is no explicit rule to allow the packet, unless the user has allowed through the Query User pop up.</description>
@@ -3873,7 +3704,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>3e05000000000000</data>
+				<data>f011000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
@@ -3906,14 +3737,14 @@
 			</action>
 			<providerContextKey>{feb49053-a00e-42a7-ab12-6f0b07ae1b2b}</providerContextKey>
 			<reserved/>
-			<filterId>178326</filterId>
+			<filterId>197980</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>9223442268161048576</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{17cae27b-973d-4407-8b7b-506581d5d6f5}</filterKey>
+			<filterKey>{1b810f9e-05fc-4aa6-aafe-cabbef174e07}</filterKey>
 			<displayData>
 				<name>Query User</name>
 				<description>Prompt the User for a decision corresponding to Inbound Traffic. This filter blocks any inbound packets for which there is no explicit rule to allow the packet, unless the user has allowed through the Query User pop up.</description>
@@ -3924,7 +3755,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>3e05000000000000</data>
+				<data>f011000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
@@ -3957,14 +3788,14 @@
 			</action>
 			<providerContextKey>{feb49053-a00e-42a7-ab12-6f0b07ae1b2b}</providerContextKey>
 			<reserved/>
-			<filterId>178334</filterId>
+			<filterId>197988</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>3458834745126813696</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{5e222c42-b812-4c9b-953b-9066e31f8c98}</filterKey>
+			<filterKey>{6463f43c-606b-4e4b-b4c4-809ec0c942c3}</filterKey>
 			<displayData>
 				<name>Remote Assistance (PNRP-In)</name>
 				<description>Inbound rule for Remote Assistance to allow use Peer Name Resolution Protocol. [UDP 3540]</description>
@@ -3972,8 +3803,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>4f05000000000000</data>
-				<asString>O.......</asString>
+				<data>0112000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_TEREDO</subLayerKey>
@@ -4032,14 +3863,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178413</filterId>
+			<filterId>198067</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198402</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{199ce3a7-357e-486a-96c4-07ea0352544c}</filterKey>
+			<filterKey>{0a166484-586e-4759-929a-8c5830cb7e33}</filterKey>
 			<displayData>
 				<name>Delivery Optimization (UDP-In)</name>
 				<description>Inbound rule to allow Delivery Optimization to connect to remote endpoints</description>
@@ -4047,8 +3878,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>4605000000000000</data>
-				<asString>F.......</asString>
+				<data>f811000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_TEREDO</subLayerKey>
@@ -4099,14 +3930,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178362</filterId>
+			<filterId>198016</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>11529003905476198400</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{f9b96e5b-5efa-4335-adb7-2725a25821bf}</filterKey>
+			<filterKey>{1cc56285-0d45-47ea-a707-9fd3a873ce33}</filterKey>
 			<displayData>
 				<name>Microsoft Store</name>
 				<description>Microsoft Store</description>
@@ -4114,8 +3945,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a205000000000000</data>
-				<asString>........</asString>
+				<data>4a12000000000000</data>
+				<asString>J.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_TEREDO</subLayerKey>
@@ -4155,14 +3986,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178873</filterId>
+			<filterId>198487</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363875846062080</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{e7fcbd07-632f-463f-aaf7-85f6a595d932}</filterKey>
+			<filterKey>{30b76080-d3fa-44f5-95af-58ed9a58223c}</filterKey>
 			<displayData>
 				<name>@{microsoft.windowscommunicationsapps_16005.14326.21786.0_x64__8wekyb3d8bbwe?ms-resource://microsoft.windowscommunicationsapps/hxoutlookintl/AppManifest_OutlookDesktop_DisplayName}</name>
 				<description>@{microsoft.windowscommunicationsapps_16005.14326.21786.0_x64__8wekyb3d8bbwe?ms-resource://microsoft.windowscommunicationsapps/hxoutlookintl/AppManifest_OutlookDesktop_Description}</description>
@@ -4170,8 +4001,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>a105000000000000</data>
-				<asString>........</asString>
+				<data>4912000000000000</data>
+				<asString>I.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_TEREDO</subLayerKey>
@@ -4211,14 +4042,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178861</filterId>
+			<filterId>198475</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363875846062080</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{63c9b4a7-eb0f-4dca-b2e6-328fddc06c6d}</filterKey>
+			<filterKey>{e76e09a1-d2b9-4e76-b3d3-b7a41df9d1f6}</filterKey>
 			<displayData>
 				<name>Game Bar</name>
 				<description>Game Bar</description>
@@ -4226,8 +4057,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9405000000000000</data>
-				<asString>........</asString>
+				<data>4612000000000000</data>
+				<asString>F.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_TEREDO</subLayerKey>
@@ -4267,14 +4098,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178801</filterId>
+			<filterId>198455</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363875846062080</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{d97410e1-5a0b-4213-bd95-87a73a82c4cf}</filterKey>
+			<filterKey>{4700400b-dfea-48df-afba-4748b813569c}</filterKey>
 			<displayData>
 				<name>Azure VPN Client</name>
 				<description>Azure VPN Client</description>
@@ -4282,8 +4113,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9305000000000000</data>
-				<asString>........</asString>
+				<data>4512000000000000</data>
+				<asString>E.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_TEREDO</subLayerKey>
@@ -4323,14 +4154,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178789</filterId>
+			<filterId>198443</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363875846062080</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{40a4d45e-d8f3-4ab9-ac07-93090814760f}</filterKey>
+			<filterKey>{0c0fe971-1025-4d06-bb14-cc59a96a19b8}</filterKey>
 			<displayData>
 				<name>@{Microsoft.Win32WebViewHost_10.0.22621.1_neutral_neutral_cw5n1h2txyewy?ms-resource://Windows.Win32WebViewHost/resources/DisplayName}</name>
 				<description>@{Microsoft.Win32WebViewHost_10.0.22621.1_neutral_neutral_cw5n1h2txyewy?ms-resource://Windows.Win32WebViewHost/resources/Description}</description>
@@ -4338,8 +4169,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9205000000000000</data>
-				<asString>........</asString>
+				<data>4412000000000000</data>
+				<asString>D.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_TEREDO</subLayerKey>
@@ -4379,14 +4210,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178777</filterId>
+			<filterId>198431</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363875846062080</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{41a84e38-cc79-4b62-9867-cecd4721bbad}</filterKey>
+			<filterKey>{09b57ec7-9bbe-4d4a-bd1e-54317270e5d7}</filterKey>
 			<displayData>
 				<name>Microsoft Store</name>
 				<description>Microsoft Store</description>
@@ -4394,8 +4225,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>9105000000000000</data>
-				<asString>........</asString>
+				<data>4312000000000000</data>
+				<asString>C.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_TEREDO</subLayerKey>
@@ -4435,14 +4266,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178765</filterId>
+			<filterId>198419</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363875846062080</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{2845df5f-fac0-497a-bd7c-97f83f4ec55b}</filterKey>
+			<filterKey>{91c8891b-9141-4de8-9990-141ed952194c}</filterKey>
 			<displayData>
 				<name>Netflix</name>
 				<description>Netflix</description>
@@ -4450,8 +4281,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>7b05000000000000</data>
-				<asString>{.......</asString>
+				<data>2d12000000000000</data>
+				<asString>-.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_TEREDO</subLayerKey>
@@ -4491,14 +4322,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178621</filterId>
+			<filterId>198275</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363875846062080</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{73279d2d-4da0-461e-8f91-9fb725875109}</filterKey>
+			<filterKey>{9b5257a1-d675-42c2-b391-25d55a7c9094}</filterKey>
 			<displayData>
 				<name>@{Microsoft.Win32WebViewHost_10.0.22621.1_neutral_neutral_cw5n1h2txyewy?ms-resource://Windows.Win32WebViewHost/resources/DisplayName}</name>
 				<description>@{Microsoft.Win32WebViewHost_10.0.22621.1_neutral_neutral_cw5n1h2txyewy?ms-resource://Windows.Win32WebViewHost/resources/Description}</description>
@@ -4506,8 +4337,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>6705000000000000</data>
-				<asString>g.......</asString>
+				<data>1912000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_TEREDO</subLayerKey>
@@ -4547,7 +4378,7 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178533</filterId>
+			<filterId>198187</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>10376363875846062080</uint64>
@@ -4597,7 +4428,7 @@
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{404c28e9-64fc-4916-b22c-3287d3a5f0aa}</filterKey>
+			<filterKey>{7d42c0c8-062f-4f99-8479-879b5fc9d9e2}</filterKey>
 			<displayData>
 				<name>AppContainerLoopback</name>
 				<description>This filter blocks loopback traffic to port 137</description>
@@ -4649,14 +4480,14 @@
 			</action>
 			<providerContextKey>{7f0fdfe9-b5aa-4df8-98c2-8bb515bbc12a}</providerContextKey>
 			<reserved/>
-			<filterId>224169</filterId>
+			<filterId>197971</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744073709551615</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{324e257c-5fa3-44d4-b469-4e1e5eef3b40}</filterKey>
+			<filterKey>{22f2c137-313a-407e-b4a2-14df5eba0da9}</filterKey>
 			<displayData>
 				<name>AppContainerLoopback</name>
 				<description>This filter allows outbound AppContainer loopback traffic</description>
@@ -4692,14 +4523,14 @@
 			</action>
 			<providerContextKey>{7f0fdfe9-b5aa-4df8-98c2-8bb515bbc12a}</providerContextKey>
 			<reserved/>
-			<filterId>224167</filterId>
+			<filterId>197969</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744073709551615</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{bc9d375b-2087-4339-9d7a-49d500325321}</filterKey>
+			<filterKey>{174f9ee7-0a7e-42b7-8cdb-3e00006dd623}</filterKey>
 			<displayData>
 				<name>AppContainerLoopback</name>
 				<description>This filter blocks AppContainer loopback traffic</description>
@@ -4743,14 +4574,14 @@
 			</action>
 			<providerContextKey>{7f0fdfe9-b5aa-4df8-98c2-8bb515bbc12a}</providerContextKey>
 			<reserved/>
-			<filterId>224175</filterId>
+			<filterId>197977</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744073709551614</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{60c3ab96-eb3f-41ef-b2f3-0082d6f14fd6}</filterKey>
+			<filterKey>{88659dcd-0808-4b43-81f2-0d08a0c7c4bb}</filterKey>
 			<displayData>
 				<name>InternetClient Default Rule</name>
 				<description>InternetClient Default Rule</description>
@@ -4758,8 +4589,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_APP_ISOLATION</providerKey>
 			<providerData>
-				<data>8d28000000000000</data>
-				<asString>.(......</asString>
+				<data>b612000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_APP_ISOLATION</subLayerKey>
@@ -4823,14 +4654,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>223973</filterId>
+			<filterId>198862</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>206158432248</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{edae18e0-a90f-4001-90eb-915330e5e0b3}</filterKey>
+			<filterKey>{c04dd877-28be-46d1-8bcd-c1c83f0886d2}</filterKey>
 			<displayData>
 				<name>InternetClientServer Outbound Default Rule</name>
 				<description>InternetClientServer Outbound Default Rule</description>
@@ -4838,8 +4669,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_APP_ISOLATION</providerKey>
 			<providerData>
-				<data>8c28000000000000</data>
-				<asString>.(......</asString>
+				<data>b512000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_APP_ISOLATION</subLayerKey>
@@ -4903,14 +4734,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>223971</filterId>
+			<filterId>198860</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>206158432248</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{17dee3b3-54a7-45e1-9fa9-af60ec61e8aa}</filterKey>
+			<filterKey>{364d57ed-e182-4a46-b8a9-cc903ffe7e20}</filterKey>
 			<displayData>
 				<name>UWP Default Outbound Block Rule</name>
 				<description>This is the UWP Default Outbound Block filter. This filter blocks any outbound packets from UWP apps that do not have the correct capability tokens for the resource they are trying to reach.</description>
@@ -4921,8 +4752,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_APP_ISOLATION</providerKey>
 			<providerData>
-				<data>4405000000000000</data>
-				<asString>D.......</asString>
+				<data>f611000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_APP_ISOLATION</subLayerKey>
@@ -4943,9 +4774,9 @@
 				<type>FWP_ACTION_BLOCK</type>
 				<filterType/>
 			</action>
-			<providerContextKey>{cbcfbef4-a873-44ab-9d73-0a797bf89703}</providerContextKey>
+			<providerContextKey>{54d5d3d1-a8ec-4f35-a65d-4e3e97c22b43}</providerContextKey>
 			<reserved/>
-			<filterId>178357</filterId>
+			<filterId>198011</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>137438953472</uint64>
@@ -4996,7 +4827,7 @@
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{43b83bae-6d19-41d5-9124-0c50ce69597b}</filterKey>
+			<filterKey>{8093482c-479d-4eec-bff4-df74c414ac0e}</filterKey>
 			<displayData>
 				<name>Allow outbound UDP traffic from local NTP port 123 to remote NTP port 123</name>
 				<description/>
@@ -5006,7 +4837,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>e205000000000000</data>
+				<data>9412000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -5065,14 +4896,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179024</filterId>
+			<filterId>198678</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>1057661466443776</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{aa48c452-20f3-470e-a09f-3d682dd36a92}</filterKey>
+			<filterKey>{90201c21-c9f1-4e18-9d8c-a2f862bef3ee}</filterKey>
 			<displayData>
 				<name>DhcpFirewallPolicy</name>
 				<description>DhcpFirewallPolicy</description>
@@ -5082,8 +4913,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>c105000000000000</data>
-				<asString>........</asString>
+				<data>7312000000000000</data>
+				<asString>s.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -5141,14 +4972,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178954</filterId>
+			<filterId>198608</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>1057661466443776</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{d5229469-341f-4fdf-98b0-c95bdb42321a}</filterKey>
+			<filterKey>{496d41b0-0fe2-4c76-aa35-d645bfa54aa6}</filterKey>
 			<displayData>
 				<name>DhcpFirewallPolicy</name>
 				<description>DhcpFirewallPolicy</description>
@@ -5158,8 +4989,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>be05000000000000</data>
-				<asString>........</asString>
+				<data>7012000000000000</data>
+				<asString>p.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -5217,14 +5048,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178948</filterId>
+			<filterId>198602</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>1057661466443776</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{d78c080d-f57a-4dca-9bf5-ea2bf513cd1e}</filterKey>
+			<filterKey>{0c2e6e94-70b0-4323-9b53-0a056ad2caa6}</filterKey>
 			<displayData>
 				<name>Allow PNRP to send to port 3540</name>
 				<description/>
@@ -5234,7 +5065,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>d205000000000000</data>
+				<data>8412000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -5302,14 +5133,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178988</filterId>
+			<filterId>198642</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>1056012199002112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{c57f2411-a70b-4e42-98ae-74b669a7ee1c}</filterKey>
+			<filterKey>{0a26492b-0564-48f4-83e5-dadb92ab8d24}</filterKey>
 			<displayData>
 				<name>Allow outbound UDP traffic from CDPSvc port 5050</name>
 				<description/>
@@ -5319,8 +5150,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>af05000000000000</data>
-				<asString>........</asString>
+				<data>6112000000000000</data>
+				<asString>a.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -5370,14 +5201,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178918</filterId>
+			<filterId>198572</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>1055737321095168</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{dc7c10b3-7cd5-4d74-b0f6-1b88cdca2039}</filterKey>
+			<filterKey>{3b6a8262-2794-45ab-8e9f-c8237a4be5d8}</filterKey>
 			<displayData>
 				<name>VMMS (FRN-HTTP-Out)</name>
 				<description>Outbound rule to allow connection to recovery HTTP server [TCP 80]</description>
@@ -5387,7 +5218,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>fc05000000000000</data>
+				<data>ae12000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -5438,14 +5269,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179094</filterId>
+			<filterId>198748</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{1886cfdb-d9e1-4a69-8b4b-a3314c20e467}</filterKey>
+			<filterKey>{ac1bd812-f4d1-481e-9b1e-b91ccd7f5d6b}</filterKey>
 			<displayData>
 				<name>VMMS (MIG_TCP_Out)</name>
 				<description>Outbound rule to allow planned failover of virtual machine. [TCP 6600]</description>
@@ -5455,7 +5286,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>fb05000000000000</data>
+				<data>ad12000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -5506,14 +5337,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179092</filterId>
+			<filterId>198746</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{26fbed43-760c-4c22-9f5a-211c8ac8be7e}</filterKey>
+			<filterKey>{ba957656-b949-4c96-a351-47ddf45ba024}</filterKey>
 			<displayData>
 				<name>VMMS (LDAP_TCP_Out)</name>
 				<description>Outbound rule to allow LDAP communication in Active Directory APIs</description>
@@ -5523,7 +5354,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>f905000000000000</data>
+				<data>ab12000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -5574,14 +5405,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179088</filterId>
+			<filterId>198742</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{b6fc6b59-fab0-4042-b217-5caa8920b2f9}</filterKey>
+			<filterKey>{c6ba3805-5f86-4942-93cc-059307830ab2}</filterKey>
 			<displayData>
 				<name>VMMS (EPM_TCP_Out)</name>
 				<description>Outbound rule to allow EPM communication in active directory APIs</description>
@@ -5591,7 +5422,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>f805000000000000</data>
+				<data>aa12000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -5642,14 +5473,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179086</filterId>
+			<filterId>198740</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{cb4bf4c0-cbbc-4c68-ace0-02cc14efe0cd}</filterKey>
+			<filterKey>{5e6ff49e-2bcf-4b44-ba8d-01c581fd3994}</filterKey>
 			<displayData>
 				<name>Allow HTTP traffic from cloudidsvc</name>
 				<description/>
@@ -5659,7 +5490,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>ed05000000000000</data>
+				<data>9f12000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -5710,14 +5541,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179050</filterId>
+			<filterId>198704</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{a3c925a2-ba40-41bc-9f86-d75fef527606}</filterKey>
+			<filterKey>{10d76b13-fade-4ee0-8b7f-cfb282d401c1}</filterKey>
 			<displayData>
 				<name>Allow WebThreatDefSvc to send to port 443</name>
 				<description/>
@@ -5727,7 +5558,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>e705000000000000</data>
+				<data>9912000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -5778,14 +5609,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179034</filterId>
+			<filterId>198688</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{e55c3aaf-42b6-4737-b71d-39237b4cff26}</filterKey>
+			<filterKey>{a697a659-bef8-4ff1-9043-deb99a049d5c}</filterKey>
 			<displayData>
 				<name>Allow NTP traffic from Wcmsvc</name>
 				<description/>
@@ -5795,7 +5626,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>e505000000000000</data>
+				<data>9712000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -5846,14 +5677,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179030</filterId>
+			<filterId>198684</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{1c053175-cad3-439f-a244-785f656fa4c8}</filterKey>
+			<filterKey>{a980bcbe-ce64-4177-bb40-a805e0d63116}</filterKey>
 			<displayData>
 				<name>Allow outbound LDAP traffic from SearchIndexer</name>
 				<description/>
@@ -5863,7 +5694,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>d805000000000000</data>
+				<data>8a12000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -5914,14 +5745,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179000</filterId>
+			<filterId>198654</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{2ce59d0c-4a35-4776-b1f3-085f3f3819c3}</filterKey>
+			<filterKey>{9d41b4d9-9443-4f3d-99a7-6d15bafeb991}</filterKey>
 			<displayData>
 				<name>IPsec Policy Agent service hardening - LDAP/UDP</name>
 				<description>Allow IPsec Policy Agent outbound LDAP/UDP traffic to Active Directory</description>
@@ -5931,7 +5762,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>d405000000000000</data>
+				<data>8612000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -5982,14 +5813,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178992</filterId>
+			<filterId>198646</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{37318c51-3293-47c7-9161-2c5d42f27067}</filterKey>
+			<filterKey>{ab0e2244-ceba-4180-ac75-360908647433}</filterKey>
 			<displayData>
 				<name>IPsec Policy Agent service hardening - LDAP/TCP</name>
 				<description>Allow IPsec Policy Agent outbound LDAP/TCP traffic to Active Directory</description>
@@ -5999,7 +5830,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>d305000000000000</data>
+				<data>8512000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -6050,14 +5881,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178990</filterId>
+			<filterId>198644</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{0d275397-44cc-4081-9d38-ebf9579e65bb}</filterKey>
+			<filterKey>{34a77fad-539b-4258-b0ed-2d0449f49e38}</filterKey>
 			<displayData>
 				<name>Allow Grouping to send to port 3587</name>
 				<description/>
@@ -6067,7 +5898,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>d005000000000000</data>
+				<data>8212000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -6118,14 +5949,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178984</filterId>
+			<filterId>198638</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{400573e4-5dd5-4ef3-9d1a-408e1010d1f0}</filterKey>
+			<filterKey>{005eb146-545a-4c83-bf7a-e52a0e407eb5}</filterKey>
 			<displayData>
 				<name>Allow outbound TCP traffic to LMHosts port 53</name>
 				<description/>
@@ -6135,8 +5966,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>ca05000000000000</data>
-				<asString>........</asString>
+				<data>7c12000000000000</data>
+				<asString>|.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -6186,14 +6017,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178972</filterId>
+			<filterId>198626</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{7855ff5f-ce4f-4148-a9dc-176921870a52}</filterKey>
+			<filterKey>{bb3f9f53-4387-4d35-a5e6-28611fe57986}</filterKey>
 			<displayData>
 				<name>Allow outbound UDP traffic to LMHosts port 53</name>
 				<description/>
@@ -6203,8 +6034,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>c905000000000000</data>
-				<asString>........</asString>
+				<data>7b12000000000000</data>
+				<asString>{.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -6254,14 +6085,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178970</filterId>
+			<filterId>198624</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{02b626ed-3e79-444b-8522-8adaebdf6ad2}</filterKey>
+			<filterKey>{9359a11b-8b90-48e2-84d2-7c0d76fc1097}</filterKey>
 			<displayData>
 				<name>Allow outbound UDP traffic from fdphost port 1900</name>
 				<description/>
@@ -6271,8 +6102,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>c705000000000000</data>
-				<asString>........</asString>
+				<data>7912000000000000</data>
+				<asString>y.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -6322,14 +6153,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178966</filterId>
+			<filterId>198620</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{caa37406-815d-4b12-a5a0-f4af898fff8e}</filterKey>
+			<filterKey>{ad72fdc5-d7e9-4ff3-9c18-f4e0d88da71a}</filterKey>
 			<displayData>
 				<name>Allow outbound UDP traffic from fdphost port 3702</name>
 				<description/>
@@ -6339,8 +6170,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>c505000000000000</data>
-				<asString>........</asString>
+				<data>7712000000000000</data>
+				<asString>w.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -6390,14 +6221,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178962</filterId>
+			<filterId>198616</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{c866c134-2fc7-4956-bc0b-bd2334329b97}</filterKey>
+			<filterKey>{dbf8e942-2c55-4927-9fa9-58a04a66ac0c}</filterKey>
 			<displayData>
 				<name>Device Metadata Retrieval</name>
 				<description>Allow dmrc communication with WMIS</description>
@@ -6407,8 +6238,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>c205000000000000</data>
-				<asString>........</asString>
+				<data>7412000000000000</data>
+				<asString>t.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -6458,14 +6289,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178956</filterId>
+			<filterId>198610</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{a3f3a234-0cb4-4c4f-93ea-ef2e3640cc68}</filterKey>
+			<filterKey>{79079aac-09db-4f89-bf05-33b0203764a2}</filterKey>
 			<displayData>
 				<name>Allow outbound TCP traffic from CDPSvc from any port to port 5160 (Wi-Fi Direct Transport)</name>
 				<description/>
@@ -6475,8 +6306,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>b205000000000000</data>
-				<asString>........</asString>
+				<data>6412000000000000</data>
+				<asString>d.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -6526,14 +6357,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178924</filterId>
+			<filterId>198578</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{f3c2c6ad-4012-4c8f-b76c-c186263e268c}</filterKey>
+			<filterKey>{d4840785-7332-439f-9231-ccde196943d4}</filterKey>
 			<displayData>
 				<name>Allow outbound UDP traffic from any port to CDPSvc port 5050</name>
 				<description/>
@@ -6543,8 +6374,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>ae05000000000000</data>
-				<asString>........</asString>
+				<data>6012000000000000</data>
+				<asString>`.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -6594,14 +6425,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178916</filterId>
+			<filterId>198570</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{d7ed4f77-78c5-479f-96f6-e2acf4ab796f}</filterKey>
+			<filterKey>{cf3ca70a-b128-4c83-8a80-067a6d1ad607}</filterKey>
 			<displayData>
 				<name>Allow outbound TCP traffic from CDPSvc from any port to port 5040</name>
 				<description/>
@@ -6611,8 +6442,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>ad05000000000000</data>
-				<asString>........</asString>
+				<data>5f12000000000000</data>
+				<asString>_.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -6662,14 +6493,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178914</filterId>
+			<filterId>198568</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>987292722266112</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{1a1f62fc-c079-4b5a-98d4-4dae639d3eab}</filterKey>
+			<filterKey>{d4bd1030-b550-42e1-b817-8bd6ee067a5c}</filterKey>
 			<displayData>
 				<name>VMMS (DYNAMIC_PORT_Out_1)</name>
 				<description>Outbound Firewall rule to allow communications to domain controllers using Active Directory APIs in Windows Server 2003 or earlier versions.</description>
@@ -6679,7 +6510,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>f605000000000000</data>
+				<data>a812000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -6739,14 +6570,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179082</filterId>
+			<filterId>198736</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985918332731392</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{eff3843e-fcec-4bdc-a28a-8b52c6d5518f}</filterKey>
+			<filterKey>{f4ba6872-f3f3-47a8-b2e6-46957f801658}</filterKey>
 			<displayData>
 				<name>VMMS (DYNAMIC_PORT_Out_2)</name>
 				<description>Outbound rule to allow communication to Server 2008 or later domain controller in active directory APIs</description>
@@ -6756,7 +6587,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>f705000000000000</data>
+				<data>a912000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -6816,14 +6647,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179084</filterId>
+			<filterId>198738</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985643454824448</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{3982086c-c75b-42dc-867a-ceb849a9e923}</filterKey>
+			<filterKey>{2d76d69a-1147-4ea2-9917-a8f390b17dca}</filterKey>
 			<displayData>
 				<name>Allow all outbound TCP ports traffic for vmicheartbeat</name>
 				<description/>
@@ -6833,7 +6664,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>e005000000000000</data>
+				<data>9212000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -6893,14 +6724,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179020</filterId>
+			<filterId>198674</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985643454824448</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{f4e2ba96-409e-4f91-bd71-99e2825f5d1f}</filterKey>
+			<filterKey>{c862f253-035b-4fc3-b3a5-8f65dabdc55b}</filterKey>
 			<displayData>
 				<name>WinDefend Outbound for TCP</name>
 				<description/>
@@ -6910,7 +6741,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>fe05000000000000</data>
+				<data>b012000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -6953,14 +6784,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179098</filterId>
+			<filterId>198752</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{ffdfef7b-ae09-4f9e-8f7f-3dc67c529a74}</filterKey>
+			<filterKey>{c4babfac-af20-4216-ab67-7e6df1c2b275}</filterKey>
 			<displayData>
 				<name>Allow outgoing TCP from PeerDistSvc</name>
 				<description/>
@@ -6970,7 +6801,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>f005000000000000</data>
+				<data>a212000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -7013,14 +6844,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179060</filterId>
+			<filterId>198714</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{7f4317a3-a904-4dd7-8482-128ae9942adb}</filterKey>
+			<filterKey>{e9b6c8e9-452c-462d-b001-3c743cdc3f29}</filterKey>
 			<displayData>
 				<name>Allow TCP traffic from lpasvc</name>
 				<description/>
@@ -7030,7 +6861,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>ec05000000000000</data>
+				<data>9e12000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -7073,14 +6904,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179048</filterId>
+			<filterId>198702</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{b5eeb04b-de6a-4fb9-9437-3290aa4bfc47}</filterKey>
+			<filterKey>{a03e34af-5a5c-4922-bbf2-e24a0c8b1497}</filterKey>
 			<displayData>
 				<name>Allow outbound TCP traffic from WinHttpAutoProxySvc</name>
 				<description/>
@@ -7090,7 +6921,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>e905000000000000</data>
+				<data>9b12000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -7133,14 +6964,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179038</filterId>
+			<filterId>198692</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{535437b5-3d7e-4023-a783-9b954c59e342}</filterKey>
+			<filterKey>{b2ac73ce-7fc5-4136-ba00-f7c459767ddf}</filterKey>
 			<displayData>
 				<name>Allow Out TCP traffic from WinDefend</name>
 				<description/>
@@ -7150,7 +6981,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>e805000000000000</data>
+				<data>9a12000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -7193,14 +7024,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179036</filterId>
+			<filterId>198690</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{fdfedf15-aa86-4f7d-9db1-dd5022aa1549}</filterKey>
+			<filterKey>{b067332d-62cf-40d7-90cf-c5aee82d628b}</filterKey>
 			<displayData>
 				<name>Allow TCP traffic from Wcmsvc</name>
 				<description/>
@@ -7210,7 +7041,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>e405000000000000</data>
+				<data>9612000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -7253,14 +7084,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179028</filterId>
+			<filterId>198682</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{a04a26e4-3ad7-40d5-8018-02d909b3b40e}</filterKey>
+			<filterKey>{ace58cdd-d546-4c6e-9059-590726e1973d}</filterKey>
 			<displayData>
 				<name>Allow all outbound TCP and RPC from SPPEXTCOMOBJ</name>
 				<description/>
@@ -7270,7 +7101,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>dc05000000000000</data>
+				<data>8e12000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -7313,14 +7144,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179008</filterId>
+			<filterId>198662</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{84ecc2fc-9720-44b7-89b4-27a0440ecabb}</filterKey>
+			<filterKey>{5b6c92a8-09c0-4cff-bc90-023ce1e62e4b}</filterKey>
 			<displayData>
 				<name>Allow outbound UDP traffic from AJRouter</name>
 				<description/>
@@ -7330,7 +7161,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>ce05000000000000</data>
+				<data>8012000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -7373,14 +7204,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178980</filterId>
+			<filterId>198634</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{81771532-9e66-41e3-915d-c9c1dd228dba}</filterKey>
+			<filterKey>{3878654f-1063-407e-8ff7-370db7e336be}</filterKey>
 			<displayData>
 				<name>Allow outbound TCP traffic from AJRouter</name>
 				<description/>
@@ -7390,7 +7221,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>cd05000000000000</data>
+				<data>7f12000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -7433,14 +7264,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178978</filterId>
+			<filterId>198632</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{8fbd0c16-2803-4cd9-a41f-88d82f2cc7f9}</filterKey>
+			<filterKey>{3efc9a9b-a6a1-4a49-b746-5bc6cc7ec4e8}</filterKey>
 			<displayData>
 				<name>Allow outbound TCP traffic from fdphost</name>
 				<description/>
@@ -7450,8 +7281,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>c805000000000000</data>
-				<asString>........</asString>
+				<data>7a12000000000000</data>
+				<asString>z.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -7493,14 +7324,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178968</filterId>
+			<filterId>198622</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{2bdd34e2-3b31-48fd-9912-ccf3dabf7a6d}</filterKey>
+			<filterKey>{43a82fb8-c711-4db6-a5bd-0f0fb9369ba3}</filterKey>
 			<displayData>
 				<name>Allow outbound TCP traffic from DMEnrollment</name>
 				<description/>
@@ -7510,8 +7341,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>bd05000000000000</data>
-				<asString>........</asString>
+				<data>6f12000000000000</data>
+				<asString>o.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -7553,14 +7384,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178946</filterId>
+			<filterId>198600</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{b2f2f24c-9617-494e-875c-d19af4f25614}</filterKey>
+			<filterKey>{b029e5ca-255c-4dcb-8d13-68d606f82de5}</filterKey>
 			<displayData>
 				<name>Allow outbound TCP traffic from CDPSvc</name>
 				<description/>
@@ -7570,8 +7401,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>b005000000000000</data>
-				<asString>........</asString>
+				<data>6212000000000000</data>
+				<asString>b.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -7613,14 +7444,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178920</filterId>
+			<filterId>198574</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{788439a7-c147-475b-ad9e-7035effb17df}</filterKey>
+			<filterKey>{e4cff03f-8103-4b58-8dad-cd24d853e3bb}</filterKey>
 			<displayData>
 				<name>AxInstSV TCP outbound allow</name>
 				<description>Allow only outbound TCP traffic from AxInstSV</description>
@@ -7630,8 +7461,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>ab05000000000000</data>
-				<asString>........</asString>
+				<data>5d12000000000000</data>
+				<asString>].......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -7673,14 +7504,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178910</filterId>
+			<filterId>198564</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985368576917504</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{fe9f30bb-f535-481c-b819-a95b32177b29}</filterKey>
+			<filterKey>{2c07ce3e-35d9-494a-8313-b95759918601}</filterKey>
 			<displayData>
 				<name>Allow outbound TCP traffic from dmcertinst.exe</name>
 				<description/>
@@ -7690,8 +7521,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>bc05000000000000</data>
-				<asString>........</asString>
+				<data>6e12000000000000</data>
+				<asString>n.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -7725,14 +7556,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178944</filterId>
+			<filterId>198598</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985299857440768</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{eb01a5af-7b40-4226-a284-bb24b6624878}</filterKey>
+			<filterKey>{2453ec67-0b75-4597-a352-6097f5521ecf}</filterKey>
 			<displayData>
 				<name>Allow outbound TCP traffic from omadmclient.exe</name>
 				<description/>
@@ -7742,8 +7573,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>b905000000000000</data>
-				<asString>........</asString>
+				<data>6b12000000000000</data>
+				<asString>k.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -7777,14 +7608,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178938</filterId>
+			<filterId>198592</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985299857440768</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{62362d55-4f1a-4959-a721-4d7439ababe4}</filterKey>
+			<filterKey>{2ada7b58-460c-402d-b62b-292fc0fb818a}</filterKey>
 			<displayData>
 				<name>Allow outbound TCP traffic from deviceenroller.exe</name>
 				<description/>
@@ -7794,8 +7625,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>b705000000000000</data>
-				<asString>........</asString>
+				<data>6912000000000000</data>
+				<asString>i.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -7829,14 +7660,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178934</filterId>
+			<filterId>198588</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>985299857440768</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{49690a58-1b1b-44f0-b91d-c12119d79729}</filterKey>
+			<filterKey>{a886b95c-c3ea-41d9-889b-800acf467e77}</filterKey>
 			<displayData>
 				<name>Block all outbound traffic from SearchFilterHost</name>
 				<description/>
@@ -7848,7 +7679,7 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>d705000000000000</data>
+				<data>8912000000000000</data>
 				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
@@ -7873,16 +7704,16 @@
 				<type>FWP_ACTION_BLOCK</type>
 				<filterType/>
 			</action>
-			<providerContextKey>{e011d865-09ec-4519-b72a-2ff75ddf2846}</providerContextKey>
+			<providerContextKey>{7862cddf-40d4-42fd-b081-00625a7f51a7}</providerContextKey>
 			<reserved/>
-			<filterId>178998</filterId>
+			<filterId>198652</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>137438953472</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{1674b4f9-40b7-4a19-973a-b074035e7912}</filterKey>
+			<filterKey>{b77601f5-7a3d-4b24-a29b-900bb2857bc1}</filterKey>
 			<displayData>
 				<name>Block outbound traffic from dmcertinst.exe</name>
 				<description/>
@@ -7894,8 +7725,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>bb05000000000000</data>
-				<asString>........</asString>
+				<data>6d12000000000000</data>
+				<asString>m.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -7919,16 +7750,16 @@
 				<type>FWP_ACTION_BLOCK</type>
 				<filterType/>
 			</action>
-			<providerContextKey>{584e1d4e-2c8f-4c7f-8d0d-e6af5db07191}</providerContextKey>
+			<providerContextKey>{f5d01293-72fb-4e49-8f15-8666d1334197}</providerContextKey>
 			<reserved/>
-			<filterId>178942</filterId>
+			<filterId>198596</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>137438953472</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{1de01b03-51e9-48d6-ade6-2c5900441a27}</filterKey>
+			<filterKey>{24a09d5a-534d-4c37-8ed2-c5d27824370d}</filterKey>
 			<displayData>
 				<name>Block outbound traffic from omadmclient.exe</name>
 				<description/>
@@ -7940,8 +7771,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>b805000000000000</data>
-				<asString>........</asString>
+				<data>6a12000000000000</data>
+				<asString>j.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -7965,16 +7796,16 @@
 				<type>FWP_ACTION_BLOCK</type>
 				<filterType/>
 			</action>
-			<providerContextKey>{ddcf86aa-8323-47b3-9453-73379b4fbd89}</providerContextKey>
+			<providerContextKey>{6ebd86eb-6ad7-466d-9ab5-af93b06a67d0}</providerContextKey>
 			<reserved/>
-			<filterId>178936</filterId>
+			<filterId>198590</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>137438953472</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{273d5573-f178-4d53-adec-1dc7033aa184}</filterKey>
+			<filterKey>{847f2c87-34a1-4c6c-8ae1-d67c07c2e259}</filterKey>
 			<displayData>
 				<name>Block outbound traffic from deviceenroller.exe</name>
 				<description/>
@@ -7986,8 +7817,8 @@
 			</flags>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WSH</providerKey>
 			<providerData>
-				<data>b605000000000000</data>
-				<asString>........</asString>
+				<data>6812000000000000</data>
+				<asString>h.......</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WSH</subLayerKey>
@@ -8011,16 +7842,16 @@
 				<type>FWP_ACTION_BLOCK</type>
 				<filterType/>
 			</action>
-			<providerContextKey>{8c020e11-e16a-44f0-943d-2b8cec141dc1}</providerContextKey>
+			<providerContextKey>{3a0fd06e-de58-427f-9be3-1ff3d2b20bd1}</providerContextKey>
 			<reserved/>
-			<filterId>178932</filterId>
+			<filterId>198586</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>137438953472</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{2433d08a-cfe4-4765-916b-14f6d5f376ff}</filterKey>
+			<filterKey>{e845584b-1b3c-43e3-b315-5c52c9b19bf7}</filterKey>
 			<displayData>
 				<name>WSH Default Outbound Block</name>
 				<description>Blocks all outbound traffic for services who have been network hardened</description>
@@ -8052,14 +7883,14 @@
 			</action>
 			<providerContextKey>{de04f4bd-a953-47f6-b1b6-eb6e24a546d6}</providerContextKey>
 			<reserved/>
-			<filterId>179117</filterId>
+			<filterId>198771</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>68719476736</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{ec096018-e029-46a8-8491-d12dd4562ac5}</filterKey>
+			<filterKey>{442f1285-67ee-4fba-a453-2840f5e7fbcb}</filterKey>
 			<displayData>
 				<name>FTP Inspection Filter</name>
 				<description>This filter enables inspection of FTP.</description>
@@ -8109,7 +7940,7 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>179122</filterId>
+			<filterId>198776</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>18446744073709551615</uint64>
@@ -8160,7 +7991,7 @@
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{060c21db-7469-43a2-a73f-b1672c84fab7}</filterKey>
+			<filterKey>{5e376539-5395-49bc-8c98-bb943f3ed648}</filterKey>
 			<displayData>
 				<name>Default Outbound</name>
 				<description>This is the default outbound filter which blocks or permits traffic based on user configured default settings</description>
@@ -8168,8 +7999,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>3f05000000000000</data>
-				<asString>?.......</asString>
+				<data>f111000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -8201,14 +8032,14 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178342</filterId>
+			<filterId>197996</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>9223372036854777848</uint64>
 			</effectiveWeight>
 		</item>
 		<item>
-			<filterKey>{6fcc0698-a430-4034-a085-b55828f1fbc4}</filterKey>
+			<filterKey>{7c86ed53-cdee-4eda-beed-7204833b211f}</filterKey>
 			<displayData>
 				<name>Default Outbound</name>
 				<description>This is the default outbound filter which blocks or permits traffic based on user configured default settings</description>
@@ -8216,8 +8047,8 @@
 			<flags/>
 			<providerKey>FWPM_PROVIDER_MPSSVC_WF</providerKey>
 			<providerData>
-				<data>3f05000000000000</data>
-				<asString>?.......</asString>
+				<data>f111000000000000</data>
+				<asString>........</asString>
 			</providerData>
 			<layerKey>FWPM_LAYER_ALE_AUTH_CONNECT_V4</layerKey>
 			<subLayerKey>FWPM_SUBLAYER_MPSSVC_WF</subLayerKey>
@@ -8232,7 +8063,7 @@
 			</action>
 			<rawContext>0</rawContext>
 			<reserved/>
-			<filterId>178346</filterId>
+			<filterId>198000</filterId>
 			<effectiveWeight>
 				<type>FWP_UINT64</type>
 				<uint64>3458764513820540928</uint64>
@@ -8293,6 +8124,16 @@
 			<serviceName>mpssvc</serviceName>
 		</item>
 		<item>
+			<providerKey>{479ace8b-2405-43d2-818a-9ee859318257}</providerKey>
+			<displayData>
+				<name>Microsoft Corporation</name>
+				<description>Microsoft Windows edge traversal socket option authorization provider</description>
+			</displayData>
+			<flags/>
+			<providerData/>
+			<serviceName/>
+		</item>
+		<item>
 			<providerKey>{893a4f22-9bba-49b7-8c66-3d40929c8fd5}</providerKey>
 			<displayData>
 				<name>Microsoft Corporation</name>
@@ -8311,16 +8152,6 @@
 			<flags/>
 			<providerData/>
 			<serviceName>mpssvc</serviceName>
-		</item>
-		<item>
-			<providerKey>{d7fa481f-734a-4d16-838a-4f3ba625d8cb}</providerKey>
-			<displayData>
-				<name>Microsoft Corporation</name>
-				<description>Microsoft Windows edge traversal socket option authorization provider</description>
-			</displayData>
-			<flags/>
-			<providerData/>
-			<serviceName/>
 		</item>
 		<item>
 			<providerKey>FWPM_PROVIDER_IPSEC_DOSP_CONFIG</providerKey>

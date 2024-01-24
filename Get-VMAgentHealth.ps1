@@ -20,7 +20,9 @@
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
     [string]$outputPath = 'C:\logs',
-    [switch]$showReport
+    [switch]$showReport,
+    [switch]$fakeFinding,
+    [switch]$skipAdminCheck
 )
 
 trap
@@ -1469,10 +1471,13 @@ $verbose = [bool]$PSBoundParameters['verbose']
 $debug = [bool]$PSBoundParameters['debug']
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')
-if ($isAdmin -eq $false)
+if ($skipAdminCheck -eq $false)
 {
-    Write-Host 'Script must be run from an elevated PowerShell session' -ForegroundColor Cyan
-    exit
+    if ($isAdmin -eq $false)
+    {
+        Write-Host 'Script must be run from an elevated PowerShell session' -ForegroundColor Cyan
+        exit
+    }
 }
 
 if ($outputPath)
@@ -1725,23 +1730,31 @@ else
     New-Check -name 'WindowsAzureGuestAgent application errors' -result 'Skipped' -details "Azure VM: $isAzureVM"
 }
 
-Out-Log 'StdRegProv WMI class queryable:' -startLine
+Out-Log 'StdRegProv WMI class:' -startLine
 if ($winmgmt.Status -eq 'Running')
 {
-    $stdRegProv = Invoke-ExpressionWithLogging "wmic /namespace:\\root\default Class StdRegProv Call GetDWORDValue hDefKey='&H80000002' sSubKeyName='SYSTEM\CurrentControlSet\Services\Winmgmt' sValueName=Start 2>`$null" -verboseOnly
+    if ($fakeFinding)
+    {
+        # Using intentionally wrong class name NOTStdRegProv in order to generate a finding on-demand without having to change any config
+        $stdRegProv = Invoke-ExpressionWithLogging "wmic /namespace:\\root\default Class NOTStdRegProv Call GetDWORDValue hDefKey='&H80000002' sSubKeyName='SYSTEM\CurrentControlSet\Services\Winmgmt' sValueName=Start 2>`$null" -verboseOnly
+    }
+    else
+    {
+        $stdRegProv = Invoke-ExpressionWithLogging "wmic /namespace:\\root\default Class StdRegProv Call GetDWORDValue hDefKey='&H80000002' sSubKeyName='SYSTEM\CurrentControlSet\Services\Winmgmt' sValueName=Start 2>`$null" -verboseOnly
+    }
 
     $wmicExitCode = $LASTEXITCODE
     if ($wmicExitCode -eq 0)
     {
         $stdRegProvQuerySuccess = $true
         Out-Log $stdRegProvQuerySuccess -color Green -endLine
-        New-Check -name 'StdRegProv WMI class queryable' -result 'OK' -details ''
+        New-Check -name 'StdRegProv WMI class' -result 'OK' -details ''
     }
     else
     {
         $stdRegProvQuerySuccess = $false
         Out-Log $stdRegProvQuerySuccess -color Red -endLine
-        New-Check -name 'StdRegProv WMI class queryable' -result 'FAILED' -details ''
+        New-Check -name 'StdRegProv WMI class' -result 'FAILED' -details ''
         $description = "StdRegProv WMI class query failed with error code $wmicExitCode"
         New-Finding -type Critical -name 'StdRegProv WMI class query failed' -description $description -mitigation ''
     }
