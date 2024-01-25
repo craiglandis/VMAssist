@@ -24,7 +24,6 @@ param (
     [switch]$fakeFinding,
     [switch]$skipFirewall,
     [switch]$skipFilters
-
 )
 
 trap
@@ -117,7 +116,7 @@ function Get-WCFConfig
 
         $global:dbgMatchesString = $matchesString
         $wcfDebuggingEnabled = $true
-        Out-Log $wcfDebuggingEnabled -color Yellow -endLine
+        Out-Log $wcfDebuggingEnabled -color Red -endLine
         New-Check -name 'WCF debugging config' -result 'FAILED' -details 'WCF debugging is enabled'
         $global:dbgMachineConfigStrings = $machineConfigStrings
         $description = "$machineConfigx64FilePath shows WCF debugging is enabled:<p>$matchesString<p>"
@@ -3019,7 +3018,7 @@ $css = @'
         }
 
         /* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
-        .active, .accordion:hover {
+        .active2, .accordion:hover {
           background-color: #ccc;
         }
 
@@ -3030,7 +3029,7 @@ $css = @'
             margin-left: 5px;
         }
 
-          .active:after {
+          .active2:after {
             content: "\2796"; /* Unicode character for "minus" sign (-) */
         }
 
