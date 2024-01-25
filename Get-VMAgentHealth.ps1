@@ -939,7 +939,7 @@ function New-Check
 {
     param(
         [string]$name,
-        [ValidateSet('OK','FAILED','SKIPPED')]
+        [ValidateSet('OK','FAILED','INFO','SKIPPED')]
         [string]$result,
         [string]$details
     )
