@@ -21,7 +21,10 @@
 param (
     [string]$outputPath = 'C:\logs',
     [switch]$showReport,
-    [switch]$fakeFinding
+    [switch]$fakeFinding,
+    [switch]$skipFirewall,
+    [switch]$skipFilters
+
 )
 
 trap
@@ -108,10 +111,17 @@ function Get-WCFConfig
         }
 
         $machineConfigStrings = $matches.ToString()
+        $matchesString = $matches.Line.Replace('<','&lt;').Replace('>','&gt;')
+        #$matchesString = "<div class='box'><pre><code>$matchesString</code></pre></div>"
+        #$matchesString = $matches.Line
+
+        $global:dbgMatchesString = $matchesString
         $wcfDebuggingEnabled = $true
         Out-Log $wcfDebuggingEnabled -color Yellow -endLine
         New-Check -name 'WCF debugging config' -result 'FAILED' -details 'WCF debugging is enabled'
-        $description = "$machineConfigx64FilePath shows WCF debugging is enabled: `n$($machineConfigStrings | Out-String)"
+        $global:dbgMachineConfigStrings = $machineConfigStrings
+        $description = "$machineConfigx64FilePath shows WCF debugging is enabled:<p>$matchesString<p>"
+        $global:dbgDescription = $description
         New-Finding -type Critical -name 'WCF debugging enabled' -description $description
     }
     else
@@ -2329,8 +2339,14 @@ else
     New-Check -name 'IMDS endpoint 169.254.169.254:80 returned expected result' -result 'Skipped' -details "Azure VM: $isAzureVM"
 }
 
-$enabledFirewallRules = Get-EnabledFirewallRules
-$wfpFilters = Get-WfpFilters
+if ($skipFirewall -eq $false)
+{
+    $enabledFirewallRules = Get-EnabledFirewallRules
+}
+if ($skipFilters -eq $false)
+{
+    $wfpFilters = Get-WfpFilters
+}
 
 $machineKeysDefaultSddl = 'O:SYG:SYD:PAI(A;;0x12019f;;;WD)(A;;FA;;;BA)'
 Out-Log 'MachineKeys folder has default permissions:' -startLine
@@ -3125,6 +3141,7 @@ $tabs | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 $findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
 if ($findingsCount -ge 1)
 {
+    <#
     foreach($finding in $findings)
     {
         [void]$stringBuilder.Append("<button class='accordion'>$($finding.Name)</button>")
@@ -3138,7 +3155,8 @@ if ($findingsCount -ge 1)
         [void]$stringBuilder.Append('</p>')
         [void]$stringBuilder.Append('</div>')
     }
-    <#
+    #>
+    #<#
     $findingsTable = $findings | Select-Object Type, Name, Description, Mitigation | ConvertTo-Html -Fragment -As Table
     $findingsTable = $findingsTable -replace '<td>Critical</td>', '<td class="CRITICAL">Critical</td>'
     $findingsTable = $findingsTable -replace '<td>Warning</td>', '<td class="WARNING">Warning</td>'
