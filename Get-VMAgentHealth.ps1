@@ -3160,6 +3160,7 @@ if ($findingsCount -ge 1)
     $findingsTable = $findingsTable -replace '<td>Critical</td>', '<td class="CRITICAL">Critical</td>'
     $findingsTable = $findingsTable -replace '<td>Warning</td>', '<td class="WARNING">Warning</td>'
     $findingsTable = $findingsTable -replace '<td>Information</td>', '<td class="INFORMATION">Information</td>'
+    $findingsTable = $findingsTable -replace '<td>Info</td>', '<td class="INFO">Info</td>'
     $global:dbgFindingsTable = $findingsTable
     $findingsTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
     #>
