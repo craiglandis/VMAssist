@@ -2906,37 +2906,37 @@ $css = @'
         td.CRITICAL {
             background: Salmon;
             color: Black;
-            text-align: left
+            text-align: center
         }
         td.WARNING {
             background: Yellow;
             color: Black;
-            text-align: left
+            text-align: center
         }
         td.INFO {
             background: Cyan;
             color: Black;
-            text-align: left
+            text-align: center
         }
         td.OK {
             background: PaleGreen;
             color: Black;
-            text-align: left
+            text-align: center
         }
         td.PASSED {
             background: PaleGreen;
             color: Black;
-            text-align: left
+            text-align: center
         }
         td.FAILED {
             background: Salmon;
             color: Black;
-            text-align: left
+            text-align: center
         }
         td.SKIPPED {
             background: LightGrey;
             color: Black;
-            text-align: left
+            text-align: center
         }
         /* Style the tab */
         .gray {
@@ -3010,12 +3010,15 @@ $css = @'
           background-color: #eee;
           color: #444;
           cursor: pointer;
-          padding: 18px;
+          padding: 10px;
           width: 100%;
           text-align: left;
           border: none;
           outline: none;
           transition: 0.4s;
+          font-family: sans-serif;
+          font-size: 17px;
+          font-weight: bold;
         }
 
         /* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
@@ -3037,6 +3040,8 @@ $css = @'
         /* Style the accordion panel. Note: hidden by default */
         .panel {
           padding: 0 18px;
+          font-family: sans-serif;
+          font-size: 17px;
           background-color: white;
           display: none;
           overflow: hidden;
@@ -3141,7 +3146,7 @@ $tabs | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 $findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
 if ($findingsCount -ge 1)
 {
-    <#
+    #<#
     foreach($finding in $findings)
     {
         [void]$stringBuilder.Append("<button class='accordion'>$($finding.Name)</button>")
@@ -3156,7 +3161,7 @@ if ($findingsCount -ge 1)
         [void]$stringBuilder.Append('</div>')
     }
     #>
-    #<#
+    <#
     $findingsTable = $findings | Select-Object Type, Name, Description, Mitigation | ConvertTo-Html -Fragment -As Table
     $findingsTable = $findingsTable -replace '<td>Critical</td>', '<td class="CRITICAL">Critical</td>'
     $findingsTable = $findingsTable -replace '<td>Warning</td>', '<td class="WARNING">Warning</td>'
