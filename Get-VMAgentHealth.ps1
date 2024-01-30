@@ -1574,10 +1574,11 @@ else
     Out-Log "Azure VM: $isAzureVM"
 }
 
+$uuidFromWMI = Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID
 $lastConfig = Get-ItemProperty -Path 'HKLM:\SYSTEM\HardwareConfig' -ErrorAction SilentlyContinue | Select-Object -Expandproperty LastConfig
 if ($lastConfig)
 {
-    $uuid = $lastConfig.ToLower().Replace('{','').Replace('}','')
+    $uuidFromRegistry = $lastConfig.ToLower().Replace('{','').Replace('}','')
 }
 if ($isAzureVM)
 {
@@ -3344,41 +3345,41 @@ else
 }
 Out-Log "$findingsCount issue(s) found." -color $color
 
-<#
-### https://github.com/search?q=get-counter+language%3APowerShell&type=code&l=PowerShell
-### $uuid = Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID
-### Check for WCF profiling
-### Check for system crashes (bugchecks), surface most recent one as well as crash count last 24 hour
-### Add test cases for each check
-### Disk space check should also check drive with page file if different than system drive
-### Fix issues experienced when running on non-Azure device
-### if possible, replace Get-NetIPConfiguration with cmdlets that don't rely on WMI
-### -verboseonly should always log to log file
-### Include script log contents at bottom of HTML report in code block so the single report .htm file will always include the log file
-### Last known heartbeat
-### Clean up 'VM agent installed' check
-### Use checkaws to verify external IP, which then confirms internet access as well
-### Available memory
-### Page file settings
-### Commit
-### filter drivers
-### 3rd-party kernel drivers
-### Mellanox driver version
-### Check for out-dated netvsc.sys
-Get-CimInstance -Query "'SELECT Name,Status,ExitCode,Started,StartMode,ErrorControl,PathName FROM Win32_SystemDriver WHERE Name='netvsc'"
-get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
-\SystemRoot\System32\drivers\netvsc63.sys - ws12r2
-\SystemRoot\System32\drivers\netvsc.sys - win11,ws22
-get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
-### installed extensions and their statuses (if possible to get this cleanly from inside the guest without calling CRP)
-### Windows activation status, relevant reg settings, most recent software licensing service events
-### Add relevant checks from Set-Wallpaper.ps1
-### Need to also check for ProxySettingsPerUser https://admx.help/?Category=Windows_10_2016&Policy=Microsoft.Policies.InternetExplorer::UserProxy
-Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
-### permissions on C:\WindowsAzure and c:\Packages folder during startup. It first removes all user/groups and then sets the following permission (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders. If GA fails to remove/set the permission, it can't proceed further.
-WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set access rules for agent directories. Exception: System.Security.Principal.IdentityNotMappedException: {Namepii} or all identity references could not be translated. Symptom reported: Guest agent not ready (Unresponsive status).
-### Update github repo readme with additional ways to run Get-VMAgentHealth.ps1
-### Add mitigations for existing checks (XL)
+<# https://github.com/search?q=get-counter+language%3APowerShell&type=code&l=PowerShell
+P0 ### Re-enable and finish Findings accordion
+P0 ### Review and complete all description/mitigation text
+P0 ### Finish WCF profiling finding
+P0 ### $uuid = Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID
+P0 ### Check for system crashes (bugchecks), surface most recent one as well as crash count last 24 hour
+P0 ### Disk space check should also check drive with page file if different than system drive
+P0 ### Last known heartbeat
+P0 ### Use checkaws to verify external IP, which then confirms internet access as well
+P0 ### Available memory
+P0 ### Page file settings
+P0 ### filter drivers
+P0 ### Mellanox driver version check (alread shows up on 3rd-party running drivers tab)
+P0 ### installed extensions and their statuses (if possible to get this cleanly from inside the guest without calling CRP)
+P0 ### Need to also check for ProxySettingsPerUser https://admx.help/?Category=Windows_10_2016&Policy=Microsoft.Policies.InternetExplorer::UserProxy
+        Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
+P0 ### (implemented, just needs content written) permissions on C:\WindowsAzure and c:\Packages folder during startup. It first removes all user/groups and then sets the following permission (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders. If GA fails to remove/set the permission, it can't proceed further.
+        WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set access rules for agent directories. Exception: System.Security.Principal.IdentityNotMappedException: {Namepii} or all identity references could not be translated. Symptom reported: Guest agent not ready (Unresponsive status).
+P0 ### Update github repo readme with additional ways to run Get-VMAgentHealth.ps1 (mostly done)
+
+P1 ### Add test cases for each check
+P1 ### if possible, replace Get-NetIPConfiguration with cmdlets that don't rely on WMI
+P1 ### -verboseonly should always log to log file
+P1 ### Include script log contents at bottom of HTML report in code block so the single report .htm file will always include the log file
+P1 ### Clean up 'VM agent installed' check (mostly done?)
+P1 ### Commit
+P1 ### Check for out-dated netvsc.sys
+        Get-CimInstance -Query "'SELECT Name,Status,ExitCode,Started,StartMode,ErrorControl,PathName FROM Win32_SystemDriver WHERE Name='netvsc'"
+        get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
+        \SystemRoot\System32\drivers\netvsc63.sys - ws12r2
+        \SystemRoot\System32\drivers\netvsc.sys - win11,ws22
+        get-itemproperty hklm:\system\currentcontrolset\services\netvsc | Select-Object -ExpandProperty ImagePath
+P1 ### Windows activation status, relevant reg settings, most recent software licensing service events
+P1 ### Add relevant checks from Set-Wallpaper.ps1
+P1 ### Add mitigations for existing checks (XL)
 #>
 
 $global:dbgOutput = $output
