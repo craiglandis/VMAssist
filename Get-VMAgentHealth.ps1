@@ -3361,6 +3361,8 @@ P0 ### Last known heartbeat
 P0 ### Use checkaws to verify external IP, which then confirms internet access as well
 P0 ### Available memory
 P0 ### Page file settings
+    get-ciminstance -class Win32_PageFile | select *
+    get-item c:\pagefile.sys -force
 P0 ### filter drivers
 P0 ### Mellanox driver version check (alread shows up on 3rd-party running drivers tab)
 P0 ### installed extensions and their statuses (if possible to get this cleanly from inside the guest without calling CRP)
