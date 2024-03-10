@@ -21,7 +21,7 @@ Running VMAssist generates a report showing the results of each check it perform
   - [Serial Console](#serial-console)
 - [License](#license)
 
-https://aka.ms/vmhealth
+https://aka.ms/vmassist
 
 ## Prerequisites
 
@@ -44,7 +44,7 @@ $versions = Get-AzVMExtensionImage -Location $location -PublisherName $publisher
 $typeHandlerVersion = "$($version.Major).$($version.Minor)"
 
 $name = 'CustomScriptExtension'
-$fileUri = 'https://aka.ms/vmhealth'
+$fileUri = 'https://aka.ms/vmassist'
 $run = $fileUri -split '/' | Select-Object -Last 1
 Set-AzVMCustomScriptExtension -Location $location -ResourceGroupName $resourceGroupName -VMName $vmName -Name $name -FileUri $fileUri -Run $run -TypeHandlerVersion $typeHandlerVersion -ForceRerun (Get-Date).Ticks
 
@@ -66,7 +66,7 @@ $type = 'CustomScriptExtension'
 $name = "$publisher.$type"
 [version]$version = (Get-AzVMExtensionImage -Location $location -PublisherName $publisher -Type $type | Sort-Object {[Version]$_.Version} -Desc | Select-Object Version -First 1).Version
 $typeHandlerVersion = "$($version.Major).$($version.Minor)"
-$scriptUrl = 'https://aka.ms/vmhealth'
+$scriptUrl = 'https://aka.ms/vmassist'
 $scriptFileName = $scriptUrl -split '/' | Select-Object -Last 1
 $settings = @{
 	'fileUris'         = @($scriptUrl)
@@ -103,7 +103,7 @@ Get-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name $n
 ### Custom Script Extension (Azure CLI)
 
 ```
-'{"fileUris": ["https://aka.ms/vmhealth"],"commandToExecute": "./health.sh"}' > settings.json
+'{"fileUris": ["https://aka.ms/vmassist"],"commandToExecute": "./health.sh"}' > settings.json
 
 az vm extension set --resource-group myrg --vm-name myvm --name customScript --publisher Microsoft.Azure.Extensions --settings ./settings.json
 
@@ -114,7 +114,7 @@ az vm extension set --resource-group myrg --vm-name myvm --name customScript --p
 ```powershell
 $resourceGroupName = 'myrg'
 $vmName = 'myvm'
-$sourceScriptUri = 'https://aka.ms/vmhealth'
+$sourceScriptUri = 'https://aka.ms/vmassist'
 Set-AzVMRunCommand -ResourceGroupName $resourceGroupName -VMName $vmName -RunCommandName RunPowerShellScript -SourceScriptUri $sourceScriptUri
 Get-AzVMRunCommand -ResourceGroupName $resourceGroupName -VMName $vmName -RunCommandName RunPowerShellScript -Expand InstanceView | Select-Object -ExpandProperty InstanceView
 ```
@@ -124,7 +124,7 @@ Get-AzVMRunCommand -ResourceGroupName $resourceGroupName -VMName $vmName -RunCom
 ```
 resourceGroupName=rg
 vmName=ws22
-az vm run-command create --name VMAssist --vm-name ws12r2 --resource-group rg --script-uri 'https://aka.ms/vmhealth'
+az vm run-command create --name VMAssist --vm-name ws12r2 --resource-group rg --script-uri 'https://aka.ms/vmassist'
 
 $result = az vm run-command show --name VMAssist --vm-name ws12r2 --resource-group rg --expand instanceView
 $result = $result | ConvertFrom-Json
@@ -136,14 +136,14 @@ $result.instanceView.output
 ```powershell
 $resourceGroupName = 'myrg'
 $vmName = 'myvm'
-Invoke-WebRequest -Uri https://aka.ms/vmhealth -OutFile VMAssist.ps1
+Invoke-WebRequest -Uri https://aka.ms/vmassist -OutFile VMAssist.ps1
 Invoke-AzVMRunCommand -ResourceGroupName $resourceGroupName -Name $vmName -CommandId RunPowerShellScript -ScriptPath VMAssist.ps1
 ```
 
 ### Action Run Command (Azure CLI)
 
 ```
-curl https://aka.ms/vmhealth -o VMAssist.ps1
+curl https://aka.ms/vmassist -o VMAssist.ps1
 az vm run-command invoke -g rg -n ws12r2 --command-id RunPowerShellScript --scripts @{VMAssist.ps1}
 
 ```
