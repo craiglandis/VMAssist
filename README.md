@@ -1,10 +1,10 @@
-# Get-VMAgentHealth
+# VMAssist
 
-Get-VMAgentHealth is a PowerShell script you run within the guest operating system of an Azure virtual machine to diagnose common health and configuration issues with the Azure VM agent.
+VMAssist is a PowerShell script you run within the guest operating system of an Azure virtual machine to diagnose common health and configuration issues with the Azure VM agent.
 
 Azure VM agent health is critical to the proper functioning of Azure VM agent extensions.
 
-Running Get-VMAgentHealth generates a report showing the results of health checks it performed and suggested mitigation steps for issues it finds.
+Running VMAssist generates a report showing the results of each check it performs and suggests mitigations for issues it finds.
 
 ## Table of Contents
 
@@ -124,9 +124,9 @@ Get-AzVMRunCommand -ResourceGroupName $resourceGroupName -VMName $vmName -RunCom
 ```
 resourceGroupName=rg
 vmName=ws22
-az vm run-command create --name Get-VMAgentHealth --vm-name ws12r2 --resource-group rg --script-uri 'https://aka.ms/vmhealth'
+az vm run-command create --name VMAssist --vm-name ws12r2 --resource-group rg --script-uri 'https://aka.ms/vmhealth'
 
-$result = az vm run-command show --name Get-VMAgentHealth --vm-name ws12r2 --resource-group rg --expand instanceView
+$result = az vm run-command show --name VMAssist --vm-name ws12r2 --resource-group rg --expand instanceView
 $result = $result | ConvertFrom-Json
 $result.instanceView.output
 ```
@@ -136,15 +136,15 @@ $result.instanceView.output
 ```powershell
 $resourceGroupName = 'myrg'
 $vmName = 'myvm'
-Invoke-WebRequest -Uri https://aka.ms/vmhealth -OutFile Get-VMAgentHealth.ps1
-Invoke-AzVMRunCommand -ResourceGroupName $resourceGroupName -Name $vmName -CommandId RunPowerShellScript -ScriptPath Get-VMAgentHealth.ps1
+Invoke-WebRequest -Uri https://aka.ms/vmhealth -OutFile VMAssist.ps1
+Invoke-AzVMRunCommand -ResourceGroupName $resourceGroupName -Name $vmName -CommandId RunPowerShellScript -ScriptPath VMAssist.ps1
 ```
 
 ### Action Run Command (Azure CLI)
 
 ```
-curl https://aka.ms/vmhealth -o Get-VMAgentHealth.ps1
-az vm run-command invoke -g rg -n ws12r2 --command-id RunPowerShellScript --scripts @{Get-VMAgentHealth.ps1}
+curl https://aka.ms/vmhealth -o VMAssist.ps1
+az vm run-command invoke -g rg -n ws12r2 --command-id RunPowerShellScript --scripts @{VMAssist.ps1}
 
 ```
 

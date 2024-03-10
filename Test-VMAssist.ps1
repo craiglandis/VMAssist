@@ -1,12 +1,12 @@
 <#
-Test-GetVMAgentHealth.ps1 -stopRdagent
-Test-GetVMAgentHealth.ps1 -stopWindowsAzureGuestAgent
-Test-GetVMAgentHealth.ps1 -blockwireserver
-Test-GetVMAgentHealth.ps1 -blockimds
-Test-GetVMAgentHealth.ps1 -enableProxy
-Test-GetVMAgentHealth.ps1 -setNonDefaultMachineKeysAcl
-Test-GetVMAgentHealth.ps1 -setNonDefaultWindowsAzureAcl
-Test-GetVMAgentHealth.ps1 -setNonDefaultPackagesAcl
+Test-VMAssist.ps1 -stopRdagent
+Test-VMAssist.ps1 -stopWindowsAzureGuestAgent
+Test-VMAssist.ps1 -blockwireserver
+Test-VMAssist.ps1 -blockimds
+Test-VMAssist.ps1 -enableProxy
+Test-VMAssist.ps1 -setNonDefaultMachineKeysAcl
+Test-VMAssist.ps1 -setNonDefaultWindowsAzureAcl
+Test-VMAssist.ps1 -setNonDefaultPackagesAcl
 
 t -setprofile
 t -blockwireserver
@@ -14,13 +14,13 @@ t -unblockwireserver
 t -blockimds
 t -unblockimds
 
-\\tsclient\c\src\Get-VMAgentHealth\Test-GetVMAgentHealth.ps1 -setprofile
-\\tsclient\c\src\Get-VMAgentHealth\Test-GetVMAgentHealth.ps1 -blockwireserver
-\\tsclient\c\src\Get-VMAgentHealth\Test-GetVMAgentHealth.ps1 -unblockwireserver
-\\tsclient\c\src\Get-VMAgentHealth\Test-GetVMAgentHealth.ps1 -blockimds
-\\tsclient\c\src\Get-VMAgentHealth\Test-GetVMAgentHealth.ps1 -unblockimds
-\\tsclient\c\src\Get-VMAgentHealth\Test-GetVMAgentHealth.ps1 -enableProxy
-\\tsclient\c\src\Get-VMAgentHealth\Test-GetVMAgentHealth.ps1 -disableProxy
+\\tsclient\c\src\VMAssist\Test-VMAssist.ps1 -setprofile
+\\tsclient\c\src\VMAssist\Test-VMAssist.ps1 -blockwireserver
+\\tsclient\c\src\VMAssist\Test-VMAssist.ps1 -unblockwireserver
+\\tsclient\c\src\VMAssist\Test-VMAssist.ps1 -blockimds
+\\tsclient\c\src\VMAssist\Test-VMAssist.ps1 -unblockimds
+\\tsclient\c\src\VMAssist\Test-VMAssist.ps1 -enableProxy
+\\tsclient\c\src\VMAssist\Test-VMAssist.ps1 -disableProxy
 
 #>
 param(
@@ -707,8 +707,8 @@ if ($setprofile)
 {
     Set-ExecutionPolicy Bypass -Force
     New-Item -Path $profile -ItemType File -Force | Out-Null
-    Add-Content -Path $profile -Value "Set-Alias g '\\tsclient\c\src\Get-VMAgentHealth\Get-VMAgentHealth.ps1'" -Force
-    Add-Content -Path $profile -Value "Set-Alias t '\\tsclient\c\src\Get-VMAgentHealth\Test-GetVMAgentHealth.ps1'" -Force
+    Add-Content -Path $profile -Value "Set-Alias g '\\tsclient\c\src\VMAssist\VMAssist.ps1'" -Force
+    Add-Content -Path $profile -Value "Set-Alias t '\\tsclient\c\src\VMAssist\Test-VMAssist.ps1'" -Force
     Add-Content -Path $profile -Value "Set-Alias w '\\tsclient\c\onedrive\my\Set-Wallpaper.ps1'" -Force
     Add-Content -Path $profile -Value "Set-Location -Path C:\" -Force
     Add-Content -Path $profile -Value "Clear-Host" -Force

@@ -1,20 +1,20 @@
 <#
 .SYNOPSIS
-    Checks Azure VM agent health
+    Assists in diagnosing Azure VM issues
 .DESCRIPTION
-    Checks Azure VM agent health
+    Assists in diagnosing Azure VM issues
 .NOTES
     Supported on Windows Server 2012 R2 and later versions of Windows.
     Supported in Windows PowerShell 4.0+ and PowerShell 6.0+.
     Not supported on Linux.
 .LINK
-    https://github.com/craiglandis/Get-VMAgentHealth/blob/main/README.md
+    https://github.com/craiglandis/VMAssist/blob/main/README.md
 .EXAMPLE
     RDP to Azure VM
     Launch an elevated PowerShell prompt
-    Download Get-VMAgentHealth.ps1 with the following command
+    Download VMAssist.ps1 with the following command
 
-    Get-VMAgentHealth.ps1
+    VMAssist.ps1
 #>
 
 [CmdletBinding(SupportsShouldProcess = $true)]
@@ -3370,7 +3370,7 @@ P0 ### Need to also check for ProxySettingsPerUser https://admx.help/?Category=W
         Computer Configuration\Administrative Templates\Windows Components\Internet Explorer\Make proxy settings per-machine (rather than per user)
 P0 ### (implemented, just needs content written) permissions on C:\WindowsAzure and c:\Packages folder during startup. It first removes all user/groups and then sets the following permission (Read & Execute: Everyone, Full Control: SYSTEM & Local Administrators only) to these folders. If GA fails to remove/set the permission, it can't proceed further.
         WaAppAgent.log shows this: [00000006] {ALPHANUMERICPII} [FATAL] Failed to set access rules for agent directories. Exception: System.Security.Principal.IdentityNotMappedException: {Namepii} or all identity references could not be translated. Symptom reported: Guest agent not ready (Unresponsive status).
-P0 ### Update github repo readme with additional ways to run Get-VMAgentHealth.ps1 (mostly done)
+P0 ### Update github repo readme with additional ways to run VMAssist.ps1 (mostly done)
 
 P1 ### Add test cases for each check
 P1 ### if possible, replace Get-NetIPConfiguration with cmdlets that don't rely on WMI
