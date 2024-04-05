@@ -1477,6 +1477,10 @@ $WarningPreference = 'SilentlyContinue'
 
 $verbose = [bool]$PSBoundParameters['verbose']
 $debug = [bool]$PSBoundParameters['debug']
+if ($debug)
+{
+    $DebugPreference = 'Continue'
+}
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')
 if ($isAdmin -eq $false)
