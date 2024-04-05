@@ -466,7 +466,7 @@ function Get-ServiceChecks
             {
                 $isInstalled = $true
 
-                $win32Service = Get-CimInstance -Query "SELECT * from Win32_Service WHERE Name='$name'" -ErrorAction SilentlyContinue
+                $win32Service = Invoke-ExpressionWithLogging "Get-CimInstance -Query `"SELECT * from Win32_Service WHERE Name='$name'`" -ErrorAction SilentlyContinue" -verboseOnly
                 if ($win32Service)
                 {
                     $processId = $win32Service.ProcessId
@@ -475,11 +475,15 @@ function Get-ServiceChecks
                     $exitCode = $win32Service.ExitCode
                     $serviceSpecificExitCode = $win32Service.ServiceSpecificExitCode
                     $errorControl = $win32Service.ErrorControl
-                    $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
-                    if ($process)
+                    if ($processId)
                     {
-                        $startTime = $process.StartTime
-                        $uptime = '{0:dd}:{0:hh}:{0:mm}:{0:ss}' -f (New-Timespan -Start $process.StartTime -End (Get-Date))
+                        $process = Invoke-ExpressionWithLogging "Get-Process -Id $processId -ErrorAction SilentlyContinue" -verboseOnly
+
+                        if ($process)
+                        {
+                            $startTime = $process.StartTime
+                            $uptime = '{0:dd}:{0:hh}:{0:mm}:{0:ss}' -f (New-Timespan -Start $process.StartTime -End (Get-Date))
+                        }
                     }
                 }
 
