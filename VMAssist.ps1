@@ -3321,12 +3321,10 @@ $script | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 $htm = $stringBuilder.ToString()
 
-#$vmProperties = [PSCustomObject]@{}
-#$vmPropertiesJson = $vmProperties | ConvertTo-Json -Depth 10
-
 $checksJson = $checks | ConvertTo-Json -Depth 10
 
 $properties = [PSCustomObject]@{}
+$properties | Add-Member -MemberType NoteProperty -Name findingsCount -Value $findingsCount
 $vm | Sort-Object Property | ForEach-Object {$properties | Add-Member -MemberType NoteProperty -Name $_.Property -Value $_.Value}
 $properties | Add-Member -MemberType NoteProperty -Name checks -Value $checksJson
 if ($findingsCount -ge 1)
