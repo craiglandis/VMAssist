@@ -1889,6 +1889,7 @@ if ($isVMAgentInstalled)
         $guestAgentKeyManifestTimeStamp = $guestAgentKey.ManifestTimeStamp
         $guestAgentKeyMetricsSelfSelectionSelected = $guestAgentKey.MetricsSelfSelectionSelected
         $guestAgentKeyUpdateNewGAVersion = $guestAgentKey.'Update-NewGAVersion'
+        $guestAgentKeyUpdatePreviousGAVersion = $guestAgentKey.'Update-PreviousGAVersion'
         $guestAgentKeyUpdateStartTime = $guestAgentKey.'Update-StartTime'
         $guestAgentKeyVmProvisionedAt = $guestAgentKey.VmProvisionedAt
     }
