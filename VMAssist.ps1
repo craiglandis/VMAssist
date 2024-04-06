@@ -1569,6 +1569,7 @@ else
 }
 
 Out-Log $osVersion -color Cyan
+$timeZone = Get-TimeZone | Select-Object -ExpandProperty DisplayName
 $isHyperVGuest = Confirm-HyperVGuest
 Out-Log "Hyper-V Guest: $isHyperVGuest"
 if ($isHyperVGuest)
@@ -1892,6 +1893,10 @@ if ($isVMAgentInstalled)
         $guestAgentKeyUpdatePreviousGAVersion = $guestAgentKey.'Update-PreviousGAVersion'
         $guestAgentKeyUpdateStartTime = $guestAgentKey.'Update-StartTime'
         $guestAgentKeyVmProvisionedAt = $guestAgentKey.VmProvisionedAt
+        if ($guestAgentKeyVmProvisionedAt)
+        {
+            $guestAgentKeyVmProvisionedAt = `Get-Date -Date $guestAgentKeyVmProvisionedAt -Format 'yyyy-MM-ddTHH:mm:ss'
+        }
     }
 
     $vm.Add([PSCustomObject]@{Property = "ContainerId"; Value = $guestAgentKeyContainerId; Type = 'Agent'})
@@ -2481,7 +2486,7 @@ if ($systemDriveFreeSpaceBytes)
         $details = "<1GB free ($($systemDriveFreeSpaceGB)GB free) on drive $systemDriveLetter"
         Out-Log $details -color Yellow -endLine
         New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'Warning' -details $details
-        New-Finding -type Warning -name "System drive free space" -description $details -mitigation ''
+        New-Finding -type Warning -name "System drive low free space" -description $details -mitigation ''
     }
     else
     {
@@ -2495,7 +2500,7 @@ else
     $details = "Unable to determine free space on system drive $systemDriveLetter"
     Out-Log $details -color Cyan -endLine
     New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'Info' -details $details
-    New-Finding -type Warning -name "System drive free space" -description $details -mitigation ''
+    New-Finding -type Warning -name "System drive low free space" -description $details -mitigation ''
 }
 
 $joinInfo = Get-JoinInfo
@@ -2514,9 +2519,12 @@ $scriptEndTime = Get-Date
 $scriptEndTimeLocalString = Get-Date -Date $scriptEndTime -Format o
 $scriptEndTimeUTCString = Get-Date -Date $scriptEndTime -Format 'yyyy-MM-ddTHH:mm:ssZ'
 
-$scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f (New-TimeSpan -Start $scriptStartTime -End $scriptEndTime)
+$scriptTimespan = New-TimeSpan -Start $scriptStartTime -End $scriptEndTime
+$scriptDurationSeconds = $scriptTimespan.Seconds
+$scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f $scriptTimespan
 
 # General
+$vm.Add([PSCustomObject]@{Property = 'scriptDurationSeconds'; Value = $scriptDurationSeconds; Type = 'General'})
 $vm.Add([PSCustomObject]@{Property = 'azEnvironment'; Value = $azEnvironment; Type = 'General'})
 $vm.Add([PSCustomObject]@{Property = 'location'; Value = $location; Type = 'General'})
 $vm.Add([PSCustomObject]@{Property = 'vmName'; Value = $vmName; Type = 'General'})
@@ -2557,6 +2565,7 @@ $vm.Add([PSCustomObject]@{Property = 'computerName'; Value = $computerName; Type
 $vm.Add([PSCustomObject]@{Property = 'licenseType'; Value = $licenseType; Type = 'OS'})
 $vm.Add([PSCustomObject]@{Property = 'joinType'; Value = $joinType; Type = 'OS'})
 $vm.Add([PSCustomObject]@{Property = 'productType'; Value = $productType; Type = 'OS'})
+$vm.Add([PSCustomObject]@{Property = 'timeZone'; Value = $timeZone; Type = 'OS'})
 
 Out-Log "DHCP-assigned IP addresses:" -startLine
 
@@ -3363,7 +3372,7 @@ $scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f (New-TimeSpan -Start $scriptS
 Out-Log "$scriptName duration:" -startLine
 Out-Log $scriptDuration -endLine -color Cyan
 
-[int]$findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
+# [int]$findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Count
 if ($findingsCount -ge 1)
 {
     $color = 'Cyan'
@@ -3373,6 +3382,35 @@ else
     $color = 'Green'
 }
 Out-Log "$findingsCount issue(s) found." -color $color
+
+<# Possible findings:
+WCF debugging enabled
+Application error
+Service terminated unexpectedly
+Third-party modules in process
+Rdagent service not installed
+WindowsAzureGuestAgent service not installed
+Rdagent service incorrect startType
+WindowsAzureGuestAgent service incorrect startType
+Rdagent service status not running
+WindowsAzureGuestAgent service status not running
+Rdagent service incorrect imagepath
+WindowsAzureGuestAgent service incorrect imagepath
+Rdagent service not installed
+WindowsAzureGuestAgent service not installed
+StdRegProv WMI class query failed
+VM agent not installed
+Proxy configured
+TenantEncryptionCert expired
+Wireserver not reachable
+IMDS endpoint not reachable
+Non-default machinekeys permissions
+Non-default C:\WindowsAzure permissions
+Non-default packages permissions
+System drive low disk space
+DHCP-disabled NICs
+#>
+
 
 <# https://github.com/search?q=get-counter+language%3APowerShell&type=code&l=PowerShell
 P0 ### Re-enable and finish Findings accordion
