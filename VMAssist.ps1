@@ -329,7 +329,7 @@ function Get-ThirdPartyLoadedModules
                 foreach ($processThirdPartyModule in $processThirdPartyModules)
                 {
                     $filePath = $processThirdPartyModule.FileName
-                    $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $filePath" -verboseOnly
+                    $signature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath '$filePath' -ErrorAction SilentlyContinue" -verboseOnly
                     $issuer = $signature.SignerCertificate.Issuer
                     if ($issuer -eq $microsoftWindowsProductionPCA2011)
                     {
@@ -1021,7 +1021,7 @@ function Send-Telemetry
                     }
                 }
                 $body = $body | ConvertTo-Json -Depth 10 -Compress
-                $headers = @{'Content-Type' = 'application/x-json-stream'; }
+                $headers = @{'Content-Type' = 'application/x-json-stream';}
                 $result = Invoke-RestMethod -Uri $ingestionEndpoint -Method Post -Headers $headers -Body $body -ErrorAction SilentlyContinue
                 if ($result)
                 {
@@ -1087,7 +1087,7 @@ CN=Microsoft Windows Verification PCA, O=Microsoft Corporation, L=Redmond, S=Was
 
         # TODO: PS4.0 shows OS file as not signed, this was fixed in PS5.1
         # Need to handle the PS4.0 scenario
-        $driverFileSignature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath $driverPath -ErrorAction SilentlyContinue" -verboseOnly
+        $driverFileSignature = Invoke-ExpressionWithLogging "Get-AuthenticodeSignature -FilePath '$driverPath' -ErrorAction SilentlyContinue" -verboseOnly
         if ($driverFileSignature)
         {
             $driver | Add-Member -MemberType NoteProperty -Name Issuer -Value $driverFileSignature.Signercertificate.Issuer
@@ -1889,17 +1889,21 @@ if ($isVMAgentInstalled)
         $guestAgentKeyManifestTimeStamp = $guestAgentKey.ManifestTimeStamp
         $guestAgentKeyMetricsSelfSelectionSelected = $guestAgentKey.MetricsSelfSelectionSelected
         $guestAgentKeyUpdateNewGAVersion = $guestAgentKey.'Update-NewGAVersion'
-        $guestAgentKeyUpdatePreviousGAVersion = $guestAgentKey.'Update-PreviousGAVersion'
         $guestAgentKeyUpdateStartTime = $guestAgentKey.'Update-StartTime'
         $guestAgentKeyVmProvisionedAt = $guestAgentKey.VmProvisionedAt
     }
 
     $vm.Add([PSCustomObject]@{Property = "ContainerId"; Value = $guestAgentKeyContainerId; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = "DirectoryToDelete"; Value = $guestAgentKeyDirectoryToDelete; Type = 'Agent'})
     $vm.Add([PSCustomObject]@{Property = "HeartbeatLastStatusUpdateTime"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
-    $vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyIncarnation; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = "InstallerRestart"; Value = $guestAgentKeyInstallerRestart; Type = 'Agent'})
     $vm.Add([PSCustomObject]@{Property = "ManifestTimeStamp"; Value = $guestAgentKeyManifestTimeStamp; Type = 'Agent'})
     $vm.Add([PSCustomObject]@{Property = "MetricsSelfSelectionSelected"; Value = $guestAgentKeyMetricsSelfSelectionSelected; Type = 'Agent'})
-    $vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = "UpdateNewGAVersion"; Value = $guestAgentKeyUpdateNewGAVersion; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = "UpdatePreviousGAVersion"; Value = $guestAgentKeyUpdatePreviousGAVersion; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = "UpdateStartTime"; Value = $guestAgentKeyUpdateStartTime; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = "VmProvisionedAt"; Value = $guestAgentKeyVmProvisionedAt; Type = 'Agent'})
 
     $windowsAzureKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure'
     $windowsAzureKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$windowsAzureKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
@@ -3316,18 +3320,31 @@ $script | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
 $htm = $stringBuilder.ToString()
 
-$findingsJson = $findings | ConvertTo-Json -Depth 10
+#$vmProperties = [PSCustomObject]@{}
+#$vmPropertiesJson = $vmProperties | ConvertTo-Json -Depth 10
+
 $checksJson = $checks | ConvertTo-Json -Depth 10
-$vmJson = $vm | ConvertTo-Json -Depth 10
-$properties = @{
-    vmId     = $vmId
-    vm       = $vmJson
-    findings = $findingsJson
-    checks   = $checksJson
+
+$properties = [PSCustomObject]@{}
+$vm | Sort-Object Property | ForEach-Object {$properties | Add-Member -MemberType NoteProperty -Name $_.Property -Value $_.Value}
+$properties | Add-Member -MemberType NoteProperty -Name checks -Value $checksJson
+if ($findingsCount -ge 1)
+{
+    $findingsJson = $findings | ConvertTo-Json -Depth 10
+    $properties | Add-Member -MemberType NoteProperty -Name findings -Value $findingsJson
+}
+else
+{
+    $properties | Add-Member -MemberType NoteProperty -Name findings -Value 'No issues found'
 }
 Send-Telemetry -properties $properties
+
 $global:dbgProperties = $properties
 $global:dbgvm = $vm
+$global:dbgchecks = $checks
+$global:dbgchecksJson = $checksJson
+$global:dbgfindings = $findings
+$global:dbgfindingsJson = $findingsJson
 $global:dbgnics = $nics
 
 $htmFileName = "$($scriptBaseName)_$($computerName)_$($scriptStartTimeString).htm"
