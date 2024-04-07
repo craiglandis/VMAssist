@@ -40,9 +40,13 @@ trap
         error = $trappedErrorString
     }
     Send-Telemetry -properties $properties
-    Exit
+    continue
 }
 
+<#
+Add check to compare file hashes of machine.config and machine.config.default - if they differ we know they changed machine.config
+(Get-FileHash -Path C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Config\machine.config -Algorithm SHA256 | Select-Object -ExpandProperty Hash) -eq (Get-FileHash -Path C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Config\machine.config.default -Algorithm SHA256 | Select-Object -ExpandProperty Hash)
+#>
 function Get-WCFConfig
 {
     <#
@@ -1022,7 +1026,20 @@ function Send-Telemetry
                 }
                 $body = $body | ConvertTo-Json -Depth 10 -Compress
                 $headers = @{'Content-Type' = 'application/x-json-stream';}
-                $result = Invoke-RestMethod -Uri $ingestionEndpoint -Method Post -Headers $headers -Body $body -ErrorAction SilentlyContinue
+                try
+                {
+                    $result = Invoke-RestMethod -Uri $ingestionEndpoint -Method Post -Headers $headers -Body $body -ErrorAction SilentlyContinue
+                }
+                catch
+                {
+                    $trappedError = $PSItem
+                    $global:trappedError = $trappedError
+                    $scriptLineNumber = $trappedError.InvocationInfo.ScriptLineNumber
+                    $line = $trappedError.InvocationInfo.Line.Trim()
+                    $exceptionMessage = $trappedError.Exception.Message
+                    $trappedErrorString = $trappedError.Exception.ErrorRecord | Out-String -ErrorAction SilentlyContinue
+                    Out-Log "[ERROR] $exceptionMessage Line $scriptLineNumber $line" -color Red
+                }
                 if ($result)
                 {
                     $itemsReceived = $result | Select-Object -ExpandProperty itemsReceived
