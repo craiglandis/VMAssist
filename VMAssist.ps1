@@ -23,7 +23,8 @@ param (
     [switch]$showReport,
     [switch]$fakeFinding,
     [switch]$skipFirewall,
-    [switch]$skipFilters
+    [switch]$skipFilters,
+    [switch]$useDotnetForNicDetails
 )
 
 trap
@@ -2588,10 +2589,49 @@ Out-Log "DHCP-assigned IP addresses:" -startLine
 
 $nics = New-Object System.Collections.Generic.List[Object]
 
-<#
-[Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces()
-#>
-if ($winmgmt.Status -eq 'Running')
+if ($useDotnetForNicDetails)
+{
+    # get-winevent -ProviderName Microsoft-Windows-NCSI
+    # reg query 'HKLM\SYSTEM\CurrentControlSet\Services\NlaSvc\Parameters\Internet'
+    $networkListManager = [Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]"{DCB00C01-570F-4A9B-8D69-199FDBA5723B}"))
+    $connections = $networkListManager.GetNetworkConnections()
+
+    $isConnected = $networkListManager.IsConnectedToInternet
+    $isConnectedToInternet = $networkListManager.IsConnectedToInternet
+
+    foreach ($connection in $connections)
+    {
+        $networkCategory = $connection.GetNetwork().GetCategory()
+    }
+
+    $isNetworkAvailable = [Net.NetworkInformation.NetworkInterface]::GetIsNetworkAvailable()
+    $networkInterfaces = [Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces()
+    $networkInterfaces = $networkInterfaces | Where-Object {$_.NetworkInterfaceType -ne 'Loopback'}
+    foreach ($networkInterface in $networkInterfaces)
+    {
+        $ipProperties = $networkInterface.GetIPProperties()
+        $ipV4Properties = $ipProperties.GetIPv4Properties()
+
+        $nic = [PSCustomObject]@{
+            Description = $networkInterface.Description
+            Alias = $networkInterface.Name
+            Status = $networkInterface.OperationalStatus
+            MACAddress = $networkInterface.GetPhysicalAddress()
+            DHCPServerAddresses = $dhcpServerAddresses
+            DNSAddresses = $ipProperties.DnsAddresses.IPAddressToString
+            GatewayAddresses = $ipProperties.GatewayAddresses.Address.IPAddressToString
+            IPV4Addresses = $ipV4Addresses
+            IsDhcpEnabled = $ipV4Properties.IsDhcpEnabled
+            Index = $ipV4Properties.Index
+            IsAutomaticPrivateAddressingActive = $ipV4Properties.IsAutomaticPrivateAddressingActive
+            $mtu = $ipV4Properties.Mtu
+            $ipV4Addresses = $ipProperties | Select-Object -ExpandProperty UnicastAddresses | Select-Object -ExpandProperty Address | Where-Object {$_.AddressFamily -eq 'InterNetwork'}
+            $ipV6Addresses = $ipProperties | Select-Object -ExpandProperty UnicastAddresses | Select-Object -ExpandProperty Address | Where-Object {$_.AddressFamily -eq 'InterNetworkV6'}
+        }
+        $nics.Add($nic)
+    }
+}
+elseif ($winmgmt.Status -eq 'Running')
 {
     # Get-NetIPConfiguration depends on WMI
     $ipconfigs = Invoke-ExpressionWithLogging "Get-NetIPConfiguration -Detailed" -verboseOnly
