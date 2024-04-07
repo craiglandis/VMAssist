@@ -2591,6 +2591,7 @@ $nics = New-Object System.Collections.Generic.List[Object]
 
 if ($useDotnetForNicDetails)
 {
+    # [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActiveTcpConnections()
     # get-winevent -ProviderName Microsoft-Windows-NCSI
     # reg query 'HKLM\SYSTEM\CurrentControlSet\Services\NlaSvc\Parameters\Internet'
     $networkListManager = [Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]"{DCB00C01-570F-4A9B-8D69-199FDBA5723B}"))
@@ -2601,7 +2602,12 @@ if ($useDotnetForNicDetails)
 
     foreach ($connection in $connections)
     {
-        $networkCategory = $connection.GetNetwork().GetCategory()
+        $category = $connection.GetNetwork().GetCategory()
+        switch ($category) {
+            0 {$networkProfile = 'Public'}
+            1 {$networkProfile = 'Private'}
+            2 {$networkProfile = 'DomainAuthenticated'}
+        }
     }
 
     $isNetworkAvailable = [Net.NetworkInformation.NetworkInterface]::GetIsNetworkAvailable()
@@ -2611,6 +2617,7 @@ if ($useDotnetForNicDetails)
     {
         $ipProperties = $networkInterface.GetIPProperties()
         $ipV4Properties = $ipProperties.GetIPv4Properties()
+        $ipV6Properties = $ipProperties.GetIPv6Properties()
 
         $nic = [PSCustomObject]@{
             Description = $networkInterface.Description
@@ -3471,8 +3478,14 @@ System drive low disk space
 DHCP-disabled NICs
 #>
 
-
 <# https://github.com/search?q=get-counter+language%3APowerShell&type=code&l=PowerShell
+$key = Get-ChildItem -Path 'HKLM:\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState' | where {[bool]($_.PSChildName -as [version]) -eq $true}
+# Build timeline of GA service starts/stops,Windows starts/stop to aid in RCA for transient "agent not ready"
+# .NET to check for ghost NICs - https://raw.githubusercontent.com/istvans/scripts/master/removeGhosts.ps1
+# Perhaps to diagnose credit exhaustion, query for Microsoft-Windows-Resource-Exhaustion-Detector warning/error events
+check for missing Message value in "HKLM\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState\<ga version>" and if missing, suggest deleting LatestExpectedVersion value in HKLM\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState)
+
+# get-winevent -ProviderName Microsoft-Windows-Resource-Exhaustion-Detector | Where-Object {$_.LevelDisplayName -ne 'Information'}
 P0 ### Re-enable and finish Findings accordion
 P0 ### Review and complete all description/mitigation text
 P0 ### Finish WCF profiling finding
