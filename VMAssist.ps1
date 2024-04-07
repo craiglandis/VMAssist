@@ -2588,6 +2588,9 @@ Out-Log "DHCP-assigned IP addresses:" -startLine
 
 $nics = New-Object System.Collections.Generic.List[Object]
 
+<#
+[Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces()
+#>
 if ($winmgmt.Status -eq 'Running')
 {
     # Get-NetIPConfiguration depends on WMI
