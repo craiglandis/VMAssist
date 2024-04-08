@@ -2619,17 +2619,26 @@ if ($useDotnetForNicDetails)
         $ipV4Properties = $ipProperties.GetIPv4Properties()
         $ipV6Properties = $ipProperties.GetIPv6Properties()
 
+        if ($ipV4Properties.IsDhcpEnabled)
+        {
+            $dhcp = 'Enabled'
+        }
+        else
+        {
+            $dhcp = 'Disabled'
+        }
+
         $nic = [PSCustomObject]@{
             Description = $networkInterface.Description
             Alias = $networkInterface.Name
-            Status = $networkInterface.OperationalStatus
-            MACAddress = $networkInterface.GetPhysicalAddress()
-            DHCPServerAddresses = $dhcpServerAddresses
-            DNSAddresses = $ipProperties.DnsAddresses.IPAddressToString
-            GatewayAddresses = $ipProperties.GatewayAddresses.Address.IPAddressToString
-            IPV4Addresses = $ipV4Addresses
-            IsDhcpEnabled = $ipV4Properties.IsDhcpEnabled
             Index = $ipV4Properties.Index
+            MacAddress = $networkInterface.GetPhysicalAddress()
+            Status = $networkInterface.OperationalStatus
+            DHCP = $dhcp
+            IpAddress = $ipV4Addresses
+            # DHCPServerAddresses = $dhcpServerAddresses
+            DnsServers = $ipProperties.DnsAddresses.IPAddressToString
+            DefaultGateway = $ipProperties.GatewayAddresses.Address.IPAddressToString
             IsAutomaticPrivateAddressingActive = $ipV4Properties.IsAutomaticPrivateAddressingActive
             $mtu = $ipV4Properties.Mtu
             $ipV4Addresses = $ipProperties | Select-Object -ExpandProperty UnicastAddresses | Select-Object -ExpandProperty Address | Where-Object {$_.AddressFamily -eq 'InterNetwork'}
