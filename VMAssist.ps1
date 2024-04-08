@@ -3460,31 +3460,31 @@ else
 Out-Log "$findingsCount issue(s) found." -color $color
 
 <# Possible findings:
-WCF debugging enabled
-Application error
-Service terminated unexpectedly
-Third-party modules in process
-Rdagent service not installed
-WindowsAzureGuestAgent service not installed
-Rdagent service incorrect startType
-WindowsAzureGuestAgent service incorrect startType
-Rdagent service status not running
-WindowsAzureGuestAgent service status not running
-Rdagent service incorrect imagepath
-WindowsAzureGuestAgent service incorrect imagepath
-Rdagent service not installed
-WindowsAzureGuestAgent service not installed
-StdRegProv WMI class query failed
-VM agent not installed
-Proxy configured
-TenantEncryptionCert expired
-Wireserver not reachable
-IMDS endpoint not reachable
-Non-default machinekeys permissions
-Non-default C:\WindowsAzure permissions
-Non-default packages permissions
-System drive low disk space
-DHCP-disabled NICs
+1. WCF debugging enabled
+2. Application error
+3. Service terminated unexpectedly
+4. Third-party modules in process
+5. Rdagent service not installed
+6. WindowsAzureGuestAgent service not installed
+7. Rdagent service incorrect startType
+8. WindowsAzureGuestAgent service incorrect startType
+9. Rdagent service status not running
+10. WindowsAzureGuestAgent service status not running
+11. Rdagent service incorrect imagepath
+12. WindowsAzureGuestAgent service incorrect imagepath
+13. Rdagent service not installed
+14. WindowsAzureGuestAgent service not installed
+15. StdRegProv WMI class query failed
+16. VM agent not installed
+17. Proxy configured
+18. TenantEncryptionCert expired
+19. Wireserver not reachable
+20. IMDS endpoint not reachable
+21. Non-default machinekeys permissions
+22. Non-default C:\WindowsAzure permissions
+23. Non-default packages permissions
+24. System drive low disk space
+25. DHCP-disabled NICs
 #>
 
 <# https://github.com/search?q=get-counter+language%3APowerShell&type=code&l=PowerShell
