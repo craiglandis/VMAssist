@@ -22,8 +22,8 @@ param (
     [string]$outputPath = 'C:\logs',
     [switch]$showReport,
     [switch]$fakeFinding,
-    [switch]$skipFirewall,
-    [switch]$skipFilters,
+    [switch]$skipFirewall = $true,
+    [switch]$skipFilters = $true,
     [switch]$useDotnetForNicDetails
 )
 
@@ -1236,9 +1236,15 @@ public class NetAPI32{
 
     $productType = Invoke-ExpressionWithLogging "Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\ProductOptions' | Select-Object -ExpandProperty ProductType" -verboseOnly
 
+    switch ($productType) {
+        'WinNT' {$role = 'Workstation'}
+        'LanmanNT ' {$role = 'Domain controller'}
+        'ServerNT' {$role = 'Server'}
+    }
+
     $joinInfo = [PSCustomObject]@{
         JoinType = $joinType
-        ProductType = $productType
+        Role = $role
     }
 
     return $joinInfo
@@ -2531,7 +2537,7 @@ else
 
 $joinInfo = Get-JoinInfo
 $joinType = $joinInfo.JoinType
-$productType = $joinInfo.ProductType
+$role = $joinInfo.Role
 
 if ($winmgmt.Status -eq 'Running')
 {
@@ -2590,7 +2596,7 @@ $vm.Add([PSCustomObject]@{Property = 'osInstallDate'; Value = $installDateString
 $vm.Add([PSCustomObject]@{Property = 'computerName'; Value = $computerName; Type = 'OS'})
 $vm.Add([PSCustomObject]@{Property = 'licenseType'; Value = $licenseType; Type = 'OS'})
 $vm.Add([PSCustomObject]@{Property = 'joinType'; Value = $joinType; Type = 'OS'})
-$vm.Add([PSCustomObject]@{Property = 'productType'; Value = $productType; Type = 'OS'})
+$vm.Add([PSCustomObject]@{Property = 'role'; Value = $role; Type = 'OS'})
 $vm.Add([PSCustomObject]@{Property = 'timeZone'; Value = $timeZone; Type = 'OS'})
 
 Out-Log "DHCP-assigned IP addresses:" -startLine
