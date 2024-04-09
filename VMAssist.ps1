@@ -979,7 +979,7 @@ function New-Finding
 
     $date = Get-Date
     $date = $date.ToUniversalTime()
-    $timeCreated = Get-Date -Date $date -Format yyyy-MM-ddTHH:mm:ss.ffZ
+    $timeCreated = Get-Date -Date $date -Format 'yyyy-MM-ddTHH:mm:ssZ'
 
     $finding = [PSCustomObject]@{
         TimeCreated = $timeCreated
@@ -1005,7 +1005,7 @@ function Send-Telemetry
         $ip4Address = $dnsRecord.IP4Address
         if ($ip4Address)
         {
-            Out-Log "Sending telemetry to $ingestionDnsName ($ip4Address):" -startLine
+            Out-Log "Sending telemetry to $ingestionDnsName ($ip4Address)"
             $ingestionEndpointReachable = Test-Port -ipAddress $ip4Address -Port 443
             $global:dbgingestionEndpointReachable = $ingestionEndpointReachable
             if ($ingestionEndpointReachable.Succeeded)
@@ -1039,8 +1039,16 @@ function Send-Telemetry
                     $line = $trappedError.InvocationInfo.Line.Trim()
                     $exceptionMessage = $trappedError.Exception.Message
                     $trappedErrorString = $trappedError.Exception.ErrorRecord | Out-String -ErrorAction SilentlyContinue
-                    Out-Log "[ERROR] $exceptionMessage Line $scriptLineNumber $line" -color Red
+                    if ($verbose -or $debug)
+                    {
+                        Out-Log "[ERROR] $exceptionMessage Line $scriptLineNumber $line" -color Red
+                    }
+                    else
+                    {
+                        Out-Log $exceptionMessage
+                    }
                 }
+
                 if ($result)
                 {
                     $itemsReceived = $result | Select-Object -ExpandProperty itemsReceived
@@ -1050,11 +1058,11 @@ function Send-Telemetry
                     if ($errors)
                     {
                         $message = "$message Errors: $errors"
-                        Out-Log $message -color Red -endLine
+                        Out-Log $message
                     }
                     else
                     {
-                        Out-Log $message -color Green -endLine
+                        Out-Log $message
                     }
                 }
             }
@@ -1587,7 +1595,7 @@ else
 }
 
 Out-Log $osVersion -color Cyan
-$timeZone = Get-TimeZone | Select-Object -ExpandProperty DisplayName
+$timeZone = [System.TimeZoneInfo]::Local | Select-Object -Expandproperty DisplayName
 $isHyperVGuest = Confirm-HyperVGuest
 Out-Log "Hyper-V Guest: $isHyperVGuest"
 if ($isHyperVGuest)
