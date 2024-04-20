@@ -661,7 +661,7 @@ function Out-Log
         [string]$prefix = 'both',
         [ValidateSet('hours', 'minutes', 'seconds')]
         [string]$timespanFormat = 'minutes',
-        [ValidateSet('condensedTime', 'time', 'datetime')]
+        [ValidateSet('condensedTime', 'datetime', 'time', 'utc')]
         [string]$timestampFormat = 'time',
         [switch]$dateCondensed = $true,
         [switch]$milliseconds,
@@ -3451,13 +3451,13 @@ $htmFilePath = "$logFolderPath\$htmFileName"
 $htm = $htm.Replace('&lt;', '<').Replace('&gt;', '>').Replace('&quot;', '"')
 
 $htm | Out-File -FilePath $htmFilePath
-Out-Log "HTML report: $htmFilePath"
+Out-Log "Report: $htmFilePath"
 if ($showReport -and $installationType -ne 'Server Core')
 {
     Invoke-Item -Path $htmFilePath
 }
 
-Out-Log "Log file: $logFilePath"
+Out-Log "Log: $logFilePath"
 $scriptDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f (New-TimeSpan -Start $scriptStartTime -End (Get-Date))
 Out-Log "$scriptName duration:" -startLine
 Out-Log $scriptDuration -endLine -color Cyan
