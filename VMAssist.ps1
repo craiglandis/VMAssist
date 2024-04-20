@@ -20,11 +20,12 @@
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
     [string]$outputPath = 'C:\logs',
-    [switch]$showReport,
     [switch]$fakeFinding,
     [switch]$skipFirewall = $true,
     [switch]$skipFilters = $true,
-    [switch]$useDotnetForNicDetails
+    [switch]$useDotnetForNicDetails,
+    [switch]$showLog,
+    [switch]$showReport
 )
 
 trap
@@ -657,36 +658,34 @@ function Out-Log
         [switch]$verboseOnly,
         [switch]$startLine,
         [switch]$endLine,
-        [ValidateSet('timespan', 'both')]
-        [string]$prefix = 'both',
-        [ValidateSet('hours', 'minutes', 'seconds')]
-        [string]$timespanFormat = 'minutes',
-        [ValidateSet('condensedTime', 'datetime', 'time', 'utc')]
-        [string]$timestampFormat = 'time',
-        [switch]$dateCondensed = $true,
-        [switch]$milliseconds,
         [switch]$raw,
         [switch]$logonly,
-        [ValidateSet('Black', 'DarkBlue', 'DarkGreen', 'DarkCyan', 'DarkRed', 'DarkMagenta', 'DarkYellow', 'Gray', 'DarkGray', 'Blue', 'Green', 'Cyan', 'Red', 'Magenta', 'Yellow', 'White')]
+        [ValidateSet('Black','Blue','Cyan','DarkBlue','DarkCyan','DarkGray','DarkGreen','DarkMagenta','DarkRed','DarkYellow','Gray','Green','Magenta','Red','White','Yellow')]
         [string]$color = 'White'
     )
 
-    if ($timestampFormat -eq 'condensedTime')
+    $utc = (Get-Date).ToUniversalTime()
+
+    $logTimestampFormat = 'yyyy-MM-dd hh:mm:ssZ'
+    $logTimestampString = Get-Date -Date $utc -Format $logTimestampFormat
+
+    if ([string]::IsNullOrEmpty($script:scriptStartTimeUtc))
     {
-        $dateFormat = 'ddhhmmss'
+        $script:scriptStartTimeUtc = $utc
+        $script:scriptStartTimeUtcString = Get-Date -Date $utc -Format $logTimestampFormat
     }
-    elseif ($timestampFormat -eq 'time')
+
+    if ([string]::IsNullOrEmpty($script:lastCallTime))
     {
-        $dateFormat = 'hh:mm:ss'
+        $script:lastCallTime = $utc
     }
-    elseif ($timestampFormat -eq 'datetime')
-    {
-        $dateFormat = 'yyyy-MM-dd hh:mm:ss'
-    }
-    else
-    {
-        $dateFormat = 'yyyy-MM-dd hh:mm:ss'
-    }
+
+    $lastCallTimeSpan = New-TimeSpan -Start $script:lastCallTime -End $utc
+    $lastCallTotalSeconds = $lastCallTimeSpan | Select-Object -ExpandProperty TotalSeconds
+    $lastCallTimeSpanFormat = '{0:ss}.{0:ff}'
+    $lastCallTimeSpanString = $lastCallTimeSpanFormat -f $lastCallTimeSpan
+    $lastCallTimeSpanString = "$($lastCallTimeSpanString)s"
+    $script:lastCallTime = $utc
 
     if ($verboseOnly)
     {
@@ -698,7 +697,7 @@ function Out-Log
             $caller = $callstack | Select-Object -First 1 -Skip 2
             $caller = $caller.InvocationInfo.MyCommand.Name
         }
-        # Write-Host "$scriptName `$verboseOnly: $verboseOnly `$global:verbose: $global:verbose `$verbose: $verbose" -ForegroundColor Magenta
+
         if ($verbose)
         {
             $outputNeeded = $true
@@ -735,81 +734,33 @@ function Out-Log
         }
         else
         {
-            if (!$script:scriptStartTime)
-            {
-                $script:scriptStartTime = Get-Date
-            }
+            $timespan = New-TimeSpan -Start $script:scriptStartTimeUtc -End $utc
 
-            if ($prefix -eq 'timespan' -and $script:scriptStartTime)
-            {
-                $timespan = New-TimeSpan -Start $script:scriptStartTime -End (Get-Date)
-                if ($timespanFormat -eq 'hours')
-                {
-                    $format = '{0:hh}:{0:mm}:{0:ss}'
-                }
-                elseif ($timespanFormat -eq 'minutes')
-                {
-                    $format = '{0:mm}:{0:ss}'
-                }
-                elseif ($timespanFormat -eq 'seconds')
-                {
-                    $format = '{0:ss}'
-                }
-                if ($milliseconds)
-                {
-                    $format = "$($format).{0:ff}"
-                }
-                $prefixString = $format -f $timespan
-            }
-            elseif ($prefix -eq 'both' -and $script:scriptStartTime)
-            {
-                $timestamp = Get-Date -Format $dateFormat
-                $timespan = New-TimeSpan -Start $script:scriptStartTime -End (Get-Date)
+            $timespanFormat = '{0:mm}:{0:ss}'
+            $timespanString = $timespanFormat -f $timespan
 
-                if ($timespanFormat -eq 'hours')
-                {
-                    $format = '{0:hh}:{0:mm}:{0:ss}'
-                }
-                elseif ($timespanFormat -eq 'minutes')
-                {
-                    $format = '{0:mm}:{0:ss}'
-                }
-                elseif ($timespanFormat -eq 'seconds')
-                {
-                    $format = '{0:ss}'
-                }
-                if ($milliseconds)
-                {
-                    $format = "$($format).{0:ff}"
-                }
-                $prefixString = $format -f $timespan
-                $prefixString = "$timestamp $prefixString"
-            }
-            else
-            {
-                $prefixString = Get-Date -Format $dateFormat
-            }
-
-            $prefixString = "$prefixString "
+            $consolePrefixString = "$timespanString "
+            $logPrefixString = "$logTimestampString $timespanString $lastCallTimeSpanString"
 
             if ($logonly -or $global:quiet)
             {
                 if ($logFilePath)
                 {
-                    "$prefixString $text" | Out-File $logFilePath -Append
+                    "$logPrefixString $text" | Out-File $logFilePath -Append
                 }
             }
             else
             {
                 if ($verboseOnly)
                 {
-                    $prefixString = "$prefixString[$caller] "
+                    $consolePrefixString = "$consolePrefixString[$caller] "
+                    $logPrefixString = "$logPrefixString[$caller] "
                 }
 
                 if ($startLine)
                 {
                     $script:startLineText = $text
-                    Write-Host $prefixString -NoNewline -ForegroundColor DarkGray
+                    Write-Host $consolePrefixString -NoNewline -ForegroundColor DarkGray
                     Write-Host "$text " -NoNewline -ForegroundColor $color
                 }
                 elseif ($endLine)
@@ -817,16 +768,16 @@ function Out-Log
                     Write-Host $text -ForegroundColor $color
                     if ($logFilePath)
                     {
-                        "$prefixString $script:startLineText $text" | Out-File $logFilePath -Append
+                        "$logPrefixString $script:startLineText $text" | Out-File $logFilePath -Append
                     }
                 }
                 else
                 {
-                    Write-Host $prefixString -NoNewline -ForegroundColor DarkGray
+                    Write-Host $consolePrefixString  -NoNewline -ForegroundColor DarkGray
                     Write-Host $text -ForegroundColor $color
                     if ($logFilePath)
                     {
-                        "$prefixString $text" | Out-File $logFilePath -Append
+                        "$logPrefixString $text" | Out-File $logFilePath -Append
                     }
                 }
             }
@@ -3472,6 +3423,15 @@ else
     $color = 'Green'
 }
 Out-Log "$findingsCount issue(s) found." -color $color
+if ($showLog -and (Test-Path -Path $logFilePath -PathType Leaf))
+{
+    Invoke-Item -Path $logFilePath
+}
+
+if ($showReport -and (Test-Path -Path $htmFilePath -PathType Leaf))
+{
+    Invoke-Item -Path $htmFilePath
+}
 
 <# Possible findings:
 1. WCF debugging enabled
