@@ -23,7 +23,7 @@ param (
     [switch]$fakeFinding,
     [switch]$skipFirewall = $true,
     [switch]$skipFilters = $true,
-    [switch]$useDotnetForNicDetails,
+    [switch]$useDotnetForNicDetails = $true,
     [switch]$showLog,
     [switch]$showReport
 )
@@ -1476,6 +1476,19 @@ if ($isAdmin -eq $false)
     exit
 }
 
+$parentProcessId = Get-CimInstance -Class Win32_Process -Filter "ProcessId = '$PID'" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ParentProcessId
+$grandparentProcessPid = Get-CimInstance -Class Win32_Process -Filter "ProcessId = '$parentProcessId'" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ParentProcessId
+$grandparentProcessName = Get-Process -Id $grandparentProcessPid -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name
+if ($grandparentProcessName -eq 'sacsess')
+{
+    $isSacSess = $true
+}
+else
+{
+    $isSacSess = $false
+}
+Out-Log "SAC session: $isSacSess"
+
 if ($outputPath)
 {
     $logFolderPath = $outputPath
@@ -2577,7 +2590,7 @@ if ($useDotnetForNicDetails)
 
     $isNetworkAvailable = [Net.NetworkInformation.NetworkInterface]::GetIsNetworkAvailable()
     $networkInterfaces = [Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces()
-    $networkInterfaces = $networkInterfaces | Where-Object {$_.NetworkInterfaceType -ne 'Loopback'}
+    $networkInterfaces = $networkInterfaces | Where-Object {$_.NetworkInterfaceType -eq 'Ethernet'}
     foreach ($networkInterface in $networkInterfaces)
     {
         $ipProperties = $networkInterface.GetIPProperties()
@@ -2594,6 +2607,7 @@ if ($useDotnetForNicDetails)
         }
 
         $nic = [PSCustomObject]@{
+            Id = $networkInterface.Id
             Description = $networkInterface.Description
             Alias = $networkInterface.Name
             Index = $ipV4Properties.Index
@@ -2605,9 +2619,9 @@ if ($useDotnetForNicDetails)
             DnsServers = $ipProperties.DnsAddresses.IPAddressToString
             DefaultGateway = $ipProperties.GatewayAddresses.Address.IPAddressToString
             IsAutomaticPrivateAddressingActive = $ipV4Properties.IsAutomaticPrivateAddressingActive
-            $mtu = $ipV4Properties.Mtu
-            $ipV4Addresses = $ipProperties | Select-Object -ExpandProperty UnicastAddresses | Select-Object -ExpandProperty Address | Where-Object {$_.AddressFamily -eq 'InterNetwork'}
-            $ipV6Addresses = $ipProperties | Select-Object -ExpandProperty UnicastAddresses | Select-Object -ExpandProperty Address | Where-Object {$_.AddressFamily -eq 'InterNetworkV6'}
+            Mtu = $ipV4Properties.Mtu
+            IpV4Addresses = $ipProperties | Select-Object -ExpandProperty UnicastAddresses | Select-Object -ExpandProperty Address | Where-Object {$_.AddressFamily -eq 'InterNetwork'}
+            IpV6Addresses = $ipProperties | Select-Object -ExpandProperty UnicastAddresses | Select-Object -ExpandProperty Address | Where-Object {$_.AddressFamily -eq 'InterNetworkV6'}
         }
         $nics.Add($nic)
     }
