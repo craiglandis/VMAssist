@@ -45,6 +45,76 @@ trap
     continue
 }
 
+function Get-Age
+{
+	param(
+		[datetime]$start,
+		[datetime]$end = (Get-Date)
+	)
+
+	$timespan = New-TimeSpan -Start $start -End $end
+	$years = [Math]::Round($timespan.Days / 365, 1)
+	$months = [Math]::Round($timespan.Days / 30, 1)
+	$days = $timespan.Days
+	$hours = $timespan.Hours
+	$minutes = $timespan.Minutes
+	$seconds = $timespan.Seconds
+
+	if ($years -gt 1)
+	{
+		$age = "$years years"
+	}
+	elseif ($years -eq 1)
+	{
+		$age = "$years year"
+	}
+	elseif ($months -gt 1)
+	{
+		$age = "$months months"
+	}
+	elseif ($months -eq 1)
+	{
+		$age = "$months month"
+	}
+	elseif ($days -gt 1)
+	{
+		$age = "$days days"
+	}
+	elseif ($days -eq 1)
+	{
+		$age = "$days day"
+	}
+	elseif ($hours -gt 1)
+	{
+		$age = "$hours hrs"
+	}
+	elseif ($hours -eq 1)
+	{
+		$age = "$hours hr"
+	}
+	elseif ($minutes -gt 1)
+	{
+		$age = "$minutes mins"
+	}
+	elseif ($minutes -eq 1)
+	{
+		$age = "$minutes min"
+	}
+	elseif ($seconds -gt 1)
+	{
+		$age = "$seconds secs"
+	}
+	elseif ($seconds -eq 1)
+	{
+		$age = "$seconds sec"
+	}
+
+	if ($age)
+	{
+		return $age
+	}
+}
+
 <#
 Add check to compare file hashes of machine.config and machine.config.default - if they differ we know they changed machine.config
 (Get-FileHash -Path C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Config\machine.config -Algorithm SHA256 | Select-Object -ExpandProperty Hash) -eq (Get-FileHash -Path C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Config\machine.config.default -Algorithm SHA256 | Select-Object -ExpandProperty Hash)
@@ -207,8 +277,9 @@ function Get-ServiceCrashes
         $message = $latestCrash.Message
         $description = "$serviceCrashesCount $name service crashes in the last 1 day. Most recent: $timeCreated $id $message"
         New-Finding -type 'Critical' -name "$name service terminated unexpectedly" -description $description -mitigation ''
-        New-Check -name "$name service crashes" -result 'FAILED' -details ''
-        Out-Log $true -color Red -endLine
+        $details = "$(Get-Age $timeCreated) ago ($timeCreated)"
+        New-Check -name "$name service crashes" -result 'FAILED' -details $details
+        Out-Log "$true $details" -color Red -endLine
     }
     else
     {
@@ -1476,19 +1547,6 @@ if ($isAdmin -eq $false)
     exit
 }
 
-$parentProcessId = Get-CimInstance -Class Win32_Process -Filter "ProcessId = '$PID'" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ParentProcessId
-$grandparentProcessPid = Get-CimInstance -Class Win32_Process -Filter "ProcessId = '$parentProcessId'" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ParentProcessId
-$grandparentProcessName = Get-Process -Id $grandparentProcessPid -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name
-if ($grandparentProcessName -eq 'sacsess')
-{
-    $isSacSess = $true
-}
-else
-{
-    $isSacSess = $false
-}
-Out-Log "SAC session: $isSacSess"
-
 if ($outputPath)
 {
     $logFolderPath = $outputPath
@@ -1578,6 +1636,19 @@ else
     $isAzureVM = $false
     Out-Log "Azure VM: $isAzureVM"
 }
+
+$parentProcessId = Get-CimInstance -Class Win32_Process -Filter "ProcessId = '$PID'" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ParentProcessId
+$grandparentProcessPid = Get-CimInstance -Class Win32_Process -Filter "ProcessId = '$parentProcessId'" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ParentProcessId
+$grandparentProcessName = Get-Process -Id $grandparentProcessPid -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name
+if ($grandparentProcessName -eq 'sacsess')
+{
+    $isSacSess = $true
+}
+else
+{
+    $isSacSess = $false
+}
+Out-Log "SAC session: $isSacSess"
 
 $uuidFromWMI = Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID
 $lastConfig = Get-ItemProperty -Path 'HKLM:\SYSTEM\HardwareConfig' -ErrorAction SilentlyContinue | Select-Object -Expandproperty LastConfig
@@ -2575,7 +2646,7 @@ if ($useDotnetForNicDetails)
     $networkListManager = [Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]"{DCB00C01-570F-4A9B-8D69-199FDBA5723B}"))
     $connections = $networkListManager.GetNetworkConnections()
 
-    $isConnected = $networkListManager.IsConnectedToInternet
+    $isConnected = $networkListManager.IsConnected
     $isConnectedToInternet = $networkListManager.IsConnectedToInternet
 
     foreach ($connection in $connections)
@@ -2597,7 +2668,10 @@ if ($useDotnetForNicDetails)
         $ipV4Properties = $ipProperties.GetIPv4Properties()
         $ipV6Properties = $ipProperties.GetIPv6Properties()
 
-        if ($ipV4Properties.IsDhcpEnabled)
+        $ipV4Addresses = $ipProperties | Select-Object -ExpandProperty UnicastAddresses | Select-Object -ExpandProperty Address | Where-Object {$_.AddressFamily -eq 'InterNetwork'}
+        $ipV6Addresses = $ipProperties | Select-Object -ExpandProperty UnicastAddresses | Select-Object -ExpandProperty Address | Where-Object {$_.AddressFamily -eq 'InterNetworkV6'}
+
+        if ([bool]$ipV4Properties.IsDhcpEnabled)
         {
             $dhcp = 'Enabled'
         }
@@ -2606,8 +2680,16 @@ if ($useDotnetForNicDetails)
             $dhcp = 'Disabled'
         }
 
+        if ([bool]$ipV6Properties.IsDhcpEnabled)
+        {
+            $ipV6Dhcp = 'Enabled'
+        }
+        else
+        {
+            $ipV6Dhcp = 'Disabled'
+        }
+
         $nic = [PSCustomObject]@{
-            Id = $networkInterface.Id
             Description = $networkInterface.Description
             Alias = $networkInterface.Name
             Index = $ipV4Properties.Index
@@ -2615,20 +2697,27 @@ if ($useDotnetForNicDetails)
             Status = $networkInterface.OperationalStatus
             DHCP = $dhcp
             IpAddress = $ipV4Addresses
-            # DHCPServerAddresses = $dhcpServerAddresses
             DnsServers = $ipProperties.DnsAddresses.IPAddressToString
             DefaultGateway = $ipProperties.GatewayAddresses.Address.IPAddressToString
+            Connected       = $isConnected
+            ConnectedToInternet       = $isConnectedToInternet
+            Category           = $networkProfile
+            IPv6DHCP           = $ipV6Dhcp
+            IPv6IpAddress      = $ipV6Addresses
+            IPv6DnsServers     = $ipProperties.DnsAddresses.IPAddressToString
+            IPv6DefaultGateway = $ipProperties.GatewayAddresses.Address.IPAddressToString
+            Id = $networkInterface.Id
+            # DHCPServerAddresses = $dhcpServerAddresses
             IsAutomaticPrivateAddressingActive = $ipV4Properties.IsAutomaticPrivateAddressingActive
             Mtu = $ipV4Properties.Mtu
-            IpV4Addresses = $ipProperties | Select-Object -ExpandProperty UnicastAddresses | Select-Object -ExpandProperty Address | Where-Object {$_.AddressFamily -eq 'InterNetwork'}
-            IpV6Addresses = $ipProperties | Select-Object -ExpandProperty UnicastAddresses | Select-Object -ExpandProperty Address | Where-Object {$_.AddressFamily -eq 'InterNetworkV6'}
         }
         $nics.Add($nic)
+        $global:dbgNics = $nics
     }
 }
 elseif ($winmgmt.Status -eq 'Running')
 {
-    # Get-NetIPConfiguration depends on WMI
+    # Get-NetIPConfiguration depends on WMI (winmgmt service)
     $ipconfigs = Invoke-ExpressionWithLogging "Get-NetIPConfiguration -Detailed" -verboseOnly
     foreach ($ipconfig in $ipconfigs)
     {
@@ -2689,29 +2778,47 @@ elseif ($winmgmt.Status -eq 'Running')
             IPv6Connectivity   = $ipV6Connectivity
         }
         $nics.Add($nic)
+        $global:dbgNics = $nics
     }
+}
+else
+{
+    Out-Log "Unable to query network adapter details because winmgmt service is not running"
+}
 
-    $dhcpDisabledNics = $nics | Where-Object DHCP -eq 'Disabled'
-    if ($dhcpDisabledNics)
-    {
-        $dhcpAssignedIpAddresses = $false
-        Out-Log $dhcpAssignedIpAddresses -endLine -color Yellow
-        $dhcpDisabledNicsString = "DHCP-disabled NICs: "
-        foreach ($dhcpDisabledNic in $dhcpDisabledNics)
-        {
-            $dhcpDisabledNicsString += "Description: $($dhcpDisabledNic.Description) Alias: $($dhcpDisabledNic.Alias) Index: $($dhcpDisabledNic.Index) IpAddress: $($dhcpDisabledNic.IpAddress)"
-        }
-        New-Check -name "DHCP-assigned IP addresses" -result 'Info' -details $dhcpDisabledNicsString
-        New-Finding -type Information -name "DHCP-disabled NICs" -description $dhcpDisabledNicsString -mitigation ''
-    }
-    else
-    {
-        $dhcpAssignedIpAddresses = $true
-        Out-Log $dhcpAssignedIpAddresses -endLine -color Green
-        $details = "All NICs have DHCP-assigned IP addresses"
-        New-Check -name "DHCP-assigned IP addresses" -result 'OK' -details $details
-    }
+if ($winmgmt.Status -eq 'Running')
+{
+    # Get-NetRoute depends on WMI (winmgmt service)
+    $routes = Get-NetRoute | Select-Object AddressFamily,State,ifIndex,InterfaceAlias,InstanceID,TypeOfRoute,RouteMetric,InterfaceMetric,DestinationPrefix,NextHop | Sort-Object InterfaceAlias
+}
+else
+{
+    Out-Log "Unable to query network route details because winmgmt service is not running"
+}
 
+$dhcpDisabledNics = $nics | Where-Object DHCP -eq 'Disabled'
+if ($dhcpDisabledNics)
+{
+    $dhcpAssignedIpAddresses = $false
+    Out-Log $dhcpAssignedIpAddresses -endLine -color Yellow
+    $dhcpDisabledNicsString = "DHCP-disabled NICs: "
+    foreach ($dhcpDisabledNic in $dhcpDisabledNics)
+    {
+        $dhcpDisabledNicsString += "Description: $($dhcpDisabledNic.Description) Alias: $($dhcpDisabledNic.Alias) Index: $($dhcpDisabledNic.Index) IpAddress: $($dhcpDisabledNic.IpAddress)"
+    }
+    New-Check -name "DHCP-assigned IP addresses" -result 'Info' -details $dhcpDisabledNicsString
+    New-Finding -type Information -name "DHCP-disabled NICs" -description $dhcpDisabledNicsString -mitigation ''
+}
+else
+{
+    $dhcpAssignedIpAddresses = $true
+    Out-Log $dhcpAssignedIpAddresses -endLine -color Green
+    $details = "All NICs have DHCP-assigned IP addresses"
+    New-Check -name "DHCP-assigned IP addresses" -result 'OK' -details $details
+}
+
+if ($imdsReachable.Succeeded)
+{
     $nicsImds = New-Object System.Collections.Generic.List[Object]
     foreach ($interface in $interfaces)
     {
@@ -2734,12 +2841,6 @@ elseif ($winmgmt.Status -eq 'Running')
         }
         $nicsImds.Add($nicImds)
     }
-
-    $routes = Get-NetRoute | Select-Object AddressFamily,State,ifIndex,InterfaceAlias,InstanceID,TypeOfRoute,RouteMetric,InterfaceMetric,DestinationPrefix,NextHop | Sort-Object InterfaceAlias
-}
-else
-{
-    Out-Log "Unable to query network adapter details because winmgmt service is not running"
 }
 
 # Security
