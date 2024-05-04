@@ -210,8 +210,8 @@ function Get-WCFConfig
 function Confirm-HyperVGuest
 {
     # SystemManufacturer/SystemProductName valus are in different locations depending if Gen1 vs Gen2
-    $systemManufacturer = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemManufacturer
-    $systemProductName = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemProductName
+    $systemManufacturer = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemManufacturer -ErrorAction SilentlyContinue
+    $systemProductName = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemProductName -ErrorAction SilentlyContinue
     if ([string]::IsNullOrEmpty($systemManufacturer) -and [string]::IsNullOrEmpty($systemProductName))
     {
         $systemManufacturer = Get-ItemProperty "HKLM:\HARDWARE\DESCRIPTION\System\BIOS" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemManufacturer
@@ -222,6 +222,8 @@ function Confirm-HyperVGuest
             $systemProductName = Get-ItemProperty "HKLM:\SYSTEM\HardwareConfig\Current" -ErrorAction SilentlyContinue| Select-Object -ExpandProperty SystemProductName
         }
     }
+    Out-Log "SystemManufacturer: $systemManufacturer" -verboseOnly
+    Out-Log "SystemProductName: $systemProductName" -verboseOnly
 
     if ($systemManufacturer -eq 'Microsoft Corporation' -and $systemProductName -eq 'Virtual Machine')
     {
