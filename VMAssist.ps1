@@ -2663,7 +2663,10 @@ if ($useDotnetForNicDetails)
 
     $isNetworkAvailable = [Net.NetworkInformation.NetworkInterface]::GetIsNetworkAvailable()
     $networkInterfaces = [Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces()
-    $networkInterfaces = $networkInterfaces | Where-Object {$_.NetworkInterfaceType -eq 'Ethernet'}
+    # Description of 'Hyper-V Virtual Ethernet Adapter' is the vswitch on a Hyper-V host
+    # Description of 'Microsoft Hyper-V Network Adapter' is the netvsc virtual NIC on a Hyper-V guest
+    $networkInterfaces = $networkInterfaces | Where-Object {($_.NetworkInterfaceType -eq 'Ethernet' -and $_.Description -ne 'Hyper-V Virtual Ethernet Adapter') -or ($_.NetworkInterfaceType -eq 'Wireless80211' -and $_.Description -notmatch 'Microsoft Wi-Fi Direct Virtual Adapter') -and $_.Description -notmatch 'Bluetooth'}
+
     foreach ($networkInterface in $networkInterfaces)
     {
         $ipProperties = $networkInterface.GetIPProperties()
@@ -2714,8 +2717,8 @@ if ($useDotnetForNicDetails)
             Mtu = $ipV4Properties.Mtu
         }
         $nics.Add($nic)
-        $global:dbgNics = $nics
     }
+    $global:dbgNics = $nics
 }
 elseif ($winmgmt.Status -eq 'Running')
 {
@@ -3309,7 +3312,20 @@ https://www.w3schools.com/howto/howto_js_accordion.asp
 #>
 $css | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 
-[void]$stringBuilder.Append("VM Name: <span style='font-weight:bold'>$vmName</span> VMID: <span style='font-weight:bold'>$vmId</span>")
+if ($isAzureVM)
+{
+    [void]$stringBuilder.Append("VM Name: <span style='font-weight:bold'>$vmName</span> VMID: <span style='font-weight:bold'>$vmId</span>")
+}
+elseif ($isHyperVGuest)
+{
+    $virtualMachineName = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters' | Select-Object -ExpandProperty VirtualMachineName
+    $virtualMachineId = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters' | Select-Object -ExpandProperty VirtualMachineId
+    [void]$stringBuilder.Append("VM Name: <span style='font-weight:bold'>$virtualMachineName</span> VMID: <span style='font-weight:bold'>$virtualMachineId</span>")
+}
+else
+{
+    [void]$stringBuilder.Append("Computer Name: <span style='font-weight:bold'>$computerName</span>")
+}
 if ($guestAgentKeyContainerId)
 {
     [void]$stringBuilder.Append(" ContainerId: <span style='font-weight:bold'>$guestAgentKeyContainerId</span>")
