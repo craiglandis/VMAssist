@@ -3602,6 +3602,7 @@ $key = Get-ChildItem -Path 'HKLM:\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpd
 check for missing Message value in "HKLM\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState\<ga version>" and if missing, suggest deleting LatestExpectedVersion value in HKLM\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState)
 
 # get-winevent -ProviderName Microsoft-Windows-Resource-Exhaustion-Detector | Where-Object {$_.LevelDisplayName -ne 'Information'}
+P0 ### Bootmode Add-Type -AssemblyName System.Windows.Forms; New-Object System.Windows.Forms.BootMode
 P0 ### Re-enable and finish Findings accordion
 P0 ### Review and complete all description/mitigation text
 P0 ### Finish WCF profiling finding
