@@ -61,7 +61,8 @@ param(
     [switch]$testCSEWithScript,
     [switch]$removeCSE,
     [string]$resourceGroupName,
-    [string]$vmName
+    [string]$vmName,
+    [switch]$parameters
 )
 
 function Out-Log
@@ -349,6 +350,15 @@ $WarningPreference = 'SilentlyContinue'
 
 $verbose = [bool]$PSBoundParameters['verbose']
 $debug = [bool]$PSBoundParameters['debug']
+
+if ($parameters)
+{
+    $script = Get-Command -Name $scriptFullName
+    $parameterNames = $script.ParameterSets.Parameters.Name | Sort-Object -Unique
+    $parameterNames = $parameterNames | Where-Object {$_ -notin 'verbose', 'whatif', 'warningaction', 'warningvariable', 'PipelineVariable', 'ProgressAction', 'OutBuffer', 'OutVariable', 'InformationAction', 'InformationVariable', 'ErrorAction', 'ErrorVariable', 'Debug', 'Confirm'}
+    $parameterNames | Format-Column
+    exit
+}
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')
 if ($isAdmin -eq $false)

@@ -16,7 +16,7 @@
 
     VMAssist.ps1
 #>
-
+#Requires -Version 4
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
     [string]$outputPath = 'C:\logs',
@@ -25,7 +25,8 @@ param (
     [switch]$skipFilters = $true,
     [switch]$useDotnetForNicDetails = $true,
     [switch]$showLog,
-    [switch]$showReport
+    [switch]$showReport,
+    [switch]$acceptEula
 )
 
 trap
@@ -45,6 +46,7 @@ trap
     continue
 }
 
+#region functions
 function Get-Age
 {
 	param(
@@ -1514,7 +1516,9 @@ namespace Microsoft.WindowsAzure.Internal
 
     return $isAzureVM
 }
+#endregion functions
 
+#region main
 $psVersion = $PSVersionTable.PSVersion
 $psVersionString = $psVersion.ToString()
 if ($psVersion -lt [version]'4.0' -or $psVersion -ge [version]'6.0')
@@ -3602,6 +3606,15 @@ $key = Get-ChildItem -Path 'HKLM:\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpd
 check for missing Message value in "HKLM\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState\<ga version>" and if missing, suggest deleting LatestExpectedVersion value in HKLM\SOFTWARE\Microsoft\Windows Azure\GuestAgentUpdateState)
 
 # get-winevent -ProviderName Microsoft-Windows-Resource-Exhaustion-Detector | Where-Object {$_.LevelDisplayName -ne 'Information'}
+# fltmc instances, fltmc filters, fltmc volumes
+DSregcmd /status
+	switch ((Get-ItemProperty -Path HKLM:\System\CurrentControlSet\Control\ProductOptions).ProductType)
+	{
+	  "WinNT"	 { return "WinNT"}
+	  "ServerNT" { return "ServerNT"}
+	  "LanmanNT" { return "LanmanNT"}
+	  Default	 {"EmptyProductType"}
+	}
 P0 ### Bootmode Add-Type -AssemblyName System.Windows.Forms; New-Object System.Windows.Forms.BootMode
 P0 ### Re-enable and finish Findings accordion
 P0 ### Review and complete all description/mitigation text
@@ -3643,3 +3656,4 @@ P1 ### Add mitigations for existing checks (XL)
 
 $global:dbgOutput = $output
 $global:dbgFindings = $findings
+#endregion main
