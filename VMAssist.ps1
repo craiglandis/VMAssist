@@ -47,6 +47,71 @@ trap
 }
 
 #region functions
+$MethodDefinition = @'
+    using System.Runtime.InteropServices;
+    public enum AccessType
+    {
+        DefaultProxy = 0,
+        NamedProxy = 3,
+        NoProxy = 1,
+        AutomaticProxy = 4
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    public struct WINHTTP_PROXY_INFO
+
+    {
+        public AccessType AccessType;
+        public string Proxy;
+        public string Bypass;
+    }
+
+        public struct WinhttpCurrentUserIeProxyConfig
+    {
+        [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        public bool AutoDetect;
+        [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)]
+        public string AutoConfigUrl;
+        [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)]
+        public string Proxy;
+        [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)]
+        public string ProxyBypass;
+
+    }
+
+    public class WinHttp
+    {
+        [DllImport("winhttp.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern bool WinHttpGetDefaultProxyConfiguration(ref WINHTTP_PROXY_INFO config);
+        [DllImport("winhttp.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern bool WinHttpGetIEProxyConfigForCurrentUser(ref WinhttpCurrentUserIeProxyConfig pProxyConfig);
+    }
+'@
+$asm = Add-Type -TypeDefinition $MethodDefinition -PassThru -ErrorAction SilentlyContinue
+
+function GetProxySettings
+{
+    $proxycfg = [PSCustomObject]@{}
+    $IEProxyConfig = New-Object WinhttpCurrentUserIeProxyConfig
+    [WinHttp]::WinHttpGetIEProxyConfigForCurrentUser([ref]$IEProxyConfig) | Out-Null
+
+    $WINHTTPPROXY = New-Object WINHTTP_PROXY_INFO
+    [WinHttp]::WinHttpGetDefaultProxyConfiguration([ref]$WINHTTPPROXY) | Out-Null
+
+    $proxycfg | Add-Member -MemberType NoteProperty -Name 'IE_ProxySetting_CurrentUser' -Value '------------------'
+    $proxycfg | Add-Member -MemberType NoteProperty -Name 'IE_ProxySetting_AutoDetect' -Value $IEProxyConfig.AutoDetect
+    $proxycfg | Add-Member -MemberType NoteProperty -Name 'IE_ProxySetting_AutoConfigUrl' -Value $IEProxyConfig.AutoConfigUrl
+    $proxycfg | Add-Member -MemberType NoteProperty -Name 'IE_ProxySetting_ProxName' -Value $IEProxyConfig.Proxy
+    $proxycfg | Add-Member -MemberType NoteProperty -Name 'IE_ProxySetting_ProxyBypass' -Value $IEProxyConfig.ProxyBypass
+    $proxycfg | Add-Member -MemberType NoteProperty -Name 'WinHTTP_Proxy_Setting' -Value '------------------'
+    $proxycfg | Add-Member -MemberType NoteProperty -Name 'WinHTTP_Proxy_AutoDetect' -Value $WINHTTPPROXY.AccessType
+    $proxycfg | Add-Member -MemberType NoteProperty -Name 'WinHTTP_Proxy_ProxName' -Value $WINHTTPPROXY.Proxy
+    $proxycfg | Add-Member -MemberType NoteProperty -Name 'WinHTTP_Proxy_ProxyBypass' -Value $WINHTTPPROXY.Bypass
+
+    return $proxycfg
+}
+
+
 function Get-Age
 {
 	param(
@@ -3644,6 +3709,113 @@ DSregcmd /status
 	  "LanmanNT" { return "LanmanNT"}
 	  Default	 {"EmptyProductType"}
 	}
+
+global:FwGetProxyInfo
+"netsh winhttp show proxy 					| Out-File -Append $outFile"
+"netsh winhttp show advproxy 2>> $global:ErrorLogFile | Out-File -Append $outFile"	#only works for Win11+
+"bitsadmin /util /getieproxy localsystem 	| Out-File -Append $outFile"
+"bitsadmin /util /getieproxy networkservice | Out-File -Append $outFile"
+"bitsadmin /util /getieproxy localservice 	| Out-File -Append $outFile"
+"WinHTTPDiag.exe -i | Out-File -Append $outFile"
+"REG.exe EXPORT `"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings`" $outFileIESettings /y"
+
+https://github.com/CSS-Identity/ADFS-Diag/blob/e803ab13ac4e85a3ed3d18508f16fec17fe0b261/helpermodules/proxysettings.psm1
+Already added proxysettings.psm1 GetProxySettings function to vmassist.ps1
+
+Check if constrained language mode is enabled:
+$ConstrainedLanguageMode = $ExecutionContext.SessionState.LanguageMode
+
+# NIC
+"Get-NetAdapter -IncludeHidden -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+# COM/DCOM/RPC
+"netsh rpc show int 2>&1 | Out-File -Append $BasicLogFolder\Net_rpcinfo.txt"
+"netsh rpc show settings 2>&1 | Out-File -Append $BasicLogFolder\Net_rpcinfo.txt"
+"netsh rpc filter show filter 2>&1 | Out-File -Append $BasicLogFolder\Net_rpcinfo.txt"
+
+"Get-NetIPAddress -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+"Get-NetIPInterface -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+"Get-NetIPConfiguration -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+"Get-NetIPv4Protocol -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+"Get-NetIPv6Protocol  -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+"Get-NetOffloadGlobalSetting -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+"Get-NetPrefixPolicy -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+"Get-NetRoute -IncludeAllCompartments -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+"Get-NetTCPConnection -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+"Get-NetTransportFilter -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+"Get-NetTCPSetting -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+"Get-NetUDPEndpoint -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+"Get-NetUDPSetting -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_TCPIP_pscmdlets.txt"
+# Firewall
+"Show-NetIPsecRule -PolicyStore ActiveStore -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_Firewall_info_pscmdlets.txt"
+"Get-NetIPsecMainModeSA -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_Firewall_info_pscmdlets.txt"
+"Get-NetIPsecQuickModeSA -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_Firewall_info_pscmdlets.txt"
+"Get-NetFirewallProfile -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_Firewall_info_pscmdlets.txt"
+"Get-NetFirewallRule -PolicyStore ActiveStore -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_Firewall_Get-NetFirewallRule.txt"
+"netsh advfirewall show allprofiles 2>&1 | Out-File -Append $BasicLogFolder\Net_Firewall_advfirewall.txt"
+"netsh advfirewall show allprofiles state 2>&1 | Out-File -Append $BasicLogFolder\Net_Firewall_advfirewall.txt"
+"netsh advfirewall show currentprofile 2>&1 | Out-File -Append $BasicLogFolder\Net_Firewall_advfirewall.txt"
+"netsh advfirewall show domainprofile 2>&1 | Out-File -Append $BasicLogFolder\Net_Firewall_advfirewall.txt"
+"netsh advfirewall show global 2>&1 | Out-File -Append $BasicLogFolder\Net_Firewall_advfirewall.txt"
+"netsh advfirewall show privateprofile 2>&1 | Out-File -Append $BasicLogFolder\Net_Firewall_advfirewall.txt"
+"netsh advfirewall show publicprofile 2>&1 | Out-File -Append $BasicLogFolder\Net_Firewall_advfirewall.txt"
+"netsh advfirewall show store 2>&1 | Out-File -Append $BasicLogFolder\Net_Firewall_advfirewall.txt"
+"Copy-Item C:\Windows\System32\LogFiles\Firewall\pfirewall.log $BasicLogFolder\Net_Firewall_pfirewall.log -ErrorAction SilentlyContinue"
+# SMB
+"Get-SmbOpenFile -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_SMB_Server_info.txt"
+"Get-SmbSession -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_SMB_Server_info.txt"
+"Get-SmbWitnessClient -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_SMB_Server_info.txt"
+#NIC
+"Get-NetAdapterAdvancedProperty -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterBinding -AllBindings -IncludeHidden -ErrorAction Stop | select Name, InterfaceDescription, DisplayName, ComponentID, Enabled | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterChecksumOffload -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterEncapsulatedPacketTaskOffload -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterHardwareInfo -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterIPsecOffload -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterLso -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterPowerManagement -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterQos -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterRdma -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterRsc -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterRss -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterSriov -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterSriovVf -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterStatistics -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterVmq -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterVmqQueue -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+"Get-NetAdapterVPort -ErrorAction Stop | Out-File -Append $BasicLogFolder\Net_NetAdapterInfo.txt"
+
+# Basic
+"Get-CimInstance -Class CIM_Processor -ErrorAction Stop | fl * | Out-File -Append $BasicLogFolder\CPU_info.txt"
+# WER
+"Get-ChildItem `'HKLM:Software\Microsoft\Windows\Windows Error Reporting`' -Recurse | Out-File -Append $BasicLogFolder\_Reg_WER.txt"
+"Get-ItemProperty `'HKLM:System\CurrentControlSet\Control\CrashControl`' | Out-File -Append $BasicLogFolder\_Reg_Dump.txt"
+"Copy-Item `'C:\ProgramData\Microsoft\Windows\WER`' $BasicLogFolder -Recurse -ErrorAction SilentlyContinue"
+
+Get-CimInstance -Namespace root\cimv2\security\microsofttpm -class win32_tpm
+Get-Tpm -ErrorAction Ignore
+
+"Get-MpComputerStatus -ErrorAction Stop | Out-File -Append $BasicLogFolder\WindowsDefender.txt",
+"Get-MpPreference -ErrorAction Stop | Out-File -Append $BasicLogFolder\WindowsDefender.txt"
+
+Get-ItemProperty "HKLM:Software\Microsoft\NET Framework Setup\NDP\v4\Full"
+
+# look for port exhaustion entries in the event logs
+$logName = "SYSTEM", "SYSTEM"
+$Provider = "tcpip", "tcpip"
+$eventID = 4227, 4231
+[hashtable]$eventFilter = @{LogName=$logName; ProviderName=$Provider; ID=$eventID}
+$events = Get-WinEvent -FilterHashtable $eventFilter -EA SilentlyContinue
+
+## bail out if running in MS prod domain
+if(!($Mode -iMatch "traceMS")){
+	if (($env:USERDNSDOMAIN -match "\.microsoft\.com") -and (IsTraceOrDataCollection)){
+		Write-Host " .. running on Domain: $env:USERDNSDOMAIN"
+		Write-Host -ForegroundColor Magenta "`n ..exiting, as testing TSS in microsoft.com domain may cause Security alerts. Please test TSS in Lab environment without CorpNet access and read 'Important Note' in internal KB5026874. `nIn case you need data from this MS domain joined machine, plz append: -Mode traceMS"
+		Exit
+	}
+}
+
+
 P0 ### Bootmode Add-Type -AssemblyName System.Windows.Forms; New-Object System.Windows.Forms.BootMode
 P0 ### Re-enable and finish Findings accordion
 P0 ### Review and complete all description/mitigation text
