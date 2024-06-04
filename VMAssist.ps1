@@ -26,7 +26,10 @@ param (
     [switch]$useDotnetForNicDetails = $true,
     [switch]$showLog,
     [switch]$showReport,
-    [switch]$acceptEula
+    [switch]$acceptEula,
+    [switch]$listChecks,
+    [switch]$listFindings,
+    [switch]$skipPSVersionCheck
 )
 
 trap
@@ -114,72 +117,72 @@ function GetProxySettings
 
 function Get-Age
 {
-	param(
-		[datetime]$start,
-		[datetime]$end = (Get-Date)
-	)
+    param(
+        [datetime]$start,
+        [datetime]$end = (Get-Date)
+    )
 
-	$timespan = New-TimeSpan -Start $start -End $end
-	$years = [Math]::Round($timespan.Days / 365, 1)
-	$months = [Math]::Round($timespan.Days / 30, 1)
-	$days = $timespan.Days
-	$hours = $timespan.Hours
-	$minutes = $timespan.Minutes
-	$seconds = $timespan.Seconds
+    $timespan = New-TimeSpan -Start $start -End $end
+    $years = [Math]::Round($timespan.Days / 365, 1)
+    $months = [Math]::Round($timespan.Days / 30, 1)
+    $days = $timespan.Days
+    $hours = $timespan.Hours
+    $minutes = $timespan.Minutes
+    $seconds = $timespan.Seconds
 
-	if ($years -gt 1)
-	{
-		$age = "$years years"
-	}
-	elseif ($years -eq 1)
-	{
-		$age = "$years year"
-	}
-	elseif ($months -gt 1)
-	{
-		$age = "$months months"
-	}
-	elseif ($months -eq 1)
-	{
-		$age = "$months month"
-	}
-	elseif ($days -gt 1)
-	{
-		$age = "$days days"
-	}
-	elseif ($days -eq 1)
-	{
-		$age = "$days day"
-	}
-	elseif ($hours -gt 1)
-	{
-		$age = "$hours hrs"
-	}
-	elseif ($hours -eq 1)
-	{
-		$age = "$hours hr"
-	}
-	elseif ($minutes -gt 1)
-	{
-		$age = "$minutes mins"
-	}
-	elseif ($minutes -eq 1)
-	{
-		$age = "$minutes min"
-	}
-	elseif ($seconds -gt 1)
-	{
-		$age = "$seconds secs"
-	}
-	elseif ($seconds -eq 1)
-	{
-		$age = "$seconds sec"
-	}
+    if ($years -gt 1)
+    {
+        $age = "$years years"
+    }
+    elseif ($years -eq 1)
+    {
+        $age = "$years year"
+    }
+    elseif ($months -gt 1)
+    {
+        $age = "$months months"
+    }
+    elseif ($months -eq 1)
+    {
+        $age = "$months month"
+    }
+    elseif ($days -gt 1)
+    {
+        $age = "$days days"
+    }
+    elseif ($days -eq 1)
+    {
+        $age = "$days day"
+    }
+    elseif ($hours -gt 1)
+    {
+        $age = "$hours hrs"
+    }
+    elseif ($hours -eq 1)
+    {
+        $age = "$hours hr"
+    }
+    elseif ($minutes -gt 1)
+    {
+        $age = "$minutes mins"
+    }
+    elseif ($minutes -eq 1)
+    {
+        $age = "$minutes min"
+    }
+    elseif ($seconds -gt 1)
+    {
+        $age = "$seconds secs"
+    }
+    elseif ($seconds -eq 1)
+    {
+        $age = "$seconds sec"
+    }
 
-	if ($age)
-	{
-		return $age
-	}
+    if ($age)
+    {
+        return $age
+    }
 }
 
 <#
@@ -227,9 +230,9 @@ function Get-WCFConfig
         }
         else
         {
-            Out-Log "Visual Studio is not installed."
-            Out-Log "The vsdiag_regwcf.exe tool is installed by the Windows Communication Framework component of Visual Studio. It cannot run as a standalone EXE."
-            Out-Log "To install Visual Studio: https://aka.ms/vs/17/release/vs_enterprise.exe"
+            Out-Log 'Visual Studio is not installed.'
+            Out-Log 'The vsdiag_regwcf.exe tool is installed by the Windows Communication Framework component of Visual Studio. It cannot run as a standalone EXE.'
+            Out-Log 'To install Visual Studio: https://aka.ms/vs/17/release/vs_enterprise.exe'
         }
 
         if ($productLocation -and (Test-Path -Path $productLocation -PathType Leaf))
@@ -253,7 +256,7 @@ function Get-WCFConfig
         }
 
         $machineConfigStrings = $matches.ToString()
-        $matchesString = $matches.Line.Replace('<','&lt;').Replace('>','&gt;')
+        $matchesString = $matches.Line.Replace('<', '&lt;').Replace('>', '&gt;')
         #$matchesString = "<div class='box'><pre><code>$matchesString</code></pre></div>"
         #$matchesString = $matches.Line
 
@@ -277,16 +280,16 @@ function Get-WCFConfig
 function Confirm-HyperVGuest
 {
     # SystemManufacturer/SystemProductName valus are in different locations depending if Gen1 vs Gen2
-    $systemManufacturer = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemManufacturer -ErrorAction SilentlyContinue
-    $systemProductName = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemProductName -ErrorAction SilentlyContinue
+    $systemManufacturer = Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemManufacturer -ErrorAction SilentlyContinue
+    $systemProductName = Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\SystemInformation' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemProductName -ErrorAction SilentlyContinue
     if ([string]::IsNullOrEmpty($systemManufacturer) -and [string]::IsNullOrEmpty($systemProductName))
     {
-        $systemManufacturer = Get-ItemProperty "HKLM:\HARDWARE\DESCRIPTION\System\BIOS" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemManufacturer
-        $systemProductName = Get-ItemProperty "HKLM:\HARDWARE\DESCRIPTION\System\BIOS" -ErrorAction SilentlyContinue| Select-Object -ExpandProperty SystemProductName
+        $systemManufacturer = Get-ItemProperty 'HKLM:\HARDWARE\DESCRIPTION\System\BIOS' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemManufacturer
+        $systemProductName = Get-ItemProperty 'HKLM:\HARDWARE\DESCRIPTION\System\BIOS' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemProductName
         if ([string]::IsNullOrEmpty($systemManufacturer) -and [string]::IsNullOrEmpty($systemProductName))
         {
-            $systemManufacturer = Get-ItemProperty "HKLM:\SYSTEM\HardwareConfig\Current" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemManufacturer
-            $systemProductName = Get-ItemProperty "HKLM:\SYSTEM\HardwareConfig\Current" -ErrorAction SilentlyContinue| Select-Object -ExpandProperty SystemProductName
+            $systemManufacturer = Get-ItemProperty 'HKLM:\SYSTEM\HardwareConfig\Current' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemManufacturer
+            $systemProductName = Get-ItemProperty 'HKLM:\SYSTEM\HardwareConfig\Current' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SystemProductName
         }
     }
     Out-Log "SystemManufacturer: $systemManufacturer" -verboseOnly
@@ -310,7 +313,7 @@ function Get-ApplicationErrors
         [string]$name
     )
     Out-Log "$name process errors:" -startLine
-    $applicationErrors = Get-WinEvent -FilterHashtable @{ProviderName = 'Application Error';Id = 1000; StartTime = ((Get-Date).AddDays(-7))} -ErrorAction SilentlyContinue | Where-Object {$_.Message -match $name}
+    $applicationErrors = Get-WinEvent -FilterHashtable @{ProviderName = 'Application Error'; Id = 1000; StartTime = ((Get-Date).AddDays(-7))} -ErrorAction SilentlyContinue | Where-Object {$_.Message -match $name}
     if ($applicationErrors)
     {
         $applicationErrorsCount = $applicationErrors | Measure-Object | Select-Object -ExpandProperty Count
@@ -336,7 +339,7 @@ function Get-ServiceCrashes
         [string]$name
     )
     Out-Log "$name service crashes:" -startLine
-    $serviceCrashes = Get-WinEvent -FilterHashtable @{ProviderName = 'Service Control Manager'; Id = 7031,7034; StartTime = ((Get-Date).AddDays(-1))} -ErrorAction SilentlyContinue | Where-Object {$_.Message -match $name}
+    $serviceCrashes = Get-WinEvent -FilterHashtable @{ProviderName = 'Service Control Manager'; Id = 7031, 7034; StartTime = ((Get-Date).AddDays(-1))} -ErrorAction SilentlyContinue | Where-Object {$_.Message -match $name}
     if ($serviceCrashes)
     {
         $serviceCrashesCount = $serviceCrashes | Measure-Object | Select-Object -ExpandProperty Count
@@ -359,7 +362,7 @@ function Get-ServiceCrashes
 
 function Get-WfpFilters
 {
-    Out-Log "Getting WFP filters:" -startLine
+    Out-Log 'Getting WFP filters:' -startLine
 
     $wireserverWfpFiltersPath = "$scriptFolderPath\wireserverFilters.xml"
     $result = Invoke-ExpressionWithLogging "netsh wfp show filters dir=OUT remoteaddr=168.63.129.16 file=$wireserverWfpFiltersPath" -verboseOnly
@@ -382,15 +385,15 @@ function Get-WfpFilters
     $effectiveWeightType = @{Name = 'effectiveWeight.type'; Expression = {$_.effectiveWeight.type}}
     $effectiveWeightUint64 = @{Name = 'effectiveWeight.uint64'; Expression = {$_.effectiveWeight.uint64}}
 
-    $providers = $wfpFilters.wfpdiag.providers.Item | Select-Object serviceName,providerKey,$displayDataName,$displayDataDescription,$flagsNumItems
-    $filters = $wfpFilters.wfpdiag.filters.item | Select-Object $actionType,$displayDataName,$displayDataDescription,filterKey,providerKey,layerKey,subLayerKey,providerContextKey,filterId,reserved,$flagsNumItems,$providerDataData,$providerDataAsString,$weightType,$weightUint8,$filterConditionNumItems,$actionFilterType,$effectiveWeightType,$effectiveWeightUint64
+    $providers = $wfpFilters.wfpdiag.providers.Item | Select-Object serviceName, providerKey, $displayDataName, $displayDataDescription, $flagsNumItems
+    $filters = $wfpFilters.wfpdiag.filters.item | Select-Object $actionType, $displayDataName, $displayDataDescription, filterKey, providerKey, layerKey, subLayerKey, providerContextKey, filterId, reserved, $flagsNumItems, $providerDataData, $providerDataAsString, $weightType, $weightUint8, $filterConditionNumItems, $actionFilterType, $effectiveWeightType, $effectiveWeightUint64
     $filters = $filters | Sort-Object 'effectiveWeight.uint64'
-    $wireserverFilters = $wireserverWfpFilters.wfpdiag.filters.item | Select-Object $actionType,$displayDataName,$displayDataDescription,filterKey,providerKey,layerKey,subLayerKey,providerContextKey,filterId,reserved,$flagsNumItems,$providerDataData,$providerDataAsString,$weightType,$weightUint8,$filterConditionNumItems,$actionFilterType,$effectiveWeightType,$effectiveWeightUint64
+    $wireserverFilters = $wireserverWfpFilters.wfpdiag.filters.item | Select-Object $actionType, $displayDataName, $displayDataDescription, filterKey, providerKey, layerKey, subLayerKey, providerContextKey, filterId, reserved, $flagsNumItems, $providerDataData, $providerDataAsString, $weightType, $weightUint8, $filterConditionNumItems, $actionFilterType, $effectiveWeightType, $effectiveWeightUint64
     $wireserverFilters = $wireserverFilters | Sort-Object 'effectiveWeight.uint64'
 
     $result = [PSCustomObject]@{
-        Providers = $providers
-        Filters = $filters
+        Providers         = $providers
+        Filters           = $filters
         WireserverFilters = $wireserverFilters
     }
 
@@ -401,7 +404,7 @@ function Get-WfpFilters
 
 function Get-EnabledFirewallRules
 {
-    Out-Log "Getting enabled Windows firewall rules: " -startLine
+    Out-Log 'Getting enabled Windows firewall rules: ' -startLine
     $getNetFirewallRuleDuration = Measure-Command {$enabledRules = Get-NetFirewallRule -Enabled True | Where-Object {$_.Direction -eq 'Inbound'}}
 
     $getNetFirewallPortFilterStartTime = Get-Date
@@ -418,10 +421,10 @@ function Get-EnabledFirewallRules
     $getNetFirewallPortFilterEndTime = Get-Date
     $getNetFirewallPortFilterDuration = '{0:hh}:{0:mm}:{0:ss}.{0:ff}' -f (New-TimeSpan -Start $getNetFirewallPortFilterStartTime -End $getNetFirewallPortFilterEndTime)
 
-    $enabledInboundFirewallRules = $enabledRules | Where-Object {$_.Direction -eq 'Inbound'} | Select-Object DisplayName,Profile,Action,Protocol,LocalPort,RemotePort,IcmpType,DynamicTarget | Sort-Object DisplayName
-    $enabledOutboundFirewallRules = $enabledRules | Where-Object {$_.Direction -eq 'Outbound'} | Select-Object DisplayName,Profile,Action,Protocol,LocalPort,RemotePort,IcmpType,DynamicTarget | Sort-Object DisplayName
+    $enabledInboundFirewallRules = $enabledRules | Where-Object {$_.Direction -eq 'Inbound'} | Select-Object DisplayName, Profile, Action, Protocol, LocalPort, RemotePort, IcmpType, DynamicTarget | Sort-Object DisplayName
+    $enabledOutboundFirewallRules = $enabledRules | Where-Object {$_.Direction -eq 'Outbound'} | Select-Object DisplayName, Profile, Action, Protocol, LocalPort, RemotePort, IcmpType, DynamicTarget | Sort-Object DisplayName
     $enabledFirewallRules = [PSCustomObject]@{
-        Inbound = $enabledInboundFirewallRules
+        Inbound  = $enabledInboundFirewallRules
         Outbound = $enabledOutboundFirewallRules
     }
 
@@ -437,14 +440,14 @@ function Get-EnabledFirewallRules
 function Get-Counters
 {
     $counters = @(
-        "\System\Processor Queue Length",
-        "\Memory\Pages/sec",
-        "\Memory\Available MBytes",
-        "\Processor(*)\% Processor Time",
-        "\Network Interface(*)\Bytes Received/sec",
-        "\Network Interface(*)\Bytes Sent/sec",
-        "\LogicalDisk(C:)\% Free Space",
-        "\LogicalDisk(*)\Avg. Disk Queue Length"
+        '\System\Processor Queue Length',
+        '\Memory\Pages/sec',
+        '\Memory\Available MBytes',
+        '\Processor(*)\% Processor Time',
+        '\Network Interface(*)\Bytes Received/sec',
+        '\Network Interface(*)\Bytes Sent/sec',
+        '\LogicalDisk(C:)\% Free Space',
+        '\LogicalDisk(*)\Avg. Disk Queue Length'
     )
     $counterValues = Get-Counter -Counter $counters -SampleInterval 5 -MaxSamples 5
     $counterSamples = $counterValues.CounterSamples
@@ -531,7 +534,7 @@ function Get-Services
             $service | Add-Member -MemberType NoteProperty -Name ExitCode -Value "$exitCode ($exitCodeMessage)" -Force
             $service | Add-Member -MemberType NoteProperty -Name ServiceSpecificExitCode -Value "$serviceSpecificExitCode ($serviceSpecificExitCodeMessage)" -Force
         }
-        $services = $services | Select-Object DisplayName,Name,State,StartMode,StartName,ErrorControl,ExitCode,ServiceSpecificExitCode,ServiceType,ProcessId,PathName | Sort-Object DisplayName
+        $services = $services | Select-Object DisplayName, Name, State, StartMode, StartName, ErrorControl, ExitCode, ServiceSpecificExitCode, ServiceType, ProcessId, PathName | Sort-Object DisplayName
     }
     else
     {
@@ -554,7 +557,7 @@ function Get-Services
                 $service | Add-Member -MemberType NoteProperty -Name ServiceSpecificExitCode -Value $null
             }
         }
-        $services = $services | Select-Object DisplayName,Name,Status,StartType,Win32ExitCode,ServiceSpecificExitCode | Sort-Object DisplayName
+        $services = $services | Select-Object DisplayName, Name, Status, StartType, Win32ExitCode, ServiceSpecificExitCode | Sort-Object DisplayName
     }
     return $services
 }
@@ -628,7 +631,7 @@ function Get-ServiceChecks
                         if ($process)
                         {
                             $startTime = $process.StartTime
-                            $uptime = '{0:dd}:{0:hh}:{0:mm}:{0:ss}' -f (New-Timespan -Start $process.StartTime -End (Get-Date))
+                            $uptime = '{0:dd}:{0:hh}:{0:mm}:{0:ss}' -f (New-TimeSpan -Start $process.StartTime -End (Get-Date))
                         }
                     }
                 }
@@ -715,7 +718,7 @@ function Get-ServiceChecks
             $actualImagePath = Get-ChildItem -Path "$env:SystemDrive\WindowsAzure" -Filter $imageName -Recurse -File -ErrorAction SilentlyContinue
             if ($actualImagePath)
             {
-                $details = "ImagePath registry value is incorrect"
+                $details = 'ImagePath registry value is incorrect'
                 New-Check -name "$name service" -result 'FAILED' -details $details
                 $description = "HKLM:\SYSTEM\CurrentControlSet\Services\$name\ImagePath is '$imagePath' but actual location of $imageName is '$actualImagePath'"
                 New-Finding -type 'Critical' -name "$name service ImagePath registry value is incorrect" -description $description -mitigation ''
@@ -780,9 +783,9 @@ function Get-RegKey
             $valueType = $regKey.GetValueKind($valueName)
             $regKeyValue = [PSCustomObject]@{
                 SubkeyName = $regKey.Name
-                ValueName = $valueName
-                ValueData = $valueData
-                ValueType = $valueType
+                ValueName  = $valueName
+                ValueData  = $valueData
+                ValueType  = $valueType
             }
             $regKeyValues.Add($regKeyValue)
         }
@@ -800,7 +803,7 @@ function Out-Log
         [switch]$endLine,
         [switch]$raw,
         [switch]$logonly,
-        [ValidateSet('Black','Blue','Cyan','DarkBlue','DarkCyan','DarkGray','DarkGreen','DarkMagenta','DarkRed','DarkYellow','Gray','Green','Magenta','Red','White','Yellow')]
+        [ValidateSet('Black', 'Blue', 'Cyan', 'DarkBlue', 'DarkCyan', 'DarkGray', 'DarkGreen', 'DarkMagenta', 'DarkRed', 'DarkYellow', 'Gray', 'Green', 'Magenta', 'Red', 'White', 'Yellow')]
         [string]$color = 'White'
     )
 
@@ -913,7 +916,7 @@ function Out-Log
                 }
                 else
                 {
-                    Write-Host $consolePrefixString  -NoNewline -ForegroundColor DarkGray
+                    Write-Host $consolePrefixString -NoNewline -ForegroundColor DarkGray
                     Write-Host $text -ForegroundColor $color
                     if ($logFilePath)
                     {
@@ -1039,7 +1042,7 @@ function New-Check
 {
     param(
         [string]$name,
-        [ValidateSet('OK','FAILED','INFO','SKIPPED')]
+        [ValidateSet('OK', 'FAILED', 'INFO', 'SKIPPED')]
         [string]$result,
         [string]$details
     )
@@ -1117,7 +1120,7 @@ function Send-Telemetry
                     }
                 }
                 $body = $body | ConvertTo-Json -Depth 10 -Compress
-                $headers = @{'Content-Type' = 'application/x-json-stream';}
+                $headers = @{'Content-Type' = 'application/x-json-stream'; }
                 try
                 {
                     $result = Invoke-RestMethod -Uri $ingestionEndpoint -Method Post -Headers $headers -Body $body -ErrorAction SilentlyContinue
@@ -1173,7 +1176,7 @@ function Get-Drivers
 {
     # Both Win32_SystemDriver and Driverquery.exe use WMI, and Win32_SystemDriver is faster
     # So no benefit to using Driverquery.exe
-<#
+    <#
 CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
 CN=Microsoft Windows Third Party Component CA 2013, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
 CN=Microsoft Windows Third Party Component CA 2014, O=Microsoft Corporation, L=Redmond, S=Washington, C=US
@@ -1215,11 +1218,11 @@ CN=Microsoft Windows Verification PCA, O=Microsoft Corporation, L=Redmond, S=Was
     $microsoftRunningDrivers = $drivers | Where-Object {$_.State -eq 'Running' -and $_.Issuer -in $microsoftIssuers}
     $thirdPartyRunningDrivers = $drivers | Where-Object {$_.State -eq 'Running' -and $_.Issuer -notin $microsoftIssuers}
 
-    $microsoftRunningDrivers = $microsoftRunningDrivers | Select-Object -Property Name,Description,Path,Version,CompanyName,Issuer
-    $thirdPartyRunningDrivers = $thirdPartyRunningDrivers | Select-Object -Property Name,Description,Path,Version,CompanyName,Issuer
+    $microsoftRunningDrivers = $microsoftRunningDrivers | Select-Object -Property Name, Description, Path, Version, CompanyName, Issuer
+    $thirdPartyRunningDrivers = $thirdPartyRunningDrivers | Select-Object -Property Name, Description, Path, Version, CompanyName, Issuer
 
     $runningDrivers = [PSCustomObject]@{
-        microsoftRunningDrivers = $microsoftRunningDrivers
+        microsoftRunningDrivers  = $microsoftRunningDrivers
         thirdPartyRunningDrivers = $thirdPartyRunningDrivers
     }
 
@@ -1228,7 +1231,7 @@ CN=Microsoft Windows Verification PCA, O=Microsoft Corporation, L=Redmond, S=Was
 
 function Get-JoinInfo
 {
-$netApi32MemberDefinition = @'
+    $netApi32MemberDefinition = @'
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -1327,7 +1330,8 @@ public class NetAPI32{
 
     $productType = Invoke-ExpressionWithLogging "Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\ProductOptions' | Select-Object -ExpandProperty ProductType" -verboseOnly
 
-    switch ($productType) {
+    switch ($productType)
+    {
         'WinNT' {$role = 'Workstation'}
         'LanmanNT ' {$role = 'Domain controller'}
         'ServerNT' {$role = 'Server'}
@@ -1335,7 +1339,7 @@ public class NetAPI32{
 
     $joinInfo = [PSCustomObject]@{
         JoinType = $joinType
-        Role = $role
+        Role     = $role
     }
 
     return $joinInfo
@@ -1583,7 +1587,7 @@ namespace Microsoft.WindowsAzure.Internal
 }
 #endregion functions
 
-$eula = @"
+$eula = @'
 MICROSOFT SOFTWARE LICENSE TERMS
 Microsoft Diagnostic Scripts and Utilities
 
@@ -1610,12 +1614,12 @@ You may not sublicense the Software or any use of it through distribution, netwo
 9.	LAW AND VENUE. If U.S. federal jurisdiction exists, you and Microsoft consent to exclusive jurisdiction and venue in the federal court in King County, Washington for all disputes heard in court (excluding arbitration). If not, you and Microsoft consent to exclusive jurisdiction and venue in the Superior Court of King County, Washington for all disputes heard in court (excluding arbitration).
 
 10.	ENTIRE AGREEMENT. This agreement, and any other terms Microsoft may provide for supplements, updates, or third-party applications, is the entire agreement for the software.
-"@
+'@
 
 #region main
 $psVersion = $PSVersionTable.PSVersion
 $psVersionString = $psVersion.ToString()
-if ($psVersion -lt [version]'4.0' -or $psVersion -ge [version]'6.0')
+if ($skipPSVersionCheck -ne $true -and ($psVersion -lt [version]'4.0' -or $psVersion -ge [version]'6.0'))
 {
     Write-Error "You are using PowerShell $psVersionString. This script requires PowerShell version 5.1, 5.0, or 4.0."
     exit 1
@@ -1638,6 +1642,26 @@ $debug = [bool]$PSBoundParameters['debug']
 if ($debug)
 {
     $DebugPreference = 'Continue'
+}
+
+if ($listChecks)
+{
+    $scriptFullName = 'C:\src\VMAssist\VMAssist.ps1'
+    $script = Get-Content -Path $scriptFullName
+    $lines = $script | Select-String -SimpleMatch -Pattern 'New-Check -name' | Select-Object -expand Line | ForEach-Object {$_.Trim()}
+    $lines = $lines | ForEach-Object {(($_ -split '-name')[1] -split '-result')[0].Trim()} | Where-Object {$_ -and $_ -notmatch 'Trim'} | Sort-Object -Unique
+    $lines.Replace('"', '').Replace("'", '')
+    exit
+}
+
+if ($listFindings)
+{
+    $scriptFullName = 'C:\src\VMAssist\VMAssist.ps1'
+    $script = Get-Content -Path $scriptFullName
+    $lines = $script | Select-String -SimpleMatch -Pattern 'New-Finding -type' | Select-Object -expand Line | ForEach-Object {$_.Trim()}
+    $lines = $lines | ForEach-Object {(($_ -split '-name')[1] -split '-description')[0].Trim()} | Where-Object {$_ -and $_ -notmatch 'Trim'} | Sort-Object -Unique
+    $lines.Replace('"', '').Replace("'", '')
+    exit
 }
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')
@@ -1723,7 +1747,7 @@ else
 }
 
 Out-Log $osVersion -color Cyan
-$timeZone = [System.TimeZoneInfo]::Local | Select-Object -Expandproperty DisplayName
+$timeZone = [System.TimeZoneInfo]::Local | Select-Object -ExpandProperty DisplayName
 $isHyperVGuest = Confirm-HyperVGuest
 Out-Log "Hyper-V Guest: $isHyperVGuest"
 if ($isHyperVGuest)
@@ -1751,14 +1775,14 @@ else
 Out-Log "SAC session: $isSacSess"
 
 $uuidFromWMI = Get-CimInstance -Query 'SELECT UUID FROM Win32_ComputerSystemProduct' | Select-Object -ExpandProperty UUID
-$lastConfig = Get-ItemProperty -Path 'HKLM:\SYSTEM\HardwareConfig' -ErrorAction SilentlyContinue | Select-Object -Expandproperty LastConfig
+$lastConfig = Get-ItemProperty -Path 'HKLM:\SYSTEM\HardwareConfig' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty LastConfig
 if ($lastConfig)
 {
-    $uuidFromRegistry = $lastConfig.ToLower().Replace('{','').Replace('}','')
+    $uuidFromRegistry = $lastConfig.ToLower().Replace('{', '').Replace('}', '')
 }
 if ($isAzureVM)
 {
-    $vmId = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows Azure' -ErrorAction SilentlyContinue | Select-Object -Expandproperty VmId
+    $vmId = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows Azure' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty VmId
 }
 
 $windowsAzureFolderPath = "$env:SystemDrive\WindowsAzure"
@@ -1882,10 +1906,10 @@ if ($isAzureVM)
 else
 {
     Out-Log "RdAgent service: Skipped (Azure VM: $isAzureVM)"
-    New-Check -name "RdAgent service" -result 'Skipped' -details "Azure VM: $isAzureVM"
+    New-Check -name 'RdAgent service' -result 'Skipped' -details "Azure VM: $isAzureVM"
 
     Out-Log "WindowsAzureGuestAgent service: Skipped (Azure VM: $isAzureVM)"
-    New-Check -name "WindowsAzureGuestAgent service" -result 'Skipped' -details "Azure VM: $isAzureVM"
+    New-Check -name 'WindowsAzureGuestAgent service' -result 'Skipped' -details "Azure VM: $isAzureVM"
 }
 $winmgmt = Get-ServiceChecks -name 'Winmgmt' -expectedStatus 'Running' -expectedStartType 'Automatic'
 $keyiso = Get-ServiceChecks -name 'Keyiso' -expectedStatus 'Running' -expectedStartType 'Manual'
@@ -2066,17 +2090,17 @@ if ($isVMAgentInstalled)
         }
     }
 
-    $vm.Add([PSCustomObject]@{Property = "ContainerId"; Value = $guestAgentKeyContainerId; Type = 'Agent'})
-    $vm.Add([PSCustomObject]@{Property = "DirectoryToDelete"; Value = $guestAgentKeyDirectoryToDelete; Type = 'Agent'})
-    $vm.Add([PSCustomObject]@{Property = "HeartbeatLastStatusUpdateTime"; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
-    $vm.Add([PSCustomObject]@{Property = "Incarnation"; Value = $guestAgentKeyIncarnation; Type = 'Agent'})
-    $vm.Add([PSCustomObject]@{Property = "InstallerRestart"; Value = $guestAgentKeyInstallerRestart; Type = 'Agent'})
-    $vm.Add([PSCustomObject]@{Property = "ManifestTimeStamp"; Value = $guestAgentKeyManifestTimeStamp; Type = 'Agent'})
-    $vm.Add([PSCustomObject]@{Property = "MetricsSelfSelectionSelected"; Value = $guestAgentKeyMetricsSelfSelectionSelected; Type = 'Agent'})
-    $vm.Add([PSCustomObject]@{Property = "UpdateNewGAVersion"; Value = $guestAgentKeyUpdateNewGAVersion; Type = 'Agent'})
-    $vm.Add([PSCustomObject]@{Property = "UpdatePreviousGAVersion"; Value = $guestAgentKeyUpdatePreviousGAVersion; Type = 'Agent'})
-    $vm.Add([PSCustomObject]@{Property = "UpdateStartTime"; Value = $guestAgentKeyUpdateStartTime; Type = 'Agent'})
-    $vm.Add([PSCustomObject]@{Property = "VmProvisionedAt"; Value = $guestAgentKeyVmProvisionedAt; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = 'ContainerId'; Value = $guestAgentKeyContainerId; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = 'DirectoryToDelete'; Value = $guestAgentKeyDirectoryToDelete; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = 'HeartbeatLastStatusUpdateTime'; Value = $guestAgentKeyHeartbeatLastStatusUpdateTime; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = 'Incarnation'; Value = $guestAgentKeyIncarnation; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = 'InstallerRestart'; Value = $guestAgentKeyInstallerRestart; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = 'ManifestTimeStamp'; Value = $guestAgentKeyManifestTimeStamp; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = 'MetricsSelfSelectionSelected'; Value = $guestAgentKeyMetricsSelfSelectionSelected; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = 'UpdateNewGAVersion'; Value = $guestAgentKeyUpdateNewGAVersion; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = 'UpdatePreviousGAVersion'; Value = $guestAgentKeyUpdatePreviousGAVersion; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = 'UpdateStartTime'; Value = $guestAgentKeyUpdateStartTime; Type = 'Agent'})
+    $vm.Add([PSCustomObject]@{Property = 'VmProvisionedAt'; Value = $guestAgentKeyVmProvisionedAt; Type = 'Agent'})
 
     $windowsAzureKeyPath = 'HKLM:\SOFTWARE\Microsoft\Windows Azure'
     $windowsAzureKey = Invoke-ExpressionWithLogging "Get-ItemProperty -Path '$windowsAzureKeyPath' -ErrorAction SilentlyContinue" -verboseOnly
@@ -2246,7 +2270,7 @@ if ($isVMAgentInstalled)
         $tenantEncryptionCertInstalled = $true
         Out-Log $tenantEncryptionCertInstalled -color Green -endLine
         $subject = $tenantEncryptionCert.Subject
-        $issuer =  $tenantEncryptionCert.Issuer
+        $issuer = $tenantEncryptionCert.Issuer
         $effective = Get-Date -Date $tenantEncryptionCert.NotBefore.ToUniversalTime() -Format 'yyyy-MM-ddTHH:mm:ssZ'
         $expires = Get-Date -Date $tenantEncryptionCert.NotAfter.ToUniversalTime() -Format 'yyyy-MM-ddTHH:mm:ssZ'
         $now = Get-Date -Date (Get-Date).ToUniversalTime() -Format 'yyyy-MM-ddTHH:mm:ssZ'
@@ -2296,7 +2320,7 @@ if ($isAzureVM)
     if ($wireserverPort80Reachable.Succeeded)
     {
         New-Check -name 'Wireserver endpoint 168.63.129.16:80 reachable' -result 'OK' -details ''
-        Out-Log "$($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)" -color Green -endline
+        Out-Log "$($wireserverPort80Reachable.Succeeded) $($wireserverPort80Reachable.Error)" -color Green -endLine
     }
     else
     {
@@ -2505,10 +2529,10 @@ if ($isAzureVM)
 }
 else
 {
-    New-Check -name "Third-party modules in WaAppAgent" -result 'SKIPPED' -details "Skipped (VM agent installed: $isVMAgentInstalled)"
+    New-Check -name 'Third-party modules in WaAppAgent' -result 'SKIPPED' -details "Skipped (VM agent installed: $isVMAgentInstalled)"
     Out-Log "Third-party modules in WaAppAgent: Skipped (VM agent installed: $isVMAgentInstalled)"
 
-    New-Check -name "Third-party modules in WindowsAzureGuestAgent" -result 'SKIPPED' -details "Skipped (VM agent installed: $isVMAgentInstalled)"
+    New-Check -name 'Third-party modules in WindowsAzureGuestAgent' -result 'SKIPPED' -details "Skipped (VM agent installed: $isVMAgentInstalled)"
     Out-Log "Third-party modules in WindowsAzureGuestAgent: Skipped (VM agent installed: $isVMAgentInstalled)"
 
     Out-Log "Wireserver endpoint 168.63.129.16:80 reachable: Skipped (Azure VM: $isAzureVM)"
@@ -2630,7 +2654,7 @@ else
     Out-Log $details -endLine
 }
 
-Out-Log "System drive has sufficient disk space:" -startLine
+Out-Log 'System drive has sufficient disk space:' -startLine
 $systemDriveLetter = "$env:SystemDrive" -split ':' | Select-Object -First 1
 $systemDrive = Invoke-ExpressionWithLogging "Get-PSDrive -Name $systemDriveLetter" -verboseOnly
 # "Get-PSDrive" doesn't call WMI but Free and Used properties are of type ScriptProperty,
@@ -2638,36 +2662,36 @@ $systemDrive = Invoke-ExpressionWithLogging "Get-PSDrive -Name $systemDriveLette
 $systemDriveFreeSpaceBytes = $systemDrive | Select-Object -ExpandProperty Free -ErrorAction SilentlyContinue
 if ($systemDriveFreeSpaceBytes)
 {
-    $systemDriveFreeSpaceGB = [Math]::Round($systemDriveFreeSpaceBytes/1GB,1)
-    $systemDriveFreeSpaceMB = [Math]::Round($systemDriveFreeSpaceBytes/1MB,1)
+    $systemDriveFreeSpaceGB = [Math]::Round($systemDriveFreeSpaceBytes / 1GB, 1)
+    $systemDriveFreeSpaceMB = [Math]::Round($systemDriveFreeSpaceBytes / 1MB, 1)
 
     if ($systemDriveFreeSpaceMB -lt 100)
     {
         $details = "<100MB free ($($systemDriveFreeSpaceMB)MB free) on drive $systemDriveLetter"
         Out-Log $false -color Red -endLine
-        New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'FAILED' -details $details
-        New-Finding -type Critical -name "System drive low disk space" -description $details -mitigation ''
+        New-Check -name 'Disk space check (<1GB Warn, <100MB Critical)' -result 'FAILED' -details $details
+        New-Finding -type Critical -name 'System drive low disk space' -description $details -mitigation ''
     }
     elseif ($systemDriveFreeSpaceGB -lt 1)
     {
         $details = "<1GB free ($($systemDriveFreeSpaceGB)GB free) on drive $systemDriveLetter"
         Out-Log $details -color Yellow -endLine
-        New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'Warning' -details $details
-        New-Finding -type Warning -name "System drive low free space" -description $details -mitigation ''
+        New-Check -name 'Disk space check (<1GB Warn, <100MB Critical)' -result 'Warning' -details $details
+        New-Finding -type Warning -name 'System drive low free space' -description $details -mitigation ''
     }
     else
     {
         $details = "$($systemDriveFreeSpaceGB)GB free on system drive $systemDriveLetter"
         Out-Log $details -color Green -endLine
-        New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'OK' -details $details
+        New-Check -name 'Disk space check (<1GB Warn, <100MB Critical)' -result 'OK' -details $details
     }
 }
 else
 {
     $details = "Unable to determine free space on system drive $systemDriveLetter"
     Out-Log $details -color Cyan -endLine
-    New-Check -name "Disk space check (<1GB Warn, <100MB Critical)" -result 'Info' -details $details
-    New-Finding -type Warning -name "System drive low free space" -description $details -mitigation ''
+    New-Check -name 'Disk space check (<1GB Warn, <100MB Critical)' -result 'Info' -details $details
+    New-Finding -type Warning -name 'System drive low free space' -description $details -mitigation ''
 }
 
 $joinInfo = Get-JoinInfo
@@ -2734,7 +2758,7 @@ $vm.Add([PSCustomObject]@{Property = 'joinType'; Value = $joinType; Type = 'OS'}
 $vm.Add([PSCustomObject]@{Property = 'role'; Value = $role; Type = 'OS'})
 $vm.Add([PSCustomObject]@{Property = 'timeZone'; Value = $timeZone; Type = 'OS'})
 
-Out-Log "DHCP-assigned IP addresses:" -startLine
+Out-Log 'DHCP-assigned IP addresses:' -startLine
 
 $nics = New-Object System.Collections.Generic.List[Object]
 
@@ -2743,7 +2767,7 @@ if ($useDotnetForNicDetails)
     # [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActiveTcpConnections()
     # get-winevent -ProviderName Microsoft-Windows-NCSI
     # reg query 'HKLM\SYSTEM\CurrentControlSet\Services\NlaSvc\Parameters\Internet'
-    $networkListManager = [Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]"{DCB00C01-570F-4A9B-8D69-199FDBA5723B}"))
+    $networkListManager = [Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]'{DCB00C01-570F-4A9B-8D69-199FDBA5723B}'))
     $connections = $networkListManager.GetNetworkConnections()
 
     $isConnected = $networkListManager.IsConnected
@@ -2752,7 +2776,8 @@ if ($useDotnetForNicDetails)
     foreach ($connection in $connections)
     {
         $category = $connection.GetNetwork().GetCategory()
-        switch ($category) {
+        switch ($category)
+        {
             0 {$networkProfile = 'Public'}
             1 {$networkProfile = 'Private'}
             2 {$networkProfile = 'DomainAuthenticated'}
@@ -2793,26 +2818,26 @@ if ($useDotnetForNicDetails)
         }
 
         $nic = [PSCustomObject]@{
-            Description = $networkInterface.Description
-            Alias = $networkInterface.Name
-            Index = $ipV4Properties.Index
-            MacAddress = $networkInterface.GetPhysicalAddress()
-            Status = $networkInterface.OperationalStatus
-            DHCP = $dhcp
-            IpAddress = $ipV4Addresses
-            DnsServers = $ipProperties.DnsAddresses.IPAddressToString
-            DefaultGateway = $ipProperties.GatewayAddresses.Address.IPAddressToString
-            Connected       = $isConnected
-            ConnectedToInternet       = $isConnectedToInternet
-            Category           = $networkProfile
-            IPv6DHCP           = $ipV6Dhcp
-            IPv6IpAddress      = $ipV6Addresses
-            IPv6DnsServers     = $ipProperties.DnsAddresses.IPAddressToString
-            IPv6DefaultGateway = $ipProperties.GatewayAddresses.Address.IPAddressToString
-            Id = $networkInterface.Id
+            Description                        = $networkInterface.Description
+            Alias                              = $networkInterface.Name
+            Index                              = $ipV4Properties.Index
+            MacAddress                         = $networkInterface.GetPhysicalAddress()
+            Status                             = $networkInterface.OperationalStatus
+            DHCP                               = $dhcp
+            IpAddress                          = $ipV4Addresses
+            DnsServers                         = $ipProperties.DnsAddresses.IPAddressToString
+            DefaultGateway                     = $ipProperties.GatewayAddresses.Address.IPAddressToString
+            Connected                          = $isConnected
+            ConnectedToInternet                = $isConnectedToInternet
+            Category                           = $networkProfile
+            IPv6DHCP                           = $ipV6Dhcp
+            IPv6IpAddress                      = $ipV6Addresses
+            IPv6DnsServers                     = $ipProperties.DnsAddresses.IPAddressToString
+            IPv6DefaultGateway                 = $ipProperties.GatewayAddresses.Address.IPAddressToString
+            Id                                 = $networkInterface.Id
             # DHCPServerAddresses = $dhcpServerAddresses
             IsAutomaticPrivateAddressingActive = $ipV4Properties.IsAutomaticPrivateAddressingActive
-            Mtu = $ipV4Properties.Mtu
+            Mtu                                = $ipV4Properties.Mtu
         }
         $nics.Add($nic)
     }
@@ -2821,7 +2846,7 @@ if ($useDotnetForNicDetails)
 elseif ($winmgmt.Status -eq 'Running')
 {
     # Get-NetIPConfiguration depends on WMI (winmgmt service)
-    $ipconfigs = Invoke-ExpressionWithLogging "Get-NetIPConfiguration -Detailed" -verboseOnly
+    $ipconfigs = Invoke-ExpressionWithLogging 'Get-NetIPConfiguration -Detailed' -verboseOnly
     foreach ($ipconfig in $ipconfigs)
     {
         $interfaceAlias = $ipconfig | Select-Object -ExpandProperty InterfaceAlias
@@ -2886,38 +2911,38 @@ elseif ($winmgmt.Status -eq 'Running')
 }
 else
 {
-    Out-Log "Unable to query network adapter details because winmgmt service is not running"
+    Out-Log 'Unable to query network adapter details because winmgmt service is not running'
 }
 
 if ($winmgmt.Status -eq 'Running')
 {
     # Get-NetRoute depends on WMI (winmgmt service)
-    $routes = Get-NetRoute | Select-Object AddressFamily,State,ifIndex,InterfaceAlias,InstanceID,TypeOfRoute,RouteMetric,InterfaceMetric,DestinationPrefix,NextHop | Sort-Object InterfaceAlias
+    $routes = Get-NetRoute | Select-Object AddressFamily, State, ifIndex, InterfaceAlias, InstanceID, TypeOfRoute, RouteMetric, InterfaceMetric, DestinationPrefix, NextHop | Sort-Object InterfaceAlias
 }
 else
 {
-    Out-Log "Unable to query network route details because winmgmt service is not running"
+    Out-Log 'Unable to query network route details because winmgmt service is not running'
 }
 
-$dhcpDisabledNics = $nics | Where-Object DHCP -eq 'Disabled'
+$dhcpDisabledNics = $nics | Where-Object DHCP -EQ 'Disabled'
 if ($dhcpDisabledNics)
 {
     $dhcpAssignedIpAddresses = $false
     Out-Log $dhcpAssignedIpAddresses -endLine -color Yellow
-    $dhcpDisabledNicsString = "DHCP-disabled NICs: "
+    $dhcpDisabledNicsString = 'DHCP-disabled NICs: '
     foreach ($dhcpDisabledNic in $dhcpDisabledNics)
     {
         $dhcpDisabledNicsString += "Description: $($dhcpDisabledNic.Description) Alias: $($dhcpDisabledNic.Alias) Index: $($dhcpDisabledNic.Index) IpAddress: $($dhcpDisabledNic.IpAddress)"
     }
-    New-Check -name "DHCP-assigned IP addresses" -result 'Info' -details $dhcpDisabledNicsString
-    New-Finding -type Information -name "DHCP-disabled NICs" -description $dhcpDisabledNicsString -mitigation ''
+    New-Check -name 'DHCP-assigned IP addresses' -result 'Info' -details $dhcpDisabledNicsString
+    New-Finding -type Information -name 'DHCP-disabled NICs' -description $dhcpDisabledNicsString -mitigation ''
 }
 else
 {
     $dhcpAssignedIpAddresses = $true
     Out-Log $dhcpAssignedIpAddresses -endLine -color Green
-    $details = "All NICs have DHCP-assigned IP addresses"
-    New-Check -name "DHCP-assigned IP addresses" -result 'OK' -details $details
+    $details = 'All NICs have DHCP-assigned IP addresses'
+    New-Check -name 'DHCP-assigned IP addresses' -result 'OK' -details $details
 }
 
 if ($imdsReachable.Succeeded)
@@ -3008,19 +3033,19 @@ foreach ($dataDisk in $dataDisks)
 }
 
 $uninstallPaths = ('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
-                   'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
-                   'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
-                   'HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*')
+    'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+    'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+    'HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*')
 $software = Get-ItemProperty -Path $uninstallPaths -ErrorAction SilentlyContinue
-$software = $software | Where-Object {$_.DisplayName} | Select-Object DisplayName,DisplayVersion,Publisher | Sort-Object -Property DisplayName
+$software = $software | Where-Object {$_.DisplayName} | Select-Object DisplayName, DisplayVersion, Publisher | Sort-Object -Property DisplayName
 
 if ($winmgmt.Status -eq 'Running')
 {
-    $updates = Get-HotFix | Select-Object -Property HotFixID,Description,InstalledOn | Sort-Object -Property InstalledOn -Descending
+    $updates = Get-HotFix | Select-Object -Property HotFixID, Description, InstalledOn | Sort-Object -Property InstalledOn -Descending
 }
 else
 {
-    Out-Log "Unable to query Windows update details because the winmgmt service is not running"
+    Out-Log 'Unable to query Windows update details because the winmgmt service is not running'
 }
 
 $output = [PSCustomObject]@{
@@ -3441,7 +3466,7 @@ $findingsCount = $findings | Measure-Object | Select-Object -ExpandProperty Coun
 if ($findingsCount -ge 1)
 {
     #<#
-    foreach($finding in $findings)
+    foreach ($finding in $findings)
     {
         [void]$stringBuilder.Append("<button class='accordion'>$($finding.Name)</button>")
         [void]$stringBuilder.Append('<div class="panel" style="display:none;">')
@@ -3508,7 +3533,7 @@ foreach ($handlerKeyName in $handlerKeyNames)
 {
     $handlerName = Split-Path -Path $handlerKeyName -Leaf
     [void]$stringBuilder.Append("<h3>$handlerName</h3>`r`n")
-    $handlerValues = $handlerStateKey | Where-Object {$_.SubkeyName -eq $handlerKeyName} | Select-Object ValueName,ValueData | Sort-Object ValueName
+    $handlerValues = $handlerStateKey | Where-Object {$_.SubkeyName -eq $handlerKeyName} | Select-Object ValueName, ValueData | Sort-Object ValueName
     $vmHandlerValuesTable = $handlerValues | ConvertTo-Html -Fragment -As Table
     $vmHandlerValuesTable | ForEach-Object {[void]$stringBuilder.Append("$_`r`n")}
 }
