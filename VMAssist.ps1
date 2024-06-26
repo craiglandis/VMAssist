@@ -1619,10 +1619,77 @@ You may not sublicense the Software or any use of it through distribution, netwo
 #region main
 $psVersion = $PSVersionTable.PSVersion
 $psVersionString = $psVersion.ToString()
+# If run from PowerShell (PS6+), rerun from Windows Powershell if Windows PowerShell 4.0+ installed, otherwise fail with error saying Windows PowerShell 4.0+ is required
 if ($skipPSVersionCheck -ne $true -and ($psVersion -lt [version]'4.0' -or $psVersion -ge [version]'6.0'))
 {
-    Write-Error "You are using PowerShell $psVersionString. This script requires PowerShell version 5.1, 5.0, or 4.0."
-    exit 1
+    [version]$powerShellVersion = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\PowerShell\3\PowerShellEngine' -Name PowerShellVersion | Select-Object -ExpandProperty PowerShellVersion
+    if ($powerShellVersion -ge [version]'4.0' -and $powerShellVersion -lt [version]'6.0')
+    {
+        #$vmAssistScriptFilePath = 'c:\src\VMAssist\VMAssist.ps1'
+        $vmAssistCommand = $MyInvocation.MyCommand.Path
+
+        if ($outputPath)
+        {
+            $vmAssistCommand = "$vmAssistCommand -outputPath $outputPath"
+        }
+        if ($fakeFinding)
+        {
+            $vmAssistCommand = "$vmAssistCommand -fakeFinding"
+        }
+        if ($skipFirewall)
+        {
+            $vmAssistCommand = "$vmAssistCommand -skipFirewall"
+        }
+        if ($skipFilters)
+        {
+            $vmAssistCommand = "$vmAssistCommand -skipFilters"
+        }
+        if ($useDotnetForNicDetails)
+        {
+            $vmAssistCommand = "$vmAssistCommand -useDotnetForNicDetails"
+        }
+        if ($showLog)
+        {
+            $vmAssistCommand = "$vmAssistCommand -showLog"
+        }
+        if ($showReport)
+        {
+            $vmAssistCommand = "$vmAssistCommand -showReport"
+        }
+        if ($acceptEula)
+        {
+            $vmAssistCommand = "$vmAssistCommand -acceptEula"
+        }
+        if ($listChecks)
+        {
+            $vmAssistCommand = "$vmAssistCommand -listChecks"
+        }
+        if ($listFindings)
+        {
+            $vmAssistCommand = "$vmAssistCommand -listFindings"
+        }
+        if ($skipPSVersionCheck)
+        {
+            $vmAssistCommand = "$vmAssistCommand -skipPSVersionCheck"
+        }
+        if ($verbose)
+        {
+            $vmAssistCommand = "$vmAssistCommand -verbose"
+        }
+        if ($debug)
+        {
+            $vmAssistCommand = "$vmAssistCommand -debug"
+        }
+        # powershell -noprofile -nologo -Command $vmAssistCommand
+        $command = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -nologo -Command $vmAssistCommand"
+        Invoke-Expression $command
+        exit
+    }
+    else
+    {
+        Write-Error "You are using PowerShell $psVersionString. This script requires PowerShell version 5.1, 5.0, or 4.0."
+        exit 1
+    }
 }
 
 $scriptStartTime = Get-Date
