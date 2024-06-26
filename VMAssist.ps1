@@ -1617,13 +1617,33 @@ You may not sublicense the Software or any use of it through distribution, netwo
 '@
 
 #region main
+
+$scriptStartTime = Get-Date
+$scriptStartTimeString = Get-Date -Date $scriptStartTime -Format yyyyMMddHHmmss
+$scriptFullName = $MyInvocation.MyCommand.Path
+$scriptFolderPath = Split-Path -Path $scriptFullName
+$scriptName = Split-Path -Path $scriptFullName -Leaf
+$scriptBaseName = $scriptName.Split('.')[0]
+
+$PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+$PSDefaultParameterValues['*:WarningAction'] = 'SilentlyContinue'
+$ProgressPreference = 'SilentlyContinue'
+$WarningPreference = 'SilentlyContinue'
+
+$verbose = [bool]$PSBoundParameters['verbose']
+$debug = [bool]$PSBoundParameters['debug']
+if ($debug)
+{
+    $DebugPreference = 'Continue'
+}
+
 $psVersion = $PSVersionTable.PSVersion
 $psVersionString = $psVersion.ToString()
 # If run from PowerShell (PS6+), rerun from Windows Powershell if Windows PowerShell 4.0+ installed, otherwise fail with error saying Windows PowerShell 4.0+ is required
 if ($skipPSVersionCheck -ne $true -and ($psVersion -lt [version]'4.0' -or $psVersion -ge [version]'6.0'))
 {
-    [version]$powerShellVersion = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\PowerShell\3\PowerShellEngine' -Name PowerShellVersion | Select-Object -ExpandProperty PowerShellVersion
-    if ($powerShellVersion -ge [version]'4.0' -and $powerShellVersion -lt [version]'6.0')
+    [version]$windowsPowerShellVersion = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\PowerShell\3\PowerShellEngine' -Name PowerShellVersion | Select-Object -ExpandProperty PowerShellVersion
+    if ($windowsPowerShellVersion -ge [version]'4.0' -and $windowsPowerShellVersion -lt [version]'6.0')
     {
         #$vmAssistScriptFilePath = 'c:\src\VMAssist\VMAssist.ps1'
         $vmAssistCommand = $MyInvocation.MyCommand.Path
@@ -1687,28 +1707,9 @@ if ($skipPSVersionCheck -ne $true -and ($psVersion -lt [version]'4.0' -or $psVer
     }
     else
     {
-        Write-Error "You are using PowerShell $psVersionString. This script requires PowerShell version 5.1, 5.0, or 4.0."
+        Write-Error "You are using PowerShell $psVersionString. This script requires Windows PowerShell version 5.1, 5.0, or 4.0."
         exit 1
     }
-}
-
-$scriptStartTime = Get-Date
-$scriptStartTimeString = Get-Date -Date $scriptStartTime -Format yyyyMMddHHmmss
-$scriptFullName = $MyInvocation.MyCommand.Path
-$scriptFolderPath = Split-Path -Path $scriptFullName
-$scriptName = Split-Path -Path $scriptFullName -Leaf
-$scriptBaseName = $scriptName.Split('.')[0]
-
-$PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
-$PSDefaultParameterValues['*:WarningAction'] = 'SilentlyContinue'
-$ProgressPreference = 'SilentlyContinue'
-$WarningPreference = 'SilentlyContinue'
-
-$verbose = [bool]$PSBoundParameters['verbose']
-$debug = [bool]$PSBoundParameters['debug']
-if ($debug)
-{
-    $DebugPreference = 'Continue'
 }
 
 if ($listChecks)
