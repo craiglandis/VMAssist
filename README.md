@@ -26,11 +26,6 @@ https://aka.ms/vmassist
 ## Prerequisites
 
 ## Usage
-### Azure Portal Run Command
-```powershell
-Invoke-WebRequest -Uri https://aka.ms/vmassist -OutFile VMAssist.ps1
-.\VMAssist.ps1
-```
 
 ### Remote Desktop
 
@@ -150,7 +145,13 @@ Invoke-AzVMRunCommand -ResourceGroupName $resourceGroupName -Name $vmName -Comma
 ```
 curl https://aka.ms/vmassist -o VMAssist.ps1
 az vm run-command invoke -g rg -n ws12r2 --command-id RunPowerShellScript --scripts @{VMAssist.ps1}
+```
 
+### Azure Portal Run Command
+
+```powershell
+Invoke-WebRequest -Uri https://aka.ms/vmassist -OutFile VMAssist.ps1
+.\VMAssist.ps1
 ```
 
 ### Serial Console
