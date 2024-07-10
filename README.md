@@ -158,6 +158,7 @@ Invoke-WebRequest -Uri https://aka.ms/vmassist -OutFile VMAssist.ps1
 
 ```powershell
 powershell
+Remove-Module PSReadLine
 Invoke-WebRequest -Uri https://aka.ms/vmassist -OutFile VMAssist.ps1
 .\VMAssist.ps1
 ```
