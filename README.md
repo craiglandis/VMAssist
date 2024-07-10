@@ -26,6 +26,11 @@ https://aka.ms/vmassist
 ## Prerequisites
 
 ## Usage
+### Azure Portal Run Command
+```powershell
+Invoke-WebRequest -Uri https://aka.ms/vmassist -OutFile VMAssist.ps1
+.\VMAssist.ps1
+```
 
 ### Remote Desktop
 
