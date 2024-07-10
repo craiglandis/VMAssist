@@ -156,6 +156,12 @@ Invoke-WebRequest -Uri https://aka.ms/vmassist -OutFile VMAssist.ps1
 
 ### Serial Console
 
+```powershell
+powershell
+Invoke-WebRequest -Uri https://aka.ms/vmassist -OutFile VMAssist.ps1
+.\VMAssist.ps1
+```
+
 ## Maintainers
 
 ## Contributing
