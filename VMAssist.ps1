@@ -2004,6 +2004,9 @@ else
     New-Check -name 'WindowsAzureGuestAgent application errors' -result 'Skipped' -details "Azure VM: $isAzureVM"
 }
 
+# TODO: WS25+ no longer include WMIC.exe (<WS25 versions have it in C:\Windows\System32\wbem\WMIC.exe), so need to use a different approach here
+# It can be installed as a feature-on-demand in WS25, but since it'll ultimately even that won't an option, but to address this now
+# https://learn.microsoft.com/en-us/windows-server/get-started/removed-deprecated-features-windows-server-2025#features-were-no-longer-developing
 Out-Log 'StdRegProv WMI class:' -startLine
 if ($winmgmt.Status -eq 'Running')
 {
