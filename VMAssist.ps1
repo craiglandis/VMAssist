@@ -2332,7 +2332,9 @@ else
 Out-Log 'TenantEncryptionCert installed:' -startLine
 if ($isVMAgentInstalled)
 {
-    $tenantEncryptionCert = Get-ChildItem -Path 'Cert:\LocalMachine\My' | Where-Object {$_.FriendlyName -eq 'TenantEncryptionCert' -and $_.Issuer -eq 'DC=Windows Azure CRP Certificate Generator' -and $_.Subject -eq 'DC=Windows Azure CRP Certificate Generator'}
+    $tenantEncryptionCerts = Get-ChildItem -Path 'Cert:\LocalMachine\My' | Where-Object {$_.FriendlyName -eq 'TenantEncryptionCert' -and $_.Issuer -eq 'DC=Windows Azure CRP Certificate Generator' -and $_.Subject -eq 'DC=Windows Azure CRP Certificate Generator'}
+    # Only consider the newest tenant encryption cert if multiple found (which can happen)
+    $tenantEncryptionCert = $tenantEncryptionCerts | Sort-Object NotBefore | Select-Object -Last 1
     if ($tenantEncryptionCert)
     {
         $tenantEncryptionCertInstalled = $true
