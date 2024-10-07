@@ -460,6 +460,7 @@ function Get-FirewallProfiles
     return $firewallProfiles
 }
 
+# Get-Process WaAppAgent,WindowsAzureGuestAgent | Select-Object -ExpandProperty modules | Select-Object ModuleName, company, description, product, filename, @{Name = 'Version'; Expression = {$_.FileVersionInfo.FileVersion}} | Sort-Object company | ft ModuleName,Company,Description -a
 function Get-ThirdPartyLoadedModules
 {
     param(
