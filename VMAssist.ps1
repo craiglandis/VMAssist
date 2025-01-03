@@ -92,6 +92,17 @@ $MethodDefinition = @'
 '@
 $asm = Add-Type -TypeDefinition $MethodDefinition -PassThru -ErrorAction SilentlyContinue
 
+function Remove-Color
+{
+    param(
+        [string]$string
+    )
+
+    $cleanedString = $string -replace "`e\[\d+m", ""
+
+    return $cleanedString
+}
+
 function GetProxySettings
 {
     $proxycfg = [PSCustomObject]@{}
